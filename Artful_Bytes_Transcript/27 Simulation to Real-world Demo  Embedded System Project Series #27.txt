@@ -1,0 +1,450 @@
+00:00 it's time to complete the code of this Zoom robot finally in the last video I sketched out the state machine diagram
+00:07 and wrote the corresponding skeleton code for it and in this video I'm going to finish it up by filling in the
+00:12 details and confirm that it works first in my simulator Bots 2D and then on this
+00:17 actual robot I'm going to begin by setting up the simulator and as I told you previously I use a simulator to save
+00:23 me time during development because developing directly on the target is quite tedious when you are dealing with
+00:29 the microcontroller because then you have to flash each change to the microcontroller the idea is that I can
+00:34 use the same application code on my actual robot as I do in the simulation and only replace the lower layers that
+00:41 are specific to my microcontroller and this means that if I get the application code to work in the simulation it should
+00:47 also work on the actual robot so I can spend all of my time developing the application code using my simulation
+00:52 before moving on to the robot I already presented and spoke about my simulator in a previous video so go check it out
+00:59 if you haven't watched it but in that video I didn't actually show how to use it and that's what I'm going to do in this video my simulator B Tod is
+01:06 available in a gitos story on GitHub and what I'm going to do first here is I'm going to clone the
+01:13 repository I will clone it recursively since it has a bunch of git sub modules inside it and now once it's cloned we
+01:21 can have a look at the read me where there are more instructions about how to actually use it and to build it you will
+01:27 need to install some additional packages most likely and this are the packages you need if you are on yuntu I have
+01:33 already installed these on my machine so I don't need to do it now and then to try it out we can have a look at the
+01:40 test application which I've added to the repository so I'm just going to change to my development window here then we
+01:46 can go to the test app and we can follow the instructions in the read
+01:52 me I should create the build folder and then I should run cmake to build the test app what I'm going to do let's
+01:59 create a build directory going to build directly and then
+02:05 build and then I can open the test app and here is the test application
+02:11 there is a bunch of scenes that I can go through here I already showed you this in the previous
+02:22 video the scene right here is basically the scene that I'm going to recreate using the new sumobot code that I've
+02:28 written in this video series since I can build this now I can close it down and then the idea with B Tod is that it's
+02:35 meant to be used as a framework so it's meant to be used in a way where you create your own application and use bot
+02:42 Tod as a framework so that's what I'm going to do right now I'm going to create a new application which I'm going
+02:48 to call nmo up and then I'm basically going to mimic
+02:53 the test application which are already available in this repository the test application that I just ran and inside
+02:59 this application it's called going to be a bunch of code or a bunch of glue code that's going to glue the application
+03:04 code running on this suot together with the simulation code in the simulation framework so there's going to be a bunch
+03:10 of new files containing C++ classes and so on it's fairly straightforward
+03:16 because I can mimic the test application which is already available and the reason I've designed like this is
+03:21 because I want B STD to be a simulator that you configure and adapt through code rather than a limited and fancy
+03:28 graphical user interface so looking inside at the files available in the test application uh that I'm going to
+03:34 mimic there's a bunch of files here and since this application is a standalone
+03:39 C++ application it's going to first of all need a main function so it's going to need a main file let's begin by
+03:46 creating that and the main function is essentially just going to initiate the
+03:52 application class which I'm going to create soon and then run
+03:59 it and then I can go on to uh creating the
+04:05 oh I should of course move this to insumo app and then I can move on to
+04:12 creating the application class which is going to derive from uh base application class from bot Tod and that's going to
+04:18 be similar to the application class inside the test application so let's have a peek at that then I can also open
+04:26 the or create corresponding files for my application with the new application I'm going to call it enum
+04:35 up then I can essentially mimic the test application I'll be a header file first
+04:41 L class deriving from the base class I will write a bit of C++ code here in
+04:46 this video which I haven't done in the other videos in this video series since on this micr controller on this robot
+04:53 I've only written uh C code and I'm not going to talk about um C FL plus here so
+04:58 if you're not used to seeing C Plus Code uh bear with me I'm soon going to get to the point where I start writing C code
+05:04 to finish up the state machine
+05:11 code also need to include then I can switch to the implementation file and
+05:16 also look at the implementation file for the test
+05:21 application and it's mostly just going to be boiler plate I'm going to keep this application simpler than the test
+05:27 application because here in test application I have multiple scenes but in the application I'm creating now I'm
+05:33 just going to have a single scene which I will use to simulate my Su robot but in a similar manner I'm first going to
+05:40 implement the Constructor and give my application a name Z up and then I will
+05:47 register the scene that I will have in my menu and also set that to my default
+05:52 scene like this then I will have an empty
+05:58 Destructor and two other functions that's also going to be empty but which I have to
+06:06 overwrite this class is essentially not doing anything or it appears to do nothing here in my file since there is
+06:13 essentially no code and the reason for that is that most of the application is inside the base class that I'm deriving
+06:18 from okay then I can continue with creating the scene which is going to contain my some robot uh so I'm going to
+06:25 have a folder for that scenes and then add the most
+06:30 implementation file and a header file and this SC is just going to be another C++
+06:36 class beginning with the header I can have a look at the suot scene
+06:42 inside the test application first Define and then this class is
+06:49 going to derive from a base class called scene and as other classes it's going to
+06:55 have a Constructor and a Destructor and it's going to have a function it's going to override called on fixed update same
+07:03 as this scene here copy that and then it's going to contain a bunch of assets
+07:08 and this scene is going to contain my sum robot the simulat sum robot running
+07:13 the application code but I'm also going to have an opponent summer robot which I can control with my keyboard and then
+07:20 there is also going to be the platform which the two sum Bots are competing on but I will Begin by just adding the platform and the keyboard control as
+07:27 some robot just to see that I can compile and so on going to be the these three objects here
+07:34 which means that I also need to include so they are available or I'm going actually going to forward declare here
+07:39 and then include inside the implementation file instead going to be
+07:45 do sumobot and roller and then I also need
+07:50 to include and then can switch to the implementation file of the scene also
+07:57 have a look at the implementation file of the scene in the test application I
+08:02 can make in my including scene and then I can create a Constructor which is going to be similar to The Constructor
+08:08 in this file that's going to be insumo scene then I need to provide some
+08:14 arguments here need to provide a description for the scene and whether it's going to be physics viewed from
+08:21 above or from the side and for this simulation I will have top down View and then I also need to pass the update
+08:27 frequency that I want I'm going to update a th000 her th000 times per second then I can first create the
+08:33 platform in this Constructor so how big it is and what kind of texture I want
+08:38 for it then I can create the actual object same as I do in the test application so I can copy that and after
+08:45 that I can create the opponent the sum robot which is going to control with my keyboard we'll call that M4 whe bot
+08:54 opponent so in Bots today there are already as assets available so to create
+09:00 this suot I just pick on one of the available blueprints or templates which is for this four- wheed Sumo robot and
+09:07 here I give the start position and orientation where this Su robot should spawn and after that I need to say how
+09:13 this robot is going to be controlled so I need to create a controller component a keyboard
+09:20 controller also set this controller component of theot object uh but this
+09:27 keyboard controller is actually not available in the among the assets so I actually need to create a class for it
+09:32 up here and I have already created it here actually so what I'm going to do is
+09:39 to Simply copy this keyboard controller from here and paste it so what this
+09:44 controller is doing is that they taking the inputs from the keyboard and then Translating that to corresponding
+09:50 voltages that should be set to the individual Motors just a bunch of if else on the specific keyboard event and
+09:56 then setting the corresponding voltages for the motors then I also need includes here and I
+10:02 should put this inside a name space used for good practice yes okay and then to
+10:10 build it I'm going to use cmake because that's what I use in B Tod so I need to create the cmake list file and I'm
+10:17 simply going to mimic the cake file inside the test application I want talk
+10:22 about cake so I'm just going to copy the pieces that I need these are the things that I will need I will have to add the
+10:30 assets that I'm depending on and also some of the things that I depend on from the milit framework but today I'm sorry
+10:35 if I'm running I'm rushing through some of the details here in terms of the simulation and C++ but I really don't
+10:42 want this video to be about my simulator or C++ the focus should be on this robot
+10:47 that I've been working on throughout this video series let's see if I can build this now
+10:54 nope ah now
+11:00 and then oh I got an error let's fix that inside
+11:07 andine oh I should also have the uh distructor here and the unfixed
+11:14 update I build it now no
+11:21 uh uh this should be
+11:26 public uh typos and
+11:34 so whoops whoops application H so what's going on
+11:41 now um it should be
+11:48 capital I need a s here now it builds and then I can try to
+11:56 run it okay so now I have a SIM which I can control with my my
+12:03 keyboard then when I have two Z Bots here one control with my state machine I can compete against my own State machine
+12:10 application by controlling this opponent simbot with the keyboard okay good now I'm going to
+12:16 commit this code to the simulator repository commit I don't really follow
+12:21 the same guidelines inside my simulator project but I guess I will just follow
+12:27 the same guidelines for these commits that I'm making now
+12:33 I also don't have any static analysis or formatting for this project just a simple commit then in order to run the
+12:41 state machine code I also need to create a component a controller component which
+12:46 is essentially a wrapper around the C code that connects it to the rest of the simulator similar to how I created the
+12:52 keyboard controller to control the add syot with the keyboard what I'm going to do now is to create a folder call
+13:01 controllers and inside this I'm going to create another folder called insumo
+13:06 controller and then I'm going to clone my syot code the repository or well I'm
+13:12 actually going to add this as a Sub sub module to the simulator project it's going to be git sub module
+13:18 add G what I need to do now is create two
+13:23 new classes which derives from the microcontroller component that's going to beo micro
+13:30 controller. more micropp and doing the same thing as I done in the test app previously
+13:37 beginning with a header I will create this new class or this is actually going
+13:43 to be the exact same here so I can copy that and then just change to my preferred styling this is just a class
+13:50 that derives from this C microcontroller class which is a component available in Bots 2D and yeah this is just a simple
+13:57 class that takes voltage lines as an argument then I can move on to the implementation file also open the one
+14:03 from test application this is also going to be the same what this microcontroller
+14:09 class requires is the voltage lines which is the concept I've talked about before the concept that connects the
+14:16 different components to the microcontroller so that microcontroller can control the components that's going to be for example the motors and the
+14:22 sensors and then it also needs the main function uh that it's going to call and in this case the main function is going
+14:29 to call the state machine code or the state machine run function which I created in the last video that's why I'm
+14:35 going to create two new files that's going to hold this main function a had a file called main function. h and a main.
+14:41 C file then I can starting with the main function and also look at the test app
+14:47 once again because it's going to be the same that's just going to be main uh I can also do the in if F here I'm
+14:56 starting this main function with an underscored because this is not not the real main function and in a C++ or C
+15:01 program there can only be one real main function but this main function is going to kind of correspond to the main
+15:07 function inside mybot code and then inside main. C the first need includes
+15:13 and then I'm going to implement this fake main function and this function is going to call the state machine run code
+15:19 it meates the main function inside the microcontroller project ofo then I need to add a header for the voltage lines
+15:27 and this file will hold a just an enum of the voltage lines these are going to be the voltage lines that connects the
+15:33 motors and the line detectors as well as the range sensors to the microcontroller
+15:39 this in the simulation kind of corresponds to what is done in the lower layers on this microcontroller I write
+15:45 to registers because this uh micr controller has peripherals which talks to the sensors and the motors but in the
+15:53 simulation there is no micr controller and there is no real Motors or sensors
+15:58 they are all Sim simulated so in the simulator instead of writing the registers I'm instead going to set the
+16:03 values of these voltage lines and since some of the drivers are tied to the microcontroller in order to simulate I
+16:08 need to replace this with corresponding simulat drivers that's what I'm going to do now and these simulat drivers are
+16:15 going to be using the voltage lines as I said to create a new folder called Eno simulated and inside this I'm going to
+16:22 create these fake drivers need one for the motor driver and these are just going to be implementation files C F
+16:29 since the header files the interface is going to remain the same so that the application code can call the same
+16:35 interface in both cases it's just the implemented drivers that I need to modify or provide another implementation
+16:40 for then one for the line sensors and also one for the range sensors and I
+16:46 will also need to provide another implementation for assert as well as trace and finally I remote okay and
+16:55 beginning with the motor driver there will be a bunch of functions that I must Implement going to be first of all an init function and in the case of the
+17:02 simulator I don't need to initialize anything this will just be an empty function then I need a function to set
+17:07 the duty cycle and first I'm going to check that the duty cycle is lower than 100 and then I need to switch on
+17:14 depending on which motor driver there is one for the left Motors and one for the right Motors and then I set the duty
+17:19 cycle here and I set the mode and I set the Dy cycle and mode for the other the right mot driver as well that's it for
+17:25 this function then I need to create the function for setting the mode and this one is going to be a bit longer I'm going to switch across the different
+17:31 modes either I can stop drive forward or in Reverse if stop I should set the voltage lines connecting to the motors
+17:38 in the simulation to zero so if it's a left one I set the voltage lines for the left Motors to zero and if it's a right
+17:45 one I set it to zero for the right motor drivers and then I do need to do something similar for if we driv forward
+17:51 but then I actually need to pass the duty cycle and I will have another function for translating the duty cycle
+17:57 to actual voltage and here I have a few defines where I make some calculations to get the correct voltage uh for the
+18:04 voltage lines uh based on the duty cycle I won't explain that here but yeah it's
+18:09 just uh the kind of the battery voltage that I expect and then the kind of loss that I expect and so on and I also
+18:16 forgot to since here I set actually set the static variables because I also want to save the current duty cycle here so
+18:22 that I can reset it to the same value when I set for example if I set the right motor driver I also need to set
+18:28 the same value to the left motor driver so I'm just going to add this here and then I will do the same for the reverse
+18:34 so like this it's the same basically just setting it to negative duty cycle or negative voltage and finally add a
+18:40 few defined uh I don't think I need that I take the same H file as in the actual driver since they have the same
+18:45 interface and then I need the microcontroller C bindings so that I get the voltage Lin functions and then I
+18:51 also need to include the voltage line en know so that I can use the values here that's it for the fake motor driver
+18:58 let's move on to the fake range sensor driver this also going to have an init function similar to the motor driver
+19:04 this is not going to do anything but just return okay then I will have a function for reading multiple sensor
+19:09 values and here I'm just going to get the value of the corresponding voltage line because the simulator range sensor
+19:15 uh is just an object that uh measures the distance in the simulation and then uh translates that to a voltage uh line
+19:22 value so a float value I also need to scale that so that I get a corresponding range and I need to do this for all of
+19:28 the sensor first should set fresh values to true because in the simulation the values are always fresh and then I can
+19:34 return and finally I need to add some includes like so and then the line
+19:39 sensor is also going to have an init function an empty init function and then I need a function for getting the
+19:44 voltages or the readings from the line sensors and I will have a threshold value based on the threshold in the
+19:51 simulation and I'm going to use the same threshold value here as I do on the actual robot so that's going to be 700
+19:56 so anything lower than 700 means that it's detected and if it's above or equal it's not detected fine can set this this
+20:03 to zero and then here I can check the individual voltages or the voltage lines for the corresponding simulated line
+20:08 sensors be like that and also a few includes and then I remote here I'm not
+20:13 actually going to implement the corresponding driver but I just need to implement it so that I can compile the
+20:20 project technically I could maybe have implemented something where I send commands using my keyboard but I'm not
+20:26 going to do that for now in it and in function and then just a get command function that always returns none so
+20:33 this driver is as if we have a remote that we never press and header that's it
+20:38 for those drivers and then I need to do something for Asser Handler since my regular Asser Handler is tied to the
+20:46 microcontroller because it traces via uart and also blinks and led and so on so I need to do something corresponding
+20:52 here that doesn't tie to my microcontroller what I do is simply Trace that an assert has happened and
+20:58 then I just get stuck in an endless W Loop so that's easy to take when an assert happens and then I also need to add some includes as always like so
+21:06 that's it for the inser Handler and then I can go into the trace in my microcontroller project as I talked
+21:11 about in a previous video print F on a microcontroller I said that I can't use the standard Library print F
+21:17 implementation because it takes too much space so I use some other external library to save flash Base by having a
+21:23 more efficient implementation but in the case of the simulator base is not a problem so here I can just use the
+21:28 regular print F function from the standard Library so that's what I'm going to use includes first then an
+21:34 empty init function and then the trace function which is just going to wrap the
+21:39 normal print F function and then you have to write this this kind of code okay that's it for the code that I need
+21:45 to replace in the lower layers to make the simulation run and now I also need to add this to the cmake list so that
+21:52 it's built as part of this simulation application these are all of the files that I need there's going to to be some
+21:58 of the application files which are going to be the same for the suot and the simulator but then I also need to add
+22:05 these simulator drivers that I just created and I need to add that to
+22:11 here and I need to add some more dependency include directories and now I can jump back to
+22:18 the simulated scene and actually add the robot which is going to be controlled by
+22:23 my state machine code that's going to be another robot here which I'm just going to call M for willb
+22:29 and then it's going to need the component which is going to control it which is going to be the insumo
+22:36 microcontroller then I need to add a class for that or a forward declaration and inside the implementation file I
+22:43 first need to create the new robot and I'm going to use a blueprint for this as well another blueprint which more mimics
+22:51 my actual robot and let it have another spawn position and then I will create the micr controller the controller
+22:57 component which runs my state machine code and here is where I need to assign or connect the voltage lines to the
+23:03 correct components and the assignment I will do here need to match up with the voltage lines that I added here I'm
+23:10 going to make a comment about that and then I just need to do a bunch of assignment for each voltage line to be
+23:16 like this so as you can see the different voltage lines are assigned to the voltage lines of the simulated
+23:23 objects so here is for the motor the line sensor and the range sensor one more thing I will do to this robit is
+23:29 I'm also going to enable debug mode so that I can see some additional things drawn bugged
+23:36 true okay now I can create the micr controller and I can pass these voltage lines to
+23:42 it like so and then I need to assign this micr controller to the robot and finally I need to start the micr
+23:48 controller which essentially starts a thread that runs the state machine code which is a thread running separate from
+23:54 the rest of the simulator application I will need to add include here here for my new controller as well and one last
+24:01 thing I will do is that when the suo robot drives out of the platform I want
+24:06 to disable the motors so that it appears as if the platform is uh some distance
+24:11 above the ground which just makes for a more realistic behavior and it makes it more clear when the zmot drives out of
+24:17 the platform so here I just grab the distance for all of the motors and then I check whether those are if any of them
+24:23 are outside of the platform and in that case I simply disable the motor okay now I have the code that I need to glue my
+24:30 state machine code orumo code together with my simulation application so I can
+24:35 try to build this
+24:41 now then make yeah asserting here so of course
+24:48 need to include assert build again ah this should be line detected
+24:56 and this error I get because inside the header file for assert
+25:02 Handler I am using this assembly function here and I can't use that on the host it doesn't even really make
+25:08 sense to try to get the program counter on a host machine so here I'm just going to rework this a bit and only have this
+25:15 defined when it's on a microcontrol Target that's either going to be enmo or
+25:20 the Launchpad and then I have another implementation when it's on the host machine like this I try to build again
+25:26 now it builds good and I can run the application again and once again I have
+25:32 my robot which I can control with my keyboard as before but now I have another sum robot here which is meant to
+25:38 be controlled by my state machine but as you can see it's not actually moving and this is because I haven't finished
+25:44 implementation of the state machine so now it's just stuck in the weight State doing nothing but now I at least have a
+25:51 simulation uh scene which works and that can run the state machine code so I'm going to commit this code now
+25:59 oh first I should commit the code inside the emble project I'm going to create a
+26:04 new G Branch here yeah I'm going to call that feature complete machine then going
+26:10 to format check oh I need to clone some of
+26:16 the like that now if run c p check it should work yes okay so then I can add
+26:22 this then commit yes then I can go to my simulate
+26:28 the project again add this one and also add the
+26:34 controller controller then I can create a commit
+26:40 yes now the simulation part is finished so now I can switch back to my normal enmo project and continue with the stage
+26:47 machine implementation that I began in the last video uh the first piece I need to add is the thing that I call input
+26:55 history which is a data structure for storing previous sensor inputs and as I
+26:60 said earlier I will implement this with the ring buffer which I extended in a previous commit that I showed in the
+27:06 last video and to do this I'm going to create two new files under app called
+27:13 input history. H and input history. C then I can open the header file and
+27:19 input history or this data structure is going to have two functions one function to save a new uh input and that's going
+27:26 to take ring buffer as an argument and also input going to create the input
+27:31 struct here and this is going to contain the enemy input and also the line and
+27:37 that's the only input that I'm storing here for now I could of course also add other inputs such as the command from the iron mode maybe but as you can see
+27:43 this stru takes up more than one BTE and this was the reason why I need to extend my ring buffer implementation to be able
+27:50 to take elements larger than a single bite then I will for declare ring buffer here and also add two includes enemy app
+27:58 line and inside the implementation file I have two includes here as well or I need to add a second function here as
+28:04 well function called input history last directed enemy and what this function
+28:09 does is it gets the latest input where the enemy was seen and was at angled Direction so whether we saw it to the
+28:16 left or to the right and this is what I'm going to use inside the search state in order to determine which direction I
+28:22 should rotate towards now back to the implementation file first the save function and when I save an input I'm
+28:28 going to check whether the input is actually an actual input whether I see the enemy or detect the line if I don't
+28:34 detect anything I'm not going to save anything and I'm also going to make sure that it's a unique detection so that if
+28:40 I see the enemy in the front several times in a row I'm just going to save one entry and this is just in order to
+28:46 be more efficient about the space
+28:55 usage so first let's check if there is input in the ring buffer and then I look
+29:00 at the latest input and then I check whether this input is equal to the input that I'm trying to save and to check
+29:06 whether it's equal I need another static function here check if the lines are equal and if also the enemy position and
+29:12 range is equal and if they are then it means the input is equal and then I shouldn't save it and then if it's valid
+29:18 input I'm going to save it to the ring buffer by calling the put function as for the directed enemy function I'm
+29:25 going to iterate through the save input and look for the latest enemy detection
+29:31 that detected an enemy to the left or right peek at the head and then I check if it's enemy to the left or right and
+29:37 if it is I return input enemy as you can see here I'm kind of using the ring buffer in a fful manner which is a bit
+29:44 abusive but oh well that's what I'm going to do here because this means that I can have a single ring buffer implementation that I can reuse in
+29:51 different places so I don't need to have a separate implementation used for this case here even if that would be more
+29:56 correct maybe but that's just details and if I didn't find any such input I'm just going to return a default non input
+30:03 yes I also need to add this to the make
+30:08 file and check whether it compiles as well or no I'm going to make use of it
+30:13 inside the state machine well before I compile I can include it here include
+30:20 app input history Bas State machine
+30:28 this one can remove these commments now to fix it now I'm going to allocate it
+30:33 here and I'm going to allocate it similar to how I allocate this data I'm going to allocate on it on the stack be
+30:40 a local ring buffer and I'm calling it input history and it's going to hold elements of type struct input and then I
+30:47 will set that in the data and I'm also going to set it in the common and I'm
+30:52 doing it here instead of inside the state machine init function since this has a lower scope so if I were to do it
+30:58 inside here it would be deallocated as soon as we return from this function that's why I have to do it here before I
+31:04 call State machine in it and I'm going to make it pretty small since I am running out of the space here this is going to get allocated in the ram since
+31:11 it's a structure that contains data that may change during runtime so it's going to be a size six and I found this to be
+31:17 enough during when testing okay now I can see if it compiles does not did I I
+31:22 think I forgot clude clude yeah it compiles good uh we'll test and see that
+31:28 this works later uh for now it's just enough that I can see that it compiles then I can commit this as
+31:37 well diff yes shouldn't be anything instead manual new then
+31:47 commit with that commit in place I can move on to the things that I need to add in the state machine as I said before in
+31:54 the last video I implemented the skeleton code uh but in reality I actually did a little bit more than that
+31:60 so there is not that much more code to implement but there are a few to-dos that I left uh in the last video which
+32:05 is what I'm going to fix now the first thing I want to fix is the process input
+32:11 function this is the function that looks at the inputs and then translates that
+32:16 into a corresponding event which can then trigger a transition this function is first going to get the input it's
+32:23 going to be enemy line and uh command then I'm going to create uh struct input
+32:30 which I can save to the input history like so and not this is the only
+32:35 place where I get the input for each y Loop iteration there's no other place
+32:41 where I retrieve the input from the sensors and that's also why it's important that I don't block anywhere in
+32:46 the stage machine when it's running so that this uh function can get called often to get new fresh inputs and then I
+32:51 can just go through these if else here and I need to go through these in order of priority because as soon as I did
+32:57 detect a match then I'm going to return a corresponding event and I'm not going to check the other events so these must
+33:03 come in order of priority and the most high priority one is if I get the command from the remote control because
+33:09 then I should transition directly to the state manual and simply stay there this is just a debug feature then I should
+33:15 check if there is an internal event if one of the states has posted an event internally right now or in this state
+33:21 machine I'm actually there's actually just one place where this happens and that's inside the retreat State when the
+33:26 retreat is done but this implementation here opens up for the possibility to add additional Eternal events posted from
+33:33 other states and then I'm going to take the internal event and return it next I will check if the timer has timed out
+33:40 and if it has I should stop the timer or clear it and then return State event
+33:46 timeout then I can check if line is detected and if so return State event line finally I can check if enemy is
+33:53 detect and return State event enemy that's it for all of the events
+33:59 and that's it for the process input function then I can move on to the state uh starting with State weight here I
+34:05 don't need to implement anything more this is already done so I can go to state search and here I need to fix a
+34:12 few things I need to first of all make use of the input history to make a smarter decision about which direction I
+34:19 should rotate towards for example if the enem is here and the robot Road stats to the right because it for example
+34:24 detected the line then it will lose sight of the enemy but enemy still here and in that case it's better if the
+34:30 robot when it goes back to the search state that if it rotates to the left instead of rotating to the right because
+34:35 then it's going to see the enemy sooner that's the idea with this um decision here I'm going to use input history to
+34:40 get where enemy was last seen and if it was seen to the right it's going to rotate to the right otherwise I'm just
+34:46 going to rotate to the left so if it was seen to the left or if it was not seen at all I'm just going to rotate to left
+34:53 okay and before I also forgot to add a comment here just to make that a bit more clear and one thing I noticed when
+34:59 testing this again is that it makes more sense to have a lower rotate timeout so I'm just going to change that while at
+35:05 it and that's it for the search state then inside State attack I am all
+35:11 already finished with this state so I don't need to fix anything else here it's done similar to the weight State
+35:18 let's go to the retreat State here I have a few things I need to add first of all I need to fill out all of the
+35:23 retreat States the different moves uh the robot should take depending on where the line is detected that's it so as you
+35:30 can see here there is different states and these corresponds to the state
+35:36 diagram that I showed in the last video I can take that up again so what I written here basically corresponds to
+35:43 the different moves in each individual states that we made transition to uh or each uh substate in the retreat state
+35:49 that we made transition to depending on the input we get for example here is a retreat state where the robot is going
+35:56 to take three moves first is going to drive backwards for 300 milliseconds and then it's going to take a sharp left
+36:02 turn for 250 milliseconds in all cases here it's driving at Max Speed and finally it's going to take an arc turn
+36:07 that is not as sharp as the previous one and then it's going to be to the right instead for 300 M seconds okay and then
+36:14 I need to kind of implement uh this next re state which represents the different
+36:19 transitions we're going to take depending on where the line is detected and where the enemy was seen so if line
+36:26 was detected from left I'm going to check a few more things I check if enemy is to the right or in the front then I
+36:32 should just uh go to retreat State align right if it's to the left enemy then I
+36:37 just align left instead and otherwise I just go to retreat State reverse so that
+36:42 corresponds to this transition over here then something similar for front right but mirrored okay so that's this one
+36:49 here then I can do the back left which is a bit different so here I check whether I'm already driving in the
+36:55 reverse Direction in in that case I do an arc turn right otherwise I check if the state is Arc turn right H this is
+37:02 another case where I should do Arc turn right and otherwise I go to retreat
+37:08 State forward so just driving forward and then I will do a corresponding thing for line back right and for line front I
+37:15 check if enemy is to the left or if it's to the right and if it is I will drive a
+37:20 line left or a line right to go to this corresponding State otherwise I go to state reverse and if line back I I
+37:27 simply drive forward as I'm already doing here arc on right left and if it's detected on a diagonal I'm going to
+37:34 assert uh it's a rare case and to handle that better I would have to write quite
+37:39 a bit of code okay now of course uh when I developed this code for the first time
+37:44 it was a lot of iterating I didn't just come up with this from scratch without compiling and testing it in the
+37:50 simulation but to keep this video short I'm not going to iterate through it in this video and just write the final
+37:56 solution that I've come up with on the downside of course then you can't really see how useful the simul simulator is
+38:02 for developing the code because doing this on the actual Robo would take a lot of time and be very tedious because as I
+38:07 said then I would have to each time I make a change I would have to flash it onto the microcontroller but when doing it in the simulation I just need to
+38:14 recompile and start a simulation and see whether it works or not so don't be blindsided by the smoothness of my
+38:19 coding here the simulator is useful and then as I showed in the last video I am
+38:25 running out of flash BAS and now it's actually getting even worse than that I'm running out of ram so for example
+38:32 when I do a trace call now with this with all of the code I have in place now I am overwriting the stack which gives
+38:39 quite annoying errors which means that right now it doesn't work if I have the tracing enabled so because of that I
+38:45 will have to go to my make file and apart from disabling enum to Strings
+38:52 I'm also going to disable uh tracing and I'm also going to add a weight to disable I remote to save me even more
+38:60 space because I remote is not critical for the
+39:06 functionality so then it's going to be until
+39:16 here and while add it I'm also going to rename this to IR
+39:22 timer since I created a new timer struct uh for the timer functionality in the St
+39:27 machine so it's just going to be confusing if this is named the same
+39:32 way and also inside here and inside
+39:42 here once again it sucks that my microcontroller is so small that it can't fit my code if I just had a
+39:48 slightly bigger microcontroller that would be no problem of course I could probably fit in the same functionality
+39:53 if I didn't have all of the abstractions I have here to make my code more readable and easier to extend there is
+39:59 always a trade-off between how easy and nice your code is to work with against how much space it takes up and I also
+40:06 need to go to state manual and if and
+40:14 if else unus data unus okay and in the make file should
+40:24 also disable I remote okay and now I can build
+40:31 this fix the compile errors search to be in a separate
+40:38 scope good compiles you can also check the size occupied yeah that looks okay
+40:44 we have th000 bytes to spare in the flash memory good then I can go back and
+40:50 see if it works in the simulation so now if I build the well I have to also
+40:58 I also have to add the input history file but now if I build the simulation
+41:04 app now I should expect to see my microcontroller or state machine controlled robot move around and trying
+41:09 to push out the robot that I control with my keyboard if everything works so I'm going to rebuild this
+41:17 now and then I can run it uh oh yeah I forgot one thing since I
+41:26 don't have a remote control I can't start inside the state weight State because then where is going to stay in
+41:33 the state weight state so I'm just going to make a temporary Shain testing in the
+41:38 simulation date weight we can do state search
+41:43 instead and if I rebuild this now I run it uh still not working
+41:50 H I figured out what the problem is and the problem is that I missed a thing in one of my simulated drivers inside the
+41:58 simulated motor driver I had to also add this at the end so I actually set the
+42:03 mode so now if I build and run this you can see that my sum robot is actually
+42:09 moving so the suot with orange wheels is uh uh some both control with my state
+42:14 machine and the other one is the one I control with my keyboard so now I'm driving against my own algorithm or my
+42:21 own State machine and I think I will be able to win because it's not that good but as you can see wherever i d the suot
+42:28 control with a state machine is trying to push out the enemy seems to be
+42:33 working yeah and then as soon as it detects the line it drives away from it
+42:43 tack it's not perfect but it's doing what it's supposed to do which is to push me out of the platform just go up
+42:50 here it's going to push me out yep and then we try to keep on
+42:55 pushing me out and if I go here it's going to push me
+43:01 again okay then I'm just going to amend the problem that I just found
+43:09 in the simulator driver because that should be part of the previous
+43:15 commit and now it's time to flash this code or build this code for the robot
+43:20 and Flash it onto the robot instead to see if we can see the same behavior
+43:25 there so I'm just going to build then I'm going to flash it my usual setup when flashing the
+43:40 robot as you can see it doesn't work so well now because it's running out of the platform and it seemingly don't detect
+43:46 the line fast enough and that's true and the reason for that is that the ADC
+43:53 sampling is a bit too slow now so it's only like checking the line just a few times per second so I'm going to make a
+43:59 change in the code now to improve on this slightly okay so inside the ADC
+44:05 driver which I wrote in an earlier video I sample multiple channels using dma and
+44:10 it's running a bit slow here and I've tried reconfiguring this a bit and I can't run it that much faster but I can
+44:17 reduce the sample and whole time One Step At least which seems to improve things so compiling this again and
+44:24 flashing it now it works better it's still not
+44:31 perfect but uh this is how good I'm going to get it in this video series and
+44:36 now it works acceptably most of the time at least it's able to push out the enemy and able to retreat away from when it
+44:44 detects the white
+44:55 border then I'm just going to try running this
+45:03 with I remote as well to show that state manual also works and for that I will need to change the default State or the
+45:09 start state to state weight again and change the make file to compile with the
+45:14 iron mode included then I can Flash this again so now by pressing buttons on iron
+45:21 mode I can first make it leave the weight State and then I can take over control and control it manually uh by
+45:27 pressing the buttons on the remote control driving forward reverse or rotate in either
+45:49 direction okay now I'm going to do my usual drill of formatting the code CPP
+45:55 shake and building oh got an error here and that's because I have to fix one of
+46:03 the test enemy function ah since I'm disabling trace this enemy is going to end up not used so I can do it like
+46:10 that yeah everything builds so now I can commit as said I could probably optimize
+46:18 this even further to make the ADC faster and maybe even make the enemy detection faster uh but I've had enough with this
+46:25 project now and it's time to put an end to it pushing the
+46:32 branch Ino create a p [Music]
+46:38 request yeah all shcks passed so then I can rebase and merge good and then I have a few changes
+46:47 inside my uh simulator which I also want to commit make list and Ando
+46:55 controller
+47:00 yes and for the simulator I don't have any Ci or anything like that in place so
+47:06 here I'm just going to push straight to master this is it I'm not going to write
+47:14 any more code in this video series I have implemented everything I set out to implement and now I have a working sum
+47:20 robot a complete embedded system is it perfect no can I improve it further yes
+47:26 probably will I improve it further no I'm sick of this project now but what
+47:31 I'm going to do uh besides finishing up this video is that I'm going to create another final video where I sum up some
+47:38 of my thoughts uh maybe some improvements that I could have made and also my general thoughts about this
+47:43 video series until then thanks for watching and see you in the next final video

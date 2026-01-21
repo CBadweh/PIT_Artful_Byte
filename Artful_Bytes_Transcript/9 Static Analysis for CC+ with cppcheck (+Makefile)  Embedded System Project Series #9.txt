@@ -1,0 +1,134 @@
+00:00 in this video I will show you how to use
+00:02 a static analyzer for CNC plus called
+00:04 CPP Shake as an example I'll run it from
+00:06 the command line on a simple C file and
+00:08 show you how you can customize it to
+00:09 suppress specific errors finally I will
+00:12 add it as a rule to my make file to
+00:13 allow me to Simply write make CDP check
+00:15 to analyze all of the files in my
+00:16 project if you haven't heard about
+00:18 static analysis before a static analyzer
+00:20 is essentially a program that helps you
+00:22 find additional bugs in your code that
+00:23 your compiler doesn't catch there are
+00:25 many static analyzers available today
+00:26 both free and paid and they're good at
+00:28 catching different types of Errors for
+00:30 this project however I will only be
+00:31 using CPP Shake just to keep things
+00:33 simple but you may consider using them
+00:35 in combination to catch even more errors
+00:37 so let's start by installing CPP Shake
+00:39 by running sudo apt install CPP Shake
+00:42 since CPP Shake is available in the
+00:44 standard repository of Ubuntu next let's
+00:46 create a C file with an error that CPT
+00:48 can catch
+00:50 let's just remove some of the things in
+00:52 this file
+00:54 and then create an array of size 5 for
+00:57 example and initialize it with zero and
+00:59 then we can make an out of bound access
+01:00 which CPP Shake should detect
+01:02 and then running CPP check on main.c you
+01:05 see that it takes the error as expected
+01:07 let's jump back into the file and add a
+01:09 function so for example we can add a
+01:10 function that sums two numbers
+01:13 and let's also fix the error that we
+01:15 just introduced so with the current
+01:17 state we have a function that's not used
+01:19 and we may want CDP check to catch that
+01:21 kind of error so if we simply run CVP
+01:23 check again it's not going to find that
+01:25 error but we can add some options to CPP
+01:27 shake to make it detect more errors so
+01:29 the first one I'm going to add is dash
+01:31 dash quiet which makes CPA check only
+01:33 output something if in case there is an
+01:35 error and then I'm going to add a flag
+01:36 that enables all of the errors and I'm
+01:38 also going to add an additional flag to
+01:40 make CP Shake return an error code
+01:42 instead of returning 0 as it does by
+01:44 default and now let's run this on Main C
+01:46 again we should detect the unused
+01:48 function
+01:50 and we do now let's say we want to make
+01:52 an exception for this particular
+01:54 function there's a couple of ways we can
+01:55 do this first we could add another flag
+01:58 called suppress and then we could make
+02:01 an exception for this particular file so
+02:03 if we for example just want to suppress
+02:06 the unused function error for this file
+02:09 we could write unused function and then
+02:11 give the file name so it would be
+02:13 something like this and if we want to
+02:15 know it even further we could give the
+02:16 line number
+02:17 so if I would use two it would still
+02:19 find it and if you instead want to
+02:21 ignore all of the errors in this file
+02:22 you could use the asterisk symbol
+02:24 another way to ignore errors is to use
+02:26 an inline command
+02:29 and then you can write CPP Shake
+02:32 surprise
+02:33 unused function
+02:36 and then you also have to add another
+02:38 flag to your command and line suppress
+02:42 so that also works I can also mention
+02:44 that if you have several files you would
+02:45 like to run CPP shake at the same time
+02:47 you could add them individually like
+02:49 this
+02:51 but you can also add a folder and CVP
+02:54 Shake will search that folder
+02:55 recursively and if you also wanted to
+02:57 find header files you can use the dash
+02:59 capitalize I flag
+03:00 and then your include directory
+03:05 to avoid having to deal with this long
+03:06 command on the command line I'm going to
+03:08 add this to my make file instead
+03:11 if you haven't seen a mate file before
+03:12 you can check out my previous video
+03:14 where I set this up so let's just go to
+03:16 the bottom and add a new phony Target
+03:18 and I'm adding this as a phony Target
+03:20 since this is not going to produce any
+03:22 output and then we can add
+03:25 a variable for the cppicha command
+03:30 Shake
+03:32 and then we can run it as follows uh oh
+03:34 and lets you start an AD Sign to avoid
+03:36 printing this command and then we can
+03:38 add options as before so it's quiet
+03:41 enable and the error exit code as well
+03:44 as inline suppress
+03:48 and then I can add the include files
+03:50 which I already have a variable for
+03:53 as well as all of the C files which I
+03:55 also have a variable for and then also
+03:57 add it to this phony list with this rule
+03:59 in place instead of the long command as
+04:00 before I can now run make CPT Shake
+04:03 instead
+04:05 is giving me a bunch of errors here in
+04:08 the external project that I'm relying on
+04:09 and I don't want to make any changes in
+04:11 this project so instead I'm just going
+04:13 to ignore this project and I can do this
+04:14 by adding another flag Dash I and then
+04:17 add a directory that I want to ignore
+04:18 like this
+04:20 and now if around makes it fishing again
+04:22 there are no errors let's also commit
+04:24 these changes to git
+04:37 okay so this was just a short video on
+04:39 CPP Shake in my next video I will make
+04:41 this part of smaller CR system that I'm
+04:43 going to set up using GitHub actions so
+04:45 see in the next video

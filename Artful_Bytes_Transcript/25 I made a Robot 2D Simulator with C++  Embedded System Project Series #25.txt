@@ -1,0 +1,448 @@
+00:00 in this video I'm going to tell you the
+00:02 story of how I built a 2d Simulator for
+00:05 robotics from scratch this video is part
+00:08 of a larger video series where I program
+00:09 a Sumo robot as a way to demonstrate and
+00:12 better systems programming and I've now
+00:14 come to the point in this video series
+00:16 where I've implemented all the drivers
+00:18 and it's time to implement the
+00:20 application code to give this Zoom robot
+00:22 its autonomous Behavior which is to
+00:24 locate and push its enemy out of the
+00:27 platform but to implement this
+00:28 application code directly onto the robot
+00:31 is time consuming because after all it's
+00:34 an embedded system so I must Flash the
+00:36 mic controller for each code change I
+00:38 want to test so for a smoother
+00:40 development experience I'm instead going
+00:42 to simulate muscle robot which also
+00:45 gives me an ample opportunity to
+00:46 showcase my simulator project in this
+00:49 video
+00:49 the idea here is that since I've
+00:51 separated my code into a hardware
+00:53 dependent code the drivers and Hardware
+00:55 independent code the application code I
+00:59 should be able to write and test the
+01:00 application code with the simulator on
+01:02 my host computer and then transfer this
+01:05 code directly onto my actual Target the
+01:08 zoom robot two Zoom robots on a circle
+01:10 platform is a fairly simple scenario so
+01:13 there is no problem simulating it but
+01:15 when I originally got the idea and when
+01:18 searching for a suitable simulator I was
+01:21 annoyed by the available simulators out
+01:23 there most felt overkill for what I
+01:25 needed many have clunky user interfaces
+01:28 or messy to set up as complicated
+01:30 graphics and so on because for what I
+01:32 wanted to simulate all I really needed
+01:34 was a simple 2D simulator and this
+01:37 finally led me to For Better or Worse to
+01:39 implement my own Simulator the first
+01:41 thing I did was to set some project
+01:43 goals first of all I wanted it to be a
+01:46 simple project function over Beauty
+01:49 so 2D and no 3D graphics 3D is cool but
+01:53 adds unnecessary code complexity for
+01:55 many simulation scenarios moreover my
+01:58 Graphics should be simple and there
+01:60 should be no sophisticated user
+02:01 interface it should be a simulator aimed
+02:04 at programmers my goal was for the code
+02:06 base to be simple and flexible so that
+02:08 the simulation could be configured
+02:10 through code rather than a graphical
+02:12 user interface and this further meant a
+02:14 minimum number of dependencies and a
+02:16 well-structured code base and I also
+02:18 wanted the target code to be clearly
+02:20 isolated from the rest of simulator code
+02:22 so that it would be easy to transfer it
+02:24 from the simulation to the actual Target
+02:26 I decided to write it in C plus mostly
+02:30 because I was writing a lot of C plus
+02:31 plus code at the time but also because C
+02:34 plus plus is a suitable language for an
+02:36 object oriented project like this
+02:38 finally I wanted it to run on both Linux
+02:41 and windows I prefer Linux but I
+02:44 realized many are stuck with Windows and
+02:46 that was it for the goals now to the
+02:49 details there are many ports that make
+02:51 up a simulator and at first it was hard
+02:53 to get the grip on where to start
+02:55 because there are not a lot of resources
+02:57 that explains how to build a simulator
+02:59 yourself but when I thought about it
+03:01 some more I realized that the simulator
+03:03 is very similar to a game engine and
+03:06 there is no lack of resources on game
+03:08 development and this was something I
+03:10 could leverage while developing this
+03:12 simulator but broadly the parts that
+03:15 make up a simulator are first of all the
+03:17 physics engine as you know the real
+03:19 world is governed by laws of physics and
+03:22 the simulator meant to simulate real
+03:24 objects need some code to resemble that
+03:27 secondly it's good if the simulator has
+03:29 Graphics well it's not functionally
+03:31 necessary it makes it much easier to see
+03:34 how the simulation is going thirdly it
+03:36 needs some sort of input and output
+03:38 system the objects acting inside the
+03:40 simulation needs to get their input from
+03:42 somewhere this can for example come from
+03:44 a keyboard and a mouse or from code
+03:46 which is going to be the case when I
+03:48 simulate with the application code of my
+03:50 assumable and finally it needs a
+03:53 software architecture to glue everything
+03:55 together I mean the simulation scene and
+03:58 objects must be represented in some way
+04:01 and there needs to be some sort of main
+04:03 Loop to ensure everything gets executed
+04:05 in the right order
+04:06 I'm now briefly going to explain how I
+04:08 implemented these parts in my simulator
+04:11 but I will keep my explanation pretty
+04:14 brief so if you want more details I will
+04:16 leave a link to a more detailed blog
+04:18 post in the description and all code is
+04:20 also of course available on GitHub Note
+04:23 One Last Thing Before I get going what
+04:26 I'm showing here is not meant to serve
+04:28 as a guide on how to implement a
+04:30 simulator I'm just explaining how I did
+04:33 it which may not be the best or even a
+04:35 good way to do it anyway getting started
+04:38 the physics engine is probably the best
+04:41 place to get started and it's also where
+04:43 I began my implementation the big
+04:45 decision here is whether to implement
+04:47 your own or to go with an existing one I
+04:50 figured it was dumb enough to implement
+04:52 my own simulator so this time I decided
+04:55 to go with something existing there are
+04:57 many existing physics engine but I
+04:59 picked one called books 2D which is an
+05:02 open source 2D physics engine used by
+05:05 many popular 2D games but while picking
+05:07 an existing physics engine saved me
+05:10 countless of hours of implementation
+05:12 time it wasn't without its problems the
+05:14 first problem was that I needed to
+05:16 simulate 2D from a top-down perspective
+05:19 but box 2D as well as other two dungeons
+05:21 are aimed at simulating side view
+05:24 perspective but I was able to get around
+05:26 this by disabling gravity and using the
+05:29 friction features of box 2D kind of a
+05:31 semantical hack and it's not perfect but
+05:34 after some tuning it turned out good
+05:36 enough for my use case on another side
+05:38 note it's important to remember that
+05:40 while you can spend a lot of time making
+05:43 a simulator realistic it adds complexity
+05:46 and many times a rough approximation can
+05:49 often be good enough the simulation
+05:50 doesn't have to match reality exactly to
+05:53 be useful and this was something I had
+05:55 to keep on reminding myself of during my
+05:58 implementation then after having an
+06:00 acceptable 2D view the next thing I
+06:03 implemented was a simple DC motor model
+06:05 because that's what my sim robot has and
+06:08 similar to real this motor this model
+06:10 takes voltages input and produce a force
+06:13 as output it's a very ideal model but
+06:16 once again good enough of an
+06:17 approximation for my simulation then I
+06:20 continued by modeling my sensors here I
+06:22 had to consider the features available
+06:24 in box 2D I implemented the range
+06:26 sensors by using the raycast feature
+06:29 which essentially casts array between
+06:32 two objects and then gives the distance
+06:33 between them the line sensor was less
+06:36 straightforward but I figured I could
+06:38 represent the line as an invisible body
+06:40 and the sensor as a tiny body and use
+06:43 something called a contact listener for
+06:45 Collision detection to detect when they
+06:47 Collide after all the attacking of box
+06:49 to these semantics I had the physics in
+06:52 place so then it was time to move on to
+06:54 the graphics because up till this point
+06:56 I had just been using the graphical user
+06:59 interface in the testbed provided by
+07:01 box2d when it came to Graphics I had
+07:04 little prior experience with Graphics
+07:06 programming and I quickly realized it
+07:08 was a jungle there are so many apis
+07:10 libraries framework and engines
+07:12 available before jumping on board with
+07:14 anything I once again took a step back
+07:16 and considered my goals again first of
+07:19 all as I said before I wanted something
+07:21 simple function over Beauty only simple
+07:24 shapes and graphics and I wanted a
+07:26 simple code base written in C plus with
+07:29 few dependencies and I wanted to support
+07:31 Linux and windows and for these reasons
+07:34 I decided to go pretty bare and
+07:37 Implement my own renderer on top of
+07:39 opengl but with some opengl helper
+07:42 libraries to avoid going completely
+07:44 insane more specifically glfv and glad
+07:47 this gave me much flexibility and few
+07:49 dependencies but of course meant I had
+07:51 to learn a lot more about Graphics
+07:53 programming I'm not going into all the
+07:56 details here but to say the least there
+07:58 is a lot that goes into even drawing a
+08:00 simple triangle with opengl first you
+08:03 need a buffer that describes what the
+08:05 GPU should render then you need to
+08:08 describe what this data is and how it's
+08:10 laid out then you need to tell the GPU
+08:12 what to do by giving it a special
+08:14 program called a Shader and with the
+08:17 selected buffer and Shader you can then
+08:19 finally execute a draw call After
+08:21 figuring out how to render a single
+08:23 triangle I went on to draw other shapes
+08:26 which led me to the fundamental idea
+08:28 that everything you render is made up of
+08:31 triangles because triangles have
+08:33 properties that make them mathematically
+08:35 faster to draw and they are what modern
+08:37 gpus are optimized for a rectangle was
+08:40 trivial it's used two triangles a circle
+08:43 less so but with enough triangles you
+08:45 can render what appears to be a circle
+08:47 as well and with enough triangles you
+08:50 can also represent any other shape
+08:52 besides the basic shapes I of course
+08:54 also wanted to be able to render them at
+08:56 different position with different
+08:58 rotation and scale and to avoid creating
+09:01 a separate buffer for each case I only
+09:04 describe the shapes at their default and
+09:06 use linear algebra to transform them and
+09:09 for this I dragged in another dependency
+09:11 a math Library called glm Next I
+09:15 implemented zooming and panning zooming
+09:17 is the same as scaling up and down the
+09:19 rendered objects and panning the same as
+09:21 moving the objects in the opposite
+09:23 direction both of which could be easily
+09:25 implemented with another transform
+09:27 Matrix then I also wanted a basic user
+09:30 interface a simple menu to toggle
+09:31 between scenes to tune parameters and to
+09:34 show statistics doing this from scratch
+09:36 with opengl is kind of a mess but
+09:39 luckily there is a great library for
+09:41 this called I am GUI which lets you add
+09:44 Advanced menus with just a few lines of
+09:46 code finally to top it off I added
+09:48 texture rendering completely unnecessary
+09:50 and kind of violates my goal of function
+09:53 over Beauty but it wasn't too much work
+09:55 and game my simulator a cooler look for
+09:58 this I dragged in another Library called
+09:59 sdb image for loading texture and wrote
+10:03 another shaded program to interpret the
+10:05 texture data I now have add a renderer
+10:07 in place for from optimized but it was
+10:09 good enough for what I needed and with
+10:11 physics and Graphics in place each on
+10:13 their own side it was time to bring the
+10:15 two together and this was when I really
+10:18 had to think about the overall software
+10:20 architecture what brings physics and
+10:22 Graphics together is essentially the OBX
+10:25 they describe for example my zoom robot
+10:28 is composed of Motors sensors and a body
+10:30 all of which has their own graphical and
+10:33 physics properties there are different
+10:35 ways to solve this design problem some
+10:37 solutions lean more towards inheritance
+10:39 While others more towards composition
+10:41 inheritance is perhaps more intuitive
+10:44 but can break down when things get more
+10:46 complicated while composition can be
+10:48 harder to implement but provides looser
+10:51 coupling which makes the code easier to
+10:53 extend my simulator project is
+10:55 comparably simple so it doesn't matter
+10:58 too much but I still decided to go for
+11:00 an implementation leaning more towards
+11:02 composition I didn't go as far as
+11:04 implementing my own entity component
+11:06 system which is a common compositional
+11:08 pattern in-game development but instead
+11:10 went for a simpler object-oriented yet
+11:13 compositional approach my design
+11:15 unsurprisingly consists of OBX which I
+11:18 call scene objects this describe the
+11:21 entities in the simulation and are made
+11:23 up of different components and each
+11:25 scene of B8 can have at most one of each
+11:27 of the following component types the
+11:30 renderable component describes the
+11:32 graphics of dobiect basically what shape
+11:34 it is and what color or Texture it has
+11:37 the physics component describes the
+11:39 physics behavior of the object and the
+11:41 transfer component describes the
+11:44 position Dimension and orientation but
+11:47 it also acts as the link between the
+11:48 physics and Graphics component by
+11:50 letting the physics component write to
+11:53 its data and the renderable component to
+11:55 read its data finally I have the control
+11:57 Loop component which holds the input and
+12:00 output logic whether it comes from a
+12:02 keyboard mouse or a piece of code just
+12:05 to give you an example
+12:06 to simulate the falling box I create a
+12:10 synovy composed of a rectangle component
+12:12 which is a renderable a rectangle
+12:15 transform and a physics body and then in
+12:18 each simulation iteration the physics
+12:20 body updates the position and
+12:21 orientation of the transform and the
+12:23 renderable component then reads this
+12:25 data and draws the rectangle on the
+12:28 screen and this falling box since it's
+12:31 not controlled by anything it has no
+12:33 controller component after all this work
+12:35 it was a satisfying moment when I saw my
+12:37 render come alive with my physics for
+12:40 the first time
+12:41 moreover to create a more complicated
+12:43 scene object like a some robot I made it
+12:46 possible to compose scene objects of
+12:49 other scene objects which also has to
+12:51 add a benefit of better code reels
+12:53 across different scene objects because
+12:55 for example the wheel motor object is
+12:58 not only useful for a certain bot but
+12:60 also for other types of robots further
+13:02 on the scene objects of course don't
+13:03 live on their own they need to be
+13:05 attached to a scene and I represent a
+13:07 scene as another class and this class
+13:09 holds the simulation session including
+13:12 the physical world and the list of
+13:14 student objects regarding the
+13:15 implementation of all of these
+13:16 components the renderable component the
+13:19 physics component and the transform
+13:20 component were all fairly
+13:22 straightforward to implement what wasn't
+13:24 as straightforward was the controller
+13:26 component while getting the input from
+13:28 the keyboard and mouse was easy because
+13:30 glfv provided callbacks for that what
+13:33 wasn't as obvious to me was how I was
+13:35 going to connect the controller
+13:37 component with the physics component
+13:39 because the interface for the different
+13:40 physical components were different I
+13:43 mean the Dismount model takes an input
+13:45 voltage while the distance sensor gives
+13:48 an output distance in millimeters and
+13:51 the line sensor gives an output Bull and
+13:53 so on and Catering for all these
+13:56 different cases in the control component
+13:58 will not only make for an ugly interface
+14:01 but would also make the controller code
+14:03 harder to separate from the rest of the
+14:05 simulation code which was important
+14:07 because I wanted that code to be easy to
+14:10 transfer to the actual Target and this
+14:12 meant I had to come up with a better
+14:14 solution and what I came up with was a
+14:17 concept called voltage line which is
+14:19 nothing but a point to the float where
+14:21 the float value represents a voltage
+14:23 level I make each physics object provide
+14:26 one or several of these voltage lines
+14:28 for example the this motor is
+14:30 straightforward since it already takes
+14:31 voltage as input but for the sensors I
+14:34 have to convert their outputs to a
+14:36 corresponding voltage level then I can
+14:39 represent the microcontroller as a
+14:40 controller component which takes a list
+14:42 of assignable voltage lines not only
+14:45 does this make it easy to connect the
+14:46 control component to the physics
+14:48 components it also makes intuitively
+14:50 sense because on a real robot the
+14:52 microcontroller are connected with
+14:54 sensor and Motors through wires with
+14:56 voltage applied to them there's more to
+14:58 this side of the code but I will get
+15:00 into that in the next video finally the
+15:03 way the execution comes together all the
+15:05 way from input to physics to Graphics is
+15:09 through a main Loop which is the same as
+15:12 the game Loop in game development
+15:14 context which is nothing but a while
+15:16 loop that executes each step of the
+15:18 simulation at a set frequency more
+15:21 specifically in my simulator I created a
+15:23 base class called application and this
+15:26 class handles the initialization of
+15:28 everything and holds the simulation
+15:30 scenes and menus and this class must be
+15:33 inherited by the user of both CD and I
+15:36 coded it like this for flexibility
+15:38 because it lets you as a user decide
+15:40 what scenes and menus you want to
+15:42 include in your simulation application
+15:44 and what this means is that my simulator
+15:47 both CD is technically not the simulator
+15:49 but it's actually kind of a framework
+15:52 for creating your own simulator this
+15:54 means that in your simulator application
+15:56 you will have a main function that
+15:58 instantiates your application class
+16:00 derived from application and then you
+16:04 call the Run function on this which in
+16:06 turn starts the main Loop and then in
+16:08 each iteration of the main Loop it first
+16:10 updates the physics then the controllers
+16:12 and finally the scene is rendered and
+16:15 that's the story of how I built a 2d
+16:17 Simulator for robotics from scratch this
+16:21 project was a good exercise in
+16:22 programming that taught me a lot of C
+16:25 plus plus object-oriented programming
+16:27 and other things but in hindsight I kind
+16:30 of regret embarking on this journey it
+16:32 just took too much time after all my
+16:35 interest lies with embedded systems and
+16:37 not game development it will be more
+16:39 pragmatic of me to use to pick an
+16:40 existing simulator even if they are not
+16:42 perfect for my scenario or to quickly
+16:45 throw something together in python or to
+16:48 directly develop on my Sumo robot but oh
+16:51 well now the damage is done and once
+16:54 again you can find it on GitHub and I've
+16:56 left a link to a detailed blog post in
+16:58 the description in my next video I will
+17:01 use this simulator or simulator
+17:03 framework both 2D to implement the
+17:05 application code for my Zuma robot but
+17:07 until then thanks for watching and see
+17:09 you next time

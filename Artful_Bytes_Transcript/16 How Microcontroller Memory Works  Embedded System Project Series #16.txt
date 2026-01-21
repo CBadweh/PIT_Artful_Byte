@@ -1,0 +1,329 @@
+00:00 in this video I want to talk about how the memory on the microcontroller works this is an important topic because
+00:07 the memory on the mic controller is limited and if we are not careful about how we write our code we can easily end
+00:14 up running out of this memory before we have finished with our program and I
+00:20 want to talk about which types of memory a my controller has as well as show a
+00:26 code example to exemplify how different parts of our code ends up in different locations inside the memory of the
+00:33 microcontroller I also want to show some programs you can use to analyze the amount of space your or memory space
+00:40 your code takes up as well as what part of your code takes up the most amount of
+00:45 space like the symbols that takes up the most amount of space which can be very useful to know how to do when you want
+00:51 to track down the worst offenders in case you need to reduce the amount of flash memory you use and I'm going to
+00:56 use this smart controller as an example because that's the my controller I have on this robot because this video is part
+01:02 of a larger video series where I'm programming this robot from scratch but what I'm going to say here really
+01:08 applies to any microcontroller because most smart controllers works the same way but note I am going to keep the
+01:14 discussion or around my controllers and I'm not going to talk about other devices that have an operating system
+01:20 running on them and that has a memory management unit because then memory Works a bit differently there are of
+01:26 course some similarities but there are also some distinct differences that I'm not getting into in this video okay so
+01:32 to begin with on a my controller you're going to have two types of memory you're going to have Flash and RAM well some
+01:39 micros also have a third type of memory called eeprom which can usually a
+01:45 smaller type of memory used for storing configuration data but I'm not going to
+01:50 talk about that here because what you are mostly going to be interested in is going to be the Flash and the RAM and
+01:56 technically flash is a kind of eeprom but anyway Flash and RAM Works
+02:02 differently the flash memory is non-volatile while the ram is volatile and what this means
+02:09 is that whatever you store on the flash memory is going to stay there even if you power off the mic controller or the
+02:16 memory while whatever you store on the ram is going to be lost when you powered
+02:21 It Off they are also used for different purposes The Flash is going to be used
+02:27 to store your program code like the instructions that your CPU is executing
+02:32 and the ram is going to be used for your program variables your program data and
+02:38 what's inside the flash is pretty much going to remain the same throughout the execution of your program and what's
+02:45 inside your RAM is going to change throughout the execution of the program depending on which function you are currently in and what stored inside and
+02:52 what store inside your variables and so on and on most smart controllers the flash memory is going to be much larger
+02:58 than the RAM for example on the microphone I'm using I have 16 kilobytes of flash but only 512 bytes of RAM and
+03:09 this is going to be the case on most smart controllers because for most applications you're going to need more
+03:15 flash memory compared to ram okay so that's the two types of physical
+03:21 memory inside the mic controller and now before I get to the code example I want
+03:27 to First explain the process of going from source code all the way to machine code stored inside the memory because
+03:34 having a basic understanding of that is going to be important to better understand the code example that I'm
+03:41 going to show you okay so the way that process looks is that to
+03:46 begin with you're going to have written a bunch of code so let's just use c as
+03:52 an example now because that's what I'm using in this series so you're going to have a bunch of C files and the first
+03:58 thing you're going to do on your path to getting this city code into your my controller is going to be
+04:04 to run your compiler to compile this code into machine code and what single file is going to do it's
+04:12 going to translate the source code into machine code now the compiler is also going to divide this machine code into
+04:17 different sections exactly how these sections look and how the compiler divides the code into different sections
+04:24 it's going to depend on the particular compiler and what object format it's using but the command object format used
+04:32 by many compilers is the object format called elf executable and linkable
+04:39 format and that's also the one that my compiler is using the one I'm using for this project and for example this format
+04:46 stores the program code intersection called text and the data into different sections called BSS
+04:52 read-only data and data and and so on but I'm going to show examples of those
+04:59 sections in the in my code example but when the compiler is done we're still
+05:04 not ready to put the like the machine code in turn my controller because we
+05:09 haven't actually specified where inside the memory the machine code should end
+05:14 up and that's going to be like that's going to be the main job of the Linker which
+05:20 is the next step of this chain so what the Linker does is that it's going to take
+05:25 a link script and the link script describes the memory layout of the mic
+05:30 controller so it contains information about where the flash memory starts at
+05:36 what start address and how big it is and the same information for the ram where the ram starts and how big it is
+05:44 the link script also explains where the sections of the object files should end
+05:50 up inside the memory and the Linker takes this link script together with the
+05:55 object files and turns everything into a single final executable file the flash
+06:01 programmer then takes the machine code of this executable file and writes it to
+06:07 the flash memory but it doesn't touch the ram because the ram is not touched until we reset my controller and the CPU
+06:14 starts executing instructions because the first thing that the CPU does when
+06:19 the my controller boots up is like before the main function is that it's going to run a piece of code called
+06:26 we'll usually referred as the startup code and among other things the startup
+06:31 code were a big part of starter code is to initialize the ram so it's going to if
+06:38 we have any variables like any Global variables initialized with some values it's going to set up that inside the ram
+06:45 and also CR initialize any Global variables that are not initialized and it's also going to set the stack your
+06:52 pointer to initialize our stack which is the section of memory used for
+06:59 storing the context of a function I will talk more about this in the code example of course this is a very simplified
+07:06 explanation of how all of this works but I think it's enough details to understand the example that I'm going to
+07:13 show you now so what I have here is the standard blink example for my microcontroller and I'm going to add
+07:19 some variables to this program and show where they end up inside the memory I usually like to do things from the
+07:25 command line but when it comes to things like this when I want to inspect the memory and look at this assembly view or
+07:31 step through the code then I like to do things from the IDE and CC Studio has something called memory browser which
+07:38 allows you to look at the content of the entire memory which is going to be very useful to demonstrate how things work in
+07:44 this video okay so what I'm going to do now is add a few variables to this example and I'm going to tell you where
+07:50 these are going to end up inside the memory and then I'm going to show you that they actually end up where I say they are going to end up and I need to
+07:56 be thought about how I Define this variable and use them inside my code because the compiler is pretty good at
+08:02 optimizing things like this and when the compiler does optimizations things don't always end up where you expect them to
+08:08 end up so for example for this first variable here I'm making it an array because well arrays are going to be
+08:13 easier to spot inside the memory and I'm also giving it different values for each index because if I give it the same
+08:20 values the compiler might optimize it of course normally you want the compiler to do the optimizations but in this case
+08:25 when I'm just doing this with demonstration purposes I don't want the compiler to do any optimizations here
+08:31 okay so the variable I've defined here is a global variable and it's initialized and this means that
+08:37 it's going to end up inside the data section but it's also going to end up inside the const section because this
+08:43 data data it's initialized with has to be stored somewhere when the microcontroller boots up and when the
+08:50 ram is empty because as I said before when the mic controller boots up there's
+08:55 going to be a piece of start of code inside the flash memory that's going to run before our main function and this
+09:02 startup code is going to initialize a global variable like this and for it to be able to initialize this variable it
+09:08 has to know what values it's going to initialize it with so those values has to be stored inside the flash so Global
+09:15 variables like this are going to count against both The Flash and the RAM and
+09:20 then I'm going to create a second variable a constant variable and I'm filling this with identical values
+09:26 because the compiler doesn't optimize this and as you can see these values are also 16 bits since the integers on the
+09:32 msp430 the microcontroller I'm using here is the 16 embed the microcontroller so the integers are 16 bit wide and
+09:38 since this is a constant variable it's just going to end up inside the const section and constant variables don't
+09:45 have to be stored inside the ram because they're never going to change throughout the execution of the program so they are
+09:51 simply is going to be stored inside the Slash and then a third variable this variable I'm going to leave uninitialized and what the compiler does
+09:59 or what the C compiler does for an initialized variables that are Global it's going to initialize those variables
+10:05 with zero so writing it like this is the same as assigning all values to zero and
+10:10 variables like this and ends up in a section called BSS and the reason for
+10:15 why the compiler puts uninitialized variables like this inside a separate section is that if all of the variables
+10:22 are going to be zero initialized or next to each other the only thing the compiling it's not over the only thing
+10:27 the startup code needs to know to initialize that part of the memory is going to be to know the start address of
+10:33 the BSS section as well as how long it is and then you can simply just initialize this entire section to zero
+10:39 and while the values inside the business sections or initial access zero just as the first variable that can be modified
+10:44 throughout the execution of the program which means that the BSS section has to be located inside the ram the fourth
+10:51 variable I'm going to add inside the main function and since this variable is inside a function and I'm defining it
+10:57 like this it's going to act as a local variable and local variables are
+11:04 allocated different from how Global variables are allocated and local variables inside functions are going to
+11:10 get allocated when we enter the function and they are going to be allocated on the stack so when we enter function the
+11:17 stack pointer is going to be moved to make place for the local variables inside the function and it's going to be initialized when the CPU reaches the
+11:24 line of code where it's defined but it's not just going to be allocated on the stack because these tests with the first
+11:30 variable the date takes initialized with has to also be stored somewhere and these starts with the first variable
+11:36 that data is going to be stored inside the flash inside the const section and
+11:41 technically it's also going to be stored inside the text section of the flash because well we're going to need instructions to copy the values from the
+11:48 consection to the stack section when this variable is initialized and then I'm going to create a static variable
+11:55 inside this function and I'm assigning this with some random values here because when I try this before the
+12:01 compiler was really good at optimizing this variable and static variables like this work very similar to how Global
+12:07 variables like the first variable Works in terms of How It's allocated so it's going to end up inside the data section
+12:14 and the values it's initialized to it is going to end up inside the cons section so it's going to count towards the RAM
+12:20 and the Flash and then I just need to make sure that I use all of these variables so that the compiler doesn't optimize them away so I'm just going to
+12:27 create a for Loop here where sum all of the values in these arrays into a single int variable and this line with the for
+12:33 Loop is going to end up inside the program code because it's going to translate to CPU instructions stored
+12:39 inside the flash inside the text section as for the sum variable it's going to end up inside the stack because it's a
+12:45 local initialized variable but well you'll you're going to see that it actually doesn't end up inside the stack
+12:51 because the compiler is going to do an optimization which I'm going to show you soon and this line where I'm adding all
+12:56 the values are going to translate into CPU instructions so program code stored inside the text section so that's going
+13:03 to be allocated inside the flash memory and then I need to make sure that I also use the some variables so I'm just going
+13:08 to add it into this for Loop below here okay so now I have all of these test
+13:14 variables so now I'm going to compile and run this code and show you how the mem really looks but before I do I want
+13:20 to first show the link script here like the script that tells the link how the
+13:25 memory layout of the microcontroller looks and where each section should end up inside the RAM and Flash so first it
+13:33 specifies the memory layout and as you can see the Flash starts at address 0
+13:39 c00000 and the length is this and I can open python here to use to see what this
+13:46 value will translate to or what this sex value translates to in decimal it's just to make sure that it is 16 kilobytes as
+13:52 I said before and it is and then there is the RAM and it starts
+13:58 at 200 or address 200 and it's 200 in length as well and that's 512 bytes and
+14:04 then I can scroll down and look at the different sections so here the link script specify where each section should
+14:11 end up so here we have all of the sections that I've talked about before we have the BSS section it's going to end up in the ram data section is going
+14:17 to end up in the RAM and here's also a six mem I haven't talked about this
+14:23 because this section is used for dynamic memory allocation so if you use costs like malloc or free which I'm not going
+14:30 to use inside my code so this section so I'm not going to use this section so I'm not going to talk about it here either
+14:35 and usually you try to avoid dynamic memory allocation inside the microcontrollers and then there is the
+14:42 stack section which is going to end up inside RAM and the text section which is going to contain the program code and
+14:48 that's going to end up inside the Flash and finally the con section which is also going to end up inside the flash so
+14:54 then I can go on and build and run the code and the IDE actually writes out how much
+14:60 Flash and RAM the code uses but note the value it's giving for the ram here is just counting the data stored inside the
+15:07 BSS and data section like the static sections that it knows up from and it doesn't count how much is allocated
+15:13 inside like the stack section or the six mem section because that's going to vary
+15:18 depending on which function you are in and this is the undergoing to be the case it's going to be much easier to predict how much flash memory you're
+15:24 going to use compared to RAM memory because if you want to find out how much RAM you're going to use you either have
+15:29 to like go through all of the code paths and do really tedious calculations or run your program and profile how much
+15:36 RAM is used so just be aware of that when you try to analyze how much memory your code occupies so with the code
+15:42 compiled and running on my target what I would like to do now is open up the memory browser the brow The View that's
+15:48 going to let me inspect what's stored inside the memory both the flash memory and the RAM memory so the first variable
+15:54 a I expected that to end up inside the data set section and the comment section and I can look inside the memory browser
+16:01 to see that it actually ended up where I expected it to end up but to confirm this I need to know where the different
+16:06 sections actually ended up and I can find out this by looking inside the map
+16:12 file and this is a file that the Linker produces after it links all of the files and produces the final executable and
+16:19 the map file is built inside the debug folder next to the final executable so if I open the map file I can see where
+16:25 the different sections ended up and like Edward address they ended up and how big they are so looking at the data section
+16:32 I can see that it starts at address 200 and if I look inside my memory browser
+16:37 again I can see that at address 200 I have the variable a the first variable so its values are stored inside the data
+16:45 section as expected and note as for the execution I'm still at the beginning of the main function and this also proves
+16:52 that the data variables are initialized before the main function inside the startup code so we have confirmed that
+16:58 it's part of the data section the ram let's now also confirm that it's part of the consection that the variables or
+17:05 that the values it's initialized with is stored inside the consection looking at the map file again I can see that the
+17:11 consection starts at this address so if I search for this inside the memory browser we should expect to see these
+17:17 values there as well and looking inside the consection I can see that the values are there
+17:25 so this values are part of the consection which is part of the flash memory and the startup code uses these
+17:30 values to initialize the variable inside the data section part of the ram so the first variable is allocated as expected
+17:37 it counts towards the Flash and the ram so moving on to the next variable this is a constant variable and I only expect
+17:44 this to be part of the const section and looking inside the memory browser again where the consection is I can
+17:50 immediately see the B variable here and since it's only part of the com section it's only going to count against
+17:56 the flash for the third variable which is a global variable that is not initialized I expected that to be inside
+18:02 the BSS section so only part of the ram and I can look at what address this is stored by hovering the value inside the
+18:09 ID and if I search for this in the memory browser I can see that it's stored here so it's all initialized to zero and I
+18:16 can double check that this is the BS section by looking inside the map file and it is because the BSS section starts
+18:23 at 214. and once again given that I am at the beginning of the main function we can
+18:29 yet again confirm that this was initialized to zero as part of the startup code my prediction seems to be
+18:34 pretty good so far then we can move on to the variables inside the main function well first we can take a look
+18:39 at the main function itself it has address c000 and if I search for this in the memory browser I can see that the
+18:45 main function is here so the instructions of the main function is stored at this address and looking inside the map file this is the
+18:52 beginning of the text section so the program code is stored inside the text section as expected as for this variable
+18:60 which is a local initialized variable I expected that to be part of the stack and I can once again look inside the map
+19:06 file to see what the stack is supposed to be located and it's located at this address so if I search for this in the
+19:12 memory browser this is where the stack is located so I expect to see the stack filled with these values where actually
+19:18 it's not going to be filled with these values yet because we haven't actually gotten to this point in the execution yet but before I step through the code I
+19:25 can first confirm that these values are also part of the constant section so the constant section is at C two
+19:32 three two and if I search for that I can see that this DDD are stored here
+19:38 so those are part of the constant section as well as expected so they count towards the Flash and not only the
+19:44 stack and then if I go back to the stack and step through the code I can see that the stack is filled with these values
+19:50 so the variable is part of the stack inside the ram but the values it's initialized with is also stored inside
+19:57 the flash memory inside the const section as for the next variable the
+20:02 static variable it's initialized before the main function runs so that's initialized by the startup code and it
+20:08 has this address so it's stored right here next to the variable so it's part of the data section
+20:14 part of the RAM and he's looking inside the map file again we can use to remind ourselves that the data section starts
+20:20 at address 200 and similar to the other variables the values it's initialized with is going to be stored inside the
+20:27 cone section part of the flash memory and I can again confirm this by looking inside the memory browser and once again
+20:33 the startup code initializes this variable by copying the values from the consection inside the flash memory to
+20:39 the data section of the ram as for the sum variable let's just first
+20:45 step to it if I step over it I should expect to see a value here somewhere in the stack be
+20:51 set to zero well it's actually not because the compiler has done optimization here because we can see
+20:58 here up in the variable section that some variable is actually stored inside the register and it's not part of the
+21:05 stack the volatile I variable here on the other hand that's stored inside the stack because if I iterate through the
+21:12 for Loop here I can see that the value increases here one two three and so on and then I also want to point out this
+21:19 section here the section between the stack and the date and BSS section this
+21:25 all of these values here are pretty much random values that Ram has when the microcontroller boots up it's a Memory
+21:32 that's free to use and if we for example grow the stack like enter a function
+21:38 that has a lot of variables that's going to grow into this section here and if we
+21:43 grow the stack too much the stack is actually going to hit the the VSS and data section and that's when
+21:49 you run into a stack overflow then I would like to try one thing here like the sum variable ended up inside the
+21:55 register as we saw but if I tell the compiler this is a volatile variable meaning that this variable can be
+22:01 changed outside the scope of this function I think the compiler is going to optimize it differently and it should
+22:07 end up inside the stack so if I add volatile here and then run the code again and one thing that I also want to
+22:12 just show here now that I am at the beginning of the main function again is that this variable here the static
+22:18 variable now that I am at the beginning of the main function I can see that it's already initialized so that is
+22:24 initialized by this by the startup code I didn't actually show this before because I talked about this variable
+22:30 after I had stepped over it and the startup code is part of The Flash and I can actually see this inside the map
+22:36 file because the startup code is part of this section called C init this part here is the part initializing
+22:43 the data section so the A and E variable and this part here is the code that
+22:49 initializes the VSS section so this section and looking inside the link to script again I can see that we tell the
+22:57 link here to put the C init section inside the flash memory so the startup code is part of the flash memory and it
+23:04 runs before the main function and another thing we can look at here is the PC register the register that holds
+23:11 the address to the current instruction the CPU is executing so if I search for this address inside the memory browser
+23:18 I can see that this instruction is located inside the main function
+23:23 and I can also open the disassembly view to see which exact instruction we are
+23:28 currently executing so it's this instruction and I can look inside the memory browser and see that this instruction is stored
+23:34 here and this shows that the CPU is executing instructions from the text
+23:42 section which is inside the flash memory and while at it I can also look at the
+23:47 ASP register it holds this value and if I search for this in the memory browser I can see that that's where the stack is
+23:53 as expected inspecting the registers and the memory browser like this inside the IDE is indeed a very powerful way to
+23:60 better understand how a microcontroller works and if I step through the code now I can see that this sum variable is part
+24:06 of the stack it's right here so it's no longer stored inside the register it's stored inside the stack and if I keep on
+24:14 iterating through the for loop I can see that it changes its value so both the sum variable and I variable
+24:20 are now part of the stack now that we have a pretty good understanding of how different variables are allocated inside
+24:26 the memory I would just like to give a few examples of code or code Snippets
+24:31 that increases the flash space unexpectedly so first I'm going to do an
+24:37 example here where I multiplied to float values so float multiplication and I'm
+24:43 just going to add them in the wild condition here as an example it doesn't really matter so right now the flash user is at the 666 number of the beasts
+24:52 and if I compile and run this I can see that the flash memory has increased to
+24:58 almost a thousand bytes so just adding this fluid multiplication increase the flash view search by over 300 bytes
+25:05 that's a bit unexpected right because I've just added two float variables and I'm multiplying them we don't expect
+25:12 that to take up over 300 bytes the reason for this increase in size is that the microcontroller I'm running here
+25:20 with the mic controller I'm using here the msp430 or the version of this msp430 it doesn't have any dedicated hardware
+25:27 for doing float multiplication there is no floating Point Unit
+25:32 and this means that to be able to do flute multiplication on the smart controller it has to be done entirely on
+25:38 the CPU so when the compiler has to translate this float multiplication into machine code it's going to have to drag
+25:44 in a lot of code to be able to do this on the CPU and that's why the flash usage increases so much and it's not
+25:50 just a question about size since it's going to take so many instruction it's also going to be slow so on a mic
+25:57 control like this that doesn't have any dedicated hardware for float multiplication you're probably going to
+26:02 just want to avoid using floats at all something similar also happens when the modular operator is used
+26:08 as well as when the division operator is used there is no good support for these operators inside the hardware so the
+26:14 compiler is going to have to drag in a lot of code to be able to do these operations on the CPU so these are also
+26:21 operators you're going to want to avoid on a microcontroller like this most of the time
+26:26 and I'm going to show one last example here where the flash usage increased by a surprising amount so I switched over
+26:33 to another project here it's still a blinky example but I'm using a different compiler the GCC compiler because let's
+26:38 see a compiler doesn't even allow me to do this so what I'm going to do now is to I'm going to include stdio so that I can use
+26:45 the printf function you know the function that's used to print things to uh like a console and I just want to
+26:52 show how this function increases the flash usage okay so you can see here that it has
+26:58 increased the flash user by several thousands of bytes and the reason for why adding a printf statement like this
+27:04 takes up so many bytes is that there's a lot of code inside the printer function to handle all of the formatting options
+27:10 and this is also why in a later video when I Implement a UI driver or the functionality to trace to a terminal
+27:16 then I'm going to use another printf implementation a more stripped down printf implementation to avoid wasting
+27:23 this much Flash and this just go to show that you have to be a bit careful about what you include inside your code that's
+27:29 to not run out of the flash memory the last thing I want to show in this video are the tools I use to analyze the
+27:36 amount of flash memory my code occupies and I'm going to do this from my normal
+27:42 workflow so from the command line and I'm going to add some new rules to my make file while I'm at it so I'm first
+27:48 going to create a new local git Branch the tools I'm going to use are part of my compiler tool chain that is the DC
+27:56 tool chain for my microcontroller but the tools I'm using you'll probably find something similar if you are using
+28:02 another tool chain because these are tools that can be found in most tool chains so the first program I'm going to add is the elf size program and I'm
+28:10 adding this as a new rule at the bottom of my Mac file so I'm just running this
+28:15 command on the final executable
+28:22 so here I get like a similar output to what we saw in the console inside the
+28:28 IDE before so this command outputs the text size and the size of the data section as well
+28:35 as the size of the BSS section so text is going to be part of the flash memory and mbss is going to be part of the RAM
+28:42 and data is going to be part of both the RAM and the Flash so the so this command is just a quick way to get a sense of
+28:48 how much flash memory my code is using an attempt to run this command quite often when I write code used to get a
+28:55 sense of how much space my code is taking and if I for example build a test function here and I said like the test blink LED function the amount of memory
+29:02 increases note the size that these command outputs it's it's not going to
+29:07 be the same as the size of the final executable because the final executable is not just the storing or containing
+29:15 the machine code that's going to be flashed to the flash memory it's also going to contain other information as
+29:20 well such as debug symbols and so on so if I just look at the size of the test blink LED executable I can see that
+29:27 that's much larger compared to how much flash memory is going to be occupied and just to give an example of how the
+29:34 flash memory can be affected I can remove the compiler flag I added in a
+29:39 previous video a compiler flag that makes my enums a single byte instead of two bytes and I can run my size command
+29:47 to see that this flag actually has an effect so if I remove it from the make
+29:52 file and then also comment out the static assert I have inside the io file
+29:59 without this flag the code takes up another 100 bytes so just by having this
+30:04  I save 100 bytes from my flash so let's put the flag back the another
+30:09 thing I can do is to remove the inline keyword from my inline function inside the io.c file
+30:18 also removing this actually decreases the amount of flashbacks used I did not
+30:24 expect that to be the case because the last time I tried this with these functions I conclude that making them in
+30:33 line actually took less space of course not in line in them may take more CPU
+30:39 Cycles in the end but in this case that's going to be insignificant so I think I'm actually going to remove the
+30:45 inlines from these functions now because I want to prioritize the amount of flashbacks here rather than like the
+30:51 execution speed okay so if I just leave the middle functions as in line I get the least amount of flashbacks used so I
+30:58 guess I will just leave it like this now though I can also change the compiler optimization to see what kind of
+31:05 difference that makes to the size so if I optimize for size instead it actually decreases the size by around 100 bytes
+31:13 but I want the debug symbols during development so I'm just going to so I'm just going to change this back and then
+31:18 I just want to try to call printf once more here and just to see how that
+31:24 affects the size again yes and as we saw earlier this has a huge impact on the
+31:30 amount of flashbacks used because the printer function is a very like it's a quite complicated functions including a
+31:36 lot of handling for different formatting options then I want to add another tool to my make file this time a tool called
+31:43 read elf and this is going to allow me to inspect the final executable and look
+31:49 at the symbols and how much space in the video symbols takes up inside the flash memory and so this is going to give a
+31:56 more detailed view of how much space individual functions are taking up and I
+32:01 sought this by the amount of space to take up to more quickly give me an overview of the symbols that takes up
+32:08 the most amount of space so if I run this command now well I still have the printf call inside my code I can see
+32:14 there are a couple of big functions taking up a lot of space So at the
+32:20 bottom I can say that the function called sfv right is taking up 800 bytes
+32:27 which is a lot now I already know that this function is part of like the printf implementation but when running this
+32:34 command it's it may not always be obvious where a function is coming from and in that case you can either you can
+32:40 either try to like disassemble your code or you can also just search for the function name on Google and then I would
+32:48 quickly realize that that's part of the STD i o header or code part of the standard Library so with this rules
+32:55 added to my make file I can go ahead and Commit This
+33:01 and then push the commit to GitHub and open a pull request
+33:09 wait for the CI to pass and then finally merge the pull request
+33:15 so that's it for this video and I hope you learned something from it once again keeping track of how much memory your
+33:21 code occupies is important when you are programming a mic controller with that said however one advice that I would
+33:27 like to give when it comes to memory size is to pick a mic controller that
+33:33 has more memory than you think you are going to need especially if it's just a hobby project because then you don't
+33:39 want to spend your time optimizing your code trying to fit inside the memory that's just too small to be honest I
+33:46 made that mistake with this project because this project would like the microcontroller on the on my robot only
+33:52 has 16 kilobytes of flash memory and I realized that by the end of this project I actually filled up the entire memory
+33:60 and I had to spend some time changing my code to make it fit inside the memory and in hindsight you're speaking a mic
+34:06 controller that had like the double amount of space would have saved me hours of work of course you may not
+34:12 always have the luxury to pick a larger memory especially actually if you're like working on a high volume product
+34:17 where every single sound counts because after all a microcontroller that has more memory is going to cost more anyway
+34:25 see you next time

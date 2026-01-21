@@ -1,0 +1,12 @@
+baseURL: https://artfulbytes.com/
+languageCode: en-us
+title: Artful Bytes
+theme: ["PaperMod"]
+
+params:
+  defaultTheme: dark
+  assets:
+    css:
+      - css/custom.css
+  footer:
+    hideCopyright: true

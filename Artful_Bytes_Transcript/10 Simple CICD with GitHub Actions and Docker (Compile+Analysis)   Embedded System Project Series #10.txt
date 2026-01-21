@@ -1,0 +1,405 @@
+00:00 so far in this video series I have
+00:03 created a make file that lets me build
+00:04 my project from the command line with me
+00:06 I've also added a way to run static
+00:08 analysis using CPP Shake as well as
+00:11 shown how I work with Git it's now time
+00:13 to bring this together into a continuous
+00:15 integration system using GitHub actions
+00:17 and Docker and the workflow I'm aiming
+00:20 for for a change or commit that I make
+00:22 is the following first I create a new
+00:24 local git Branch I then make my code
+00:26 changes and I build the code and run
+00:28 static analysis on it I then commit my
+00:30 changes to my branch and I push the
+00:32 branch or the changes to GitHub and open
+00:34 a pull request and here is where the CI
+00:36 system that I'm setting up in this video
+00:38 comes in once I pushed my code GitHub
+00:40 actions will automatically build and run
+00:42 static analysis once more and if it
+00:44 succeeds I'm allowed to merge my pull
+00:46 request and if it doesn't I have to
+00:48 rework the pull request until it passes
+00:50 the CI system in other words the aim
+00:52 with the Cs system is to prevent me from
+00:54 merging code that doesn't work so that
+00:56 my repository remains functional as I
+00:58 continuously deliver new incremental
+00:60 little changes to it having a CR system
+01:02 is common practice in the professional
+01:04 World these days of course what I'm
+01:06 going to show you here is a much
+01:07 Simplicity system that you would
+01:08 normally find in a professional setting
+01:10 but then again so is the project I'm
+01:12 working on but the goal of the Cs system
+01:13 Still Remains the Same to automatically
+01:15 prevent new changes from breaking
+01:17 existing functionality there are
+01:19 different platforms for implementing a
+01:21 CS system but since I host my code on
+01:23 GitHub I'm going to use GitHub action
+01:24 and the way that works is that I'm going
+01:26 to add a configuration file to my git
+01:28 repository to describe my CR workflow
+01:30 and GitHub then takes care of realizing
+01:32 that into a series of jobs a so-called
+01:34 pipeline that runs on their servers
+01:36 there is a lot of configuration
+01:37 possibilities when it comes to GitHub
+01:39 actions but I'm going to keep things
+01:41 rather simple however by default GitHub
+01:43 action spins up to see a job inside a
+01:45 virtual machine with a clean operating
+01:47 system installation for example Linux
+01:49 but I'm actually going to complicate
+01:51 things a little further by running my CR
+01:53 job inside a Docker container and the
+01:54 reason for that is that I'm using a
+01:56 particular set of tools across tool
+01:58 chain to compile code that has executes
+02:01 on my target the msp430 micronroller and
+02:03 since this tool chain is not easily
+02:05 available from a clean OS installation
+02:07 and since it's a bit too large for me to
+02:09 want to commit it into my git repository
+02:11 I'm instead going to create a Docker
+02:13 container that includes it I know I
+02:15 could let GitHub actions fetch it from
+02:17 the manufacturer's website Texas
+02:19 Instruments using a program like we get
+02:21 but the problem with that approach is
+02:23 that the link to the tool chain will
+02:24 likely break at some point for example
+02:26 when TI decides to upgrade the tool
+02:29 chain and it's also a bit wasteful
+02:30 having to fetch it each time the CI job
+02:32 runs so I think having a ready-made
+02:34 Docker container that I can trust to be
+02:36 a much better approach in this case I
+02:38 will start by creating the docker
+02:39 container that will include the tool
+02:40 chain that I'm using
+02:42 so let's first install Docker on my
+02:44 event machine
+02:46 and to avoid having to run Docker with
+02:48 the root permissions or prefixing Edge
+02:50 command with sudo I'm going to create a
+02:53 Docker group and then I'm going to add
+02:55 my user to that group so sudo group add
+02:58 Docker now I've already created this
+03:01 before so it already exists and then I
+03:03 will add my user to this group
+03:07 like that and to avoid having to log out
+03:10 and log in for this to take effect I can
+03:12 instead use the new group command
+03:14 so now I can run Docker without
+03:16 prefixing each command with sudo so now
+03:19 I'm going to create the docker file
+03:21 and I'm only just created under the
+03:23 tools directory so I can also remove the
+03:25 play solo file here now
+03:29 and create Docker file and I'm going to
+03:31 use the latest Ubuntu version for this
+03:33 Docker container so that's going to be
+03:35 from Ubuntu
+03:38 22.4 and then there are some programs
+03:40 that are not installed by default that I
+03:43 want to install so that I can download
+03:45 and unpack the tool chain
+03:50 and I'm also going to add a normal usage
+03:52 to this container so that I don't always
+03:53 have to be root when I'm inside it
+03:57 and that's all I need to specify in this
+03:59 Docker file there is not that much to it
+04:02 so now we'll build this Docker container
+04:04 and I'm going to name it msp430 GCC
+04:09 oh I also have to point to this
+04:11 directory
+04:13 so now Docker is setting up this new
+04:14 container
+04:17 and to say that it's been created I can
+04:20 run Docker images and there it is so
+04:23 with the content I created I'm going to
+04:24 log into it so that I can download that
+04:27 tool chain to it
+04:32 you normally download the tool chain
+04:34 from TI's website but since I'm going to
+04:37 download it from the command line now I
+04:38 have to do things a bit differently so
+04:40 let's just jump to TI's website
+04:47 and I'm just going to grab the link for
+04:48 the tool chain from here
+04:52 so that's going to be the 64-bit version
+04:54 for Linux it's going to be this link and
+04:59 I'm going to download this package from
+05:01 the command line using a tool called
+05:03 vget which I made sure got installed
+05:05 inside with my Docker file so I can just
+05:07 paste the link here
+05:11 I also have to download the support
+05:13 files which contains some of the header
+05:15 files I'm relying on as well as the link
+05:17 Scripts
+05:18 and those are available down here
+05:22 so doing the same for this
+05:30 and then I'm going to create a folder
+05:31 where I can put this a folder named
+05:33 similarly to how I name it on my host
+05:36 machine so that's going to be Dev slash
+05:38 tools
+05:39 and I also have to unpack the tool chain
+05:41 and the support files
+05:49 foreign
+05:55 and then I'm going to move the support
+05:57 files into the tool chain folder
+06:04 here and I'm moving them to this include
+06:06 folder because that's how it's set up
+06:08 when you use the installer from your
+06:11 desktop environment the installer that
+06:12 TI provides so once I've done that I can
+06:16 move this tool chain folder to
+06:20 my Dev tools folder and I'm going to
+06:23 name that msp430 GCC and now I can also
+06:26 remove the files I don't need anymore
+06:31 like that so now the container have
+06:33 everything it needs so I can exit from
+06:35 it and commit my changes
+06:37 I can run Docker PSA to find the most
+06:41 recent session that I'm going to commit
+06:47 and I will name this outfill bytes
+06:50 msp430 this is a dash the version that
+06:54 I'm using so that's
+06:58 9.3.1.11 and then the tag which I will
+07:00 just name latest
+07:02 so by executing this command I just save
+07:04 the changes that I just made into a new
+07:06 Docker container
+07:08 so now I can run Docker images again
+07:10 okay so this is the final container that
+07:12 includes the tool chain and the
+07:13 container that I will be using from
+07:15 GitHub actions and to make this
+07:16 container available from GitHub actions
+07:18 I'm not going to push this container to
+07:20 Docker Hub which is a hosting platform
+07:22 for Docker containers similar to how
+07:24 GitHub is the hosting platform for git
+07:27 repositories so going to Docker Hub
+07:29 creating a new repository and I'm going
+07:31 to give this the same name as the local
+07:32 container
+07:35 and just a short description
+07:42 so logging into Docker Hub and pushing
+07:45 their container
+07:55 that was it for the docker part of this
+07:57 video Let's now move on to creating the
+07:59 GitHub actions for the Repository
+08:02 so for GitHub to pick up the
+08:04 configuration file you have to create
+08:05 the file under a specific directory
+08:07 called GitHub
+08:09 workflows
+08:11 and then the configuration file I'm just
+08:13 going to name it CI it doesn't really
+08:15 matter so first I'm going to specify
+08:17 when I want this action to trigger and
+08:19 that's going to be every time I push a
+08:21 new commit and then I'm going to specify
+08:23 a job I'm going to name it build and
+08:26 that take analysis and then I want to
+08:29 run it on an Ubuntu machine and then I'm
+08:31 going to specify that I want to run it
+08:32 inside a Docker container the container
+08:34 that I just created so that's going to
+08:37 be this one and then specifying the
+08:39 things I want this job to do so first of
+08:41 all it has to check out the repository
+08:44 and for that I will use the following
+08:45 action and this action is described in
+08:48 the documentation of GitHub actions but
+08:50 it just basically checks out the report
+08:52 story and then there are two things I
+08:53 want my CR system to do first of all I
+08:55 wanted to build my project so that's
+08:57 just going to be running make from the
+08:59 command line and then I also want to run
+09:00 static analysis what I showed you in the
+09:03 last video so it's quite simple actually
+09:04 the first action is just going to be
+09:07 simply make then the second one is going
+09:09 to be make synthetic like that so let's
+09:12 say this
+09:13 and look at the status and let's
+09:18 add the changes to a new commit
+09:21 and commit them and writing a commit
+09:24 message following the grand Channel
+09:26 commits guidelines
+09:32 and pushing it to GitHub and heading
+09:34 over to GitHub we should Now find the
+09:36 GitHub action there so under this tab
+09:38 and it seems to have failed for some
+09:39 reason oh yeah the issue is that I'm
+09:41 using wrong indentations let's just
+09:43 quickly fix that
+09:52 and adding it and just amending the same
+09:55 commit
+09:56 and then
+09:57 Force push it
+10:01 and now there is another thing I want to
+10:02 configure for this repository and I want
+10:04 to make it so that I can't even merge a
+10:06 commit unless it passes the CI system so
+10:09 I'm going to disallow pushing things
+10:10 directly to the main branch and I'm also
+10:13 going to make it so that pull request
+10:15 can't be merged until they pass the CI
+10:17 system so to do that I'm going to set up
+10:19 a branch rule
+10:23 and the name pattern is just going to be
+10:25 main because this is just for the main
+10:27 branch so I'm going to require a pull
+10:29 request before merging no approvals
+10:31 because I'm the only one working on this
+10:33 project and then require status checks
+10:35 before merging and also that the branch
+10:38 has to be up to date before merging and
+10:40 then not allow anyone to bypass the
+10:43 settings that is myself and then also
+10:45 add the action it has to pass
+10:49 so like that
+10:52 so let's now have a look if the action
+10:54 passed the second time it seems to be
+10:56 another error
+10:60 so it successfully set up the job
+11:02 initialize the container
+11:04 checked out the report story but then
+11:06 failed on building the project and
+11:08 that's because the path to the tool
+11:09 chain is incorrect because the home
+11:12 folder of the container is actually
+11:14 named Ubuntu and not the ab I'm going to
+11:17 fix this by making my make file a bit
+11:19 more General okay so before I update the
+11:21 make file let's now start following the
+11:23 new workflow that I want to be following
+11:25 throughout this video series so each
+11:27 change that I make I'm going to start by
+11:28 creating a new local branch so that's
+11:30 going to be git checkout Dash B and then
+11:33 the Brand's name now updating the make
+11:35 file
+11:36 and to make this make file a bit more
+11:38 General I'm instead going to let the
+11:40 tools path be passed as an environment
+11:42 variable tools there
+11:52 like this and running make now I have to
+11:55 pass the tools path explicitly that's
+11:58 going to be this
+11:60 and if I want to avoid writing this each
+12:02 time I could also specify this variable
+12:04 inside my batch profile but I'm not
+12:06 going to do that for now and adding this
+12:08 as a new commit
+12:14 foreign
+12:16 this to the correct Branch I can
+12:18 actually test to push this to the main
+12:20 branch now to show you that the branch
+12:22 will actually prohibits me from doing
+12:24 that
+12:30 and yes it works as expected this status
+12:32 check is enforced on the main branch so
+12:34 I have to push it to the correct branch
+12:38 and going back to GitHub I can create a
+12:41 new pull request
+12:43 like this
+12:45 and at this stage of the workflow once
+12:47 I've created a pull request this is
+12:49 usually where other programmers would
+12:51 review my code but of course I'm a sole
+12:53 developer in this project and no one
+12:54 else is going to review my code but I
+12:56 actually find it quite nice to go over
+12:58 my changes a second time within the pull
+13:01 request because sometimes I find that
+13:03 being in another coding environment or
+13:05 another code editor actually makes me
+13:07 find additional issues so I usually
+13:09 review my own pull requests even if that
+13:11 seems a bit silly so let's also have a
+13:13 look if it passed the CI system and it
+13:15 did not so let's have a look at Why
+13:17 didn't
+13:19 filter on make again and that's because
+13:21 the tools path is not actually specified
+13:23 and it's not because I haven't actually
+13:25 updated the workflow configuration file
+13:28 so let's do that
+13:35 so this is going to be the path to the
+13:37 tools directory inside the docker
+13:39 container like this and I don't need to
+13:42 specify the tillage path for the second
+13:44 command here since it's not actually
+13:46 using anything from the tools directory
+13:48 so this is enough and I'm just going to
+13:50 update this and run git commit command
+13:53 on the same commit
+13:55 and now I will push this or Force push
+13:58 this to the same tool request by issuing
+14:01 git push
+14:02 and force with list and what this option
+14:06 does is that it does the fourth push but
+14:08 it will prohibit me from pushing to a
+14:10 pull request that has been updated by
+14:11 someone else in general you should avoid
+14:13 Force pushing your commits but updating
+14:15 pull request is one case where I think
+14:17 Force pushing actually makes sense
+14:20 and finally the cr1 was successful so
+14:23 now I'm allowed to merge my pull request
+14:28 and just avoid the ugly merge commit
+14:30 message I'm going to choose this option
+14:33 instead rebellious and merge so with
+14:35 this option it's just going to add this
+14:37 commit to the top of the main branch
+14:42 another main branch includes the commit
+14:44 that I just made and I can be sure that
+14:46 the main branch actually builds and
+14:48 passes static analysis one thing I can
+14:51 note about this pipeline is that what
+14:53 takes time here is initializing the
+14:55 docker container so each time the action
+14:56 triggers it's actually fetching and
+14:59 setting up the container each time and
+15:01 that's a bit wasteful since the
+15:02 container is the same each time the job
+15:04 runs I think there are ways to improve
+15:06 on this by saving the container or
+15:08 caching the container so that it can be
+15:09 reused instead of having to be fetched
+15:11 this time but I haven't looked further
+15:13 into it and it's only taking 15 seconds
+15:15 and that's something I can live with
+15:16 this was all for this video now I have a
+15:18 CR system and workflame place that I
+15:21 will be using throughout the rest of
+15:22 this video series yes it's simple it
+15:25 just builds the project and runs static
+15:26 analysis on it and I probably see a
+15:28 system would have a much more rigorous
+15:30 testing and Analysis but one can also
+15:32 argue that the Cs system that I set up
+15:33 here simple as it is is actually
+15:35 overkill for a one-man project like this
+15:38 but so is many of the other things that
+15:41 I'm doing in this video series and
+15:42 that's because one of my aim with this
+15:44 series is to also give you a sense of
+15:46 some good professional practices and one
+15:48 last thing the end of this video also
+15:50 marks the end of the setup phase and in
+15:52 the next video it's time for me to
+15:54 finally start writing some code so see
+15:57 you in the next video

@@ -1,0 +1,354 @@
+00:00 in this video I'm going to decode the signal sent from this IR mode to my sunbot this signal follows the NEC
+00:06 protocol which is one of the most common infrared protocols used for transmitting signals between devices like remote
+00:12 controls and TVs and while muslimbot is meant to be fully autonomous having a way to control it remotely is going to
+00:19 be useful during development and regardless I must be able to decode the start signal to adhere to the
+00:24 competition rules the basic flow is that I press a button on the remote and it transmits an infrared signal the eye
+00:31 receiver on the PCB picks up the signal and toggles a pin connected to one of the gpios on the microtroller which
+00:38 forms a digital signal that can be decoded in software and since I haven't moved over to the robot yet in the
+00:44 meantime I will do this on the development board and confirm that it works by tracing the name of the button
+00:49 I currently press taking a closer look at the signal itself here I've connected the irsaver to the development board and
+00:55 hooked up my oscilloscope to inspect the signal by triggering on one of the flanks I can get still view of the
+01:01 signal when I press one of the buttons as I mentioned earlier the signal follows the NEC protocol which is well
+01:07 documented but basically it encodes a 32-bit message slash data frame using a
+01:12 series of pulses of different lengths and if the button is kept pressed a repeating code is sent at a given
+01:18 interval so overall a fairly simple signal now let's dive into decoding the
+01:23 signal by setting up the interrupt on the gpio connected to the I receiver and measuring the time between the edges
+01:29 using the timer peripheral of the microcontroller similar to some of my other videos I'm going to first
+01:34 implement the functionality in this video in a standalone project inside the IDE just to make this video a bit more
+01:41 isolated and Standalone in case you haven't watched all of the other videos in this video series and then when I
+01:48 have something that works I'm going to move the code over to the rest of the project code okay so first creating a
+01:55 new project inside code composer Studio and this is just going to be an empty
+02:00 project targeting my particular microcontroller and then targeting the GCC tool chain which is the same tool
+02:07 chain as I'm using in the main project and I'm just going to call this IR remote
+02:12 and it's going to be an empty project
+02:23 and the first thing I need to do here in in the main file is going to be to do
+02:29 some general initialization of the microcontroller so stopping the Watchdog
+02:34 and also configuring the clock speed of my controller
+02:44 and then I also need to enable interrupt since that's something I will be using in this driver that I'm going to write I
+02:50 also need to initialize or configure one of the iopins the IOP that's connected to the IR receiver which is the pin that
+02:58 I'm going to configure to trigger interrupts on the falling Edge
+03:05 and as you know if you have watched my previous videos in the main project code I have a bunch of i o related functions
+03:12 to make the audio configuring more clean but here I'm just going to do something
+03:18 temporary and the IR silver is connected to Port 2
+03:26 the first pin on Port 2 so 2.0 and I'm configuring this as a gpio input pin and
+03:33 with no pull up resistor since there is already a pull-up resistor integrated into the I receiver so I don't need to
+03:40 use the one inside the microcontroller and then I can just call this inside here and call MCU init the top of the
+03:46 main function and then I will list it up endless while loop here yeah it doesn't really matter
+03:53 as long as I don't return from this function okay so that's what I have to do in regards to the initialization of
+04:00 the mic controller and then I'm going to create two new files to hold the driver for the i o
+04:07 remote or the I receiver and that's just going to be an implementation file as well as a header file
+04:14 so I'm going to call that irmo.c
+04:20 and I remote dot h
+04:25 and beginning with the header file I can start defining the functions we need to have here so first of all I'm going to
+04:31 have a function uh for initializing this driver so I'm
+04:37 going to call that IR remote init and then I'm going to have a second function to get the most recent command
+04:44 that we have received and I'm going to call that iron mode get command and that is also not going to
+04:51 take any argument but it's actually going to return something it's going to return IR command dot e
+04:58 which is going to be an enum that I have to Define here as well and this email is just going to hold the
+05:05 values or the commands that this microcontroller can send so it's just a way for me to name the individual
+05:11 buttons on the eye remote so that's going to be zero so all of the buttons
+05:17 was here to nine followed by some of the special buttons so
+05:22 star hash and then the last values is going
+05:30 to be a value to represent an invalid key I mean if if we haven't received any
+05:36 command and we call this function it should return IR CMD none and later on
+05:42 I'm going to assign each of these values in this genome to disting the integer
+05:47 values that represents the exact command value that the IR mode sends but I'm not
+05:53 going to do that right now okay so that's it for the header file then I can jump into the implementation file
+06:01 and first of all include the header file and starting with the
+06:08 initialization function I remote init what I'm going to need to initialize in
+06:14 this driver is going to be to make sure that an interrupt Triggers on the IOP as
+06:20 well as configure the timer peripheral that I'm going to use to track the time between the individual pulses okay so
+06:27 I'm configuring interrupts the trigger on the falling edge of this ioping so the same pin as I set up here so pin 2.0
+06:37 and I'm shortly going to explain why I'm just configuring it to trigger on the falling Edge and not on the rising Edge
+06:45 and then I'm also going to have a function to initialize the timer peripheral
+06:52 the timer peripheral is a peripheral you can set up to trigger an interrupt after
+06:57 a given amount of clock Cycles and in my case I'm going to configure
+07:03 the timer to trigger and interrupt every millisecond since that's the granularity
+07:10 I need for this driver since the pulses that I'm tracking all of them like the
+07:15 time between all of them is going to be uh one millisecond or more and this means that I have to do some simple
+07:21 calculations here to convert from a millisecond to the number
+07:28 of clock Cycles taking into account how fast my my controller is running at which is 16 megahertz as well as any
+07:36 scaling that I add to the time I peripheral and you can configure the timer peripheral to take the its input
+07:43 clock cycle from different clock sources but I'm going to heavy take it from the subsystem main clock so that's going to
+07:50 be running at 16 megahertz as well and I'm going to set the prescaler to
+07:57 8 so that the timing peripheral takes the 16 megahertz input and then divides
+08:04 it down down to two megahertz so it's going to trigger its stick at a rate of
+08:09 2 megahertz and not 16 megahertz so first to Define for the divider or the prescaler and then I can calculate the
+08:16 ticks per millisecond by dividing the clock speed
+08:26 with the divider so eight
+08:32 and this division gives me the number of ticks per second and to get the number of ticks per millisecond I have to
+08:38 divide by a thousand and the reason I'm calling this I3 here well it should be
+08:44 called ID3 is because that's what they call it inside the header file provided
+08:50 by Texas Instruments so I can just write ID3 here so that's
+08:56 right here and it's the biggest divider dividing by eight
+09:03 and I won't interrupt the trigger each millisecond so that's what I'm going to write here
+09:09 and to get the number of ticks per interrupt
+09:14 I can just multiply ticks per Ms with
+09:19 the number of milliseconds so that's just going to be one and I can also add a static assert here
+09:26 to make sure that this is not bigger than it's allowed to be since to configure the number of ticks per
+09:33 interrupt you write to a register that is only 16 bit wide and this means that
+09:38 you can at most configure it to trigger at around 65 000 ticks at most since that's what the
+09:47 16-bit register can hold and this is also one of the limitations with the timing peripheral that you can't have it
+09:53 interrupt less often than the maximum number of ticks that this register can
+09:59 take so if you want something to happen less often than this register can handle you need to use a separate variable that
+10:06 you increment each time the interrupt triggers so for example if I want to have something happen after 20
+10:12 milliseconds I can configure the interrupt to trigger each millisecond and then for each interrupt I increment
+10:18 the variable and then when once I reach 20 in this case then I can do something
+10:24 so the static SRT is just going to be a standard check
+10:29 so it should be less than or equal to and then I can write to the registers
+10:34 related to the time peripheral to configure it as I want it to be configured
+10:39 and as always this peripheral related registers or described in detail inside
+10:45 the datasheet so writing this to this register is
+10:51 going to configure the timer to take this clock as the input source and
+10:58 ID3 to set the divider to 8 and then I have to write to this register to
+11:05 configure when or after how many ticks the interrupt should trigger
+11:11 so that's going to be the ticks that I calculated up here and finally I'm going
+11:18 to enable the interrupt so with this configuration in place the
+11:23 time I prefer is going to trigger and interrupt every millisecond but I also have to create two functions to start
+11:30 and stop the timer because after this configuration here the timer is not actually started
+11:36 and to start a timer I have to write to this register again and first I'm going to get the current value of
+11:43 this register but I'm going to clear the part of this register that are related
+11:49 to the MC bits so the bits that controls how the counter of the timer behaves and
+11:57 the way I want it to behave is to count up to the value that I have stored inside this CCR register so I'm going to
+12:04 be writing MC underscore one and the MC bits are used two bits so I'm going to
+12:10 create a separate mask or a variable to hold a mask that I can easily clear these bits
+12:19 can we find it up here it's gonna look like that
+12:25 and I can clear those by taking the inverse of this mask and I'm also going to write the a clear
+12:32 here and this is going to make sure that when I call timer start I'm also
+12:38 clearing the value of the current counter so for example if I if the timer started and then I stop the timer before
+12:46 it reaches the uh count when the interrupt occurs then
+12:52 this counter register is going to contain a value larger than zero and
+12:57 this just make sure that I clear the value of that register and similarly I'm going to have a function to stop the
+13:03 timer and here instead of writing MC1 I write
+13:10 mc0 since that's the way you stop the timer and I can also add a comment about
+13:15 these two to make it more obvious and next I'm going to add the interrupt function the function that's going to be
+13:22 called when the timer interrupt occurs so this is just going to be a function
+13:28 that I add the interrupt attribute to and in this function I'm going to have a
+13:35 variable I call timer Ms that I increment each time this interrupts
+13:40 triggers so that I can keep track of how many milliseconds that has passed since the timer was started and I'm also going
+13:46 to add a timeout here to make sure that the timer is stopped after a given amount of time in case there is no more
+13:52 commands coming in from the IR mode so if I stop pressing the buttons on the IR
+13:59 mode I don't want this timer to continuously be running because that's going to be wasting a current and it is
+14:06 going to be unnecessary so I'm going to have a sanity timeout here that's going to stop the timeout when
+14:13 the time Ms value goes above this timeout value so as long as it's below
+14:19 this timeout I'm going to be incrementing the timer but as soon as it goes above it I'm
+14:26 going to stop the timer I also need to reset some more stuff here but I'm going to do that later
+14:35 and I'm going to set this time out to 150 milliseconds because during normal
+14:41 transmission there is never going to be more than around 110 milliseconds between two pulses so setting it to 150
+14:49 is more than plenty in this case let's just check to see if this compiles Now does not
+14:55 yeah since we're not using some of these variables yet and I also need to Define this variable
+15:01 and I can make this 8-bit value since it's never going to go above
+15:07 150. I also need to include assert
+15:13 as well as STD int
+15:23 oh this shouldn't be void here
+15:28 we double underscore now it compiles now I have
+15:33 the initialization in place which means that I have set up the io pin connected
+15:39 to the I receiver to trigger on each falling Edge and I've set up the timer peripheral to
+15:45 trigger and interrupt on each millisecond and also create a function to store the timer and a function to
+15:50 stop the timer so the next thing I need to implement is going to be the function that's going to be called each time a
+15:57 falling Edge happens which is going to be the main function in this driver because that's the function that's going
+16:03 to be parsing the incoming signal so I'm going to add a new interrupt function here for Port 2.
+16:10 and first I'm going to check if the interrupt happened on the first pin of
+16:16 this port since that's the pin that I receive is connected to and once again I have all of this handling in place in
+16:23 the main project code so the way I write it here is just temporary and I will replace it with a proper code in the
+16:29 project when I move this implementation to the main project and I'm going to have this called
+16:35 another function called ISR pulls which is going to be the function that handles the decoding of the signal
+16:42 and then I also have to clear the interrupt
+16:49 and to understand what we need to do in this function we have to understand the protocol that that is used for this
+16:55 signal and as I mentioned before this protocol is called NEC
+17:00 and let's just have a look at one of the images here you can take this one for example
+17:12 the way each key press is going to be represented in this protocol is going to
+17:18 be that each transmission is going to start with the signal being held down for 9 milliseconds and then held pulled
+17:26 up for 4.5 milliseconds and these two represents the start of a transmission and then the following pulses is going
+17:34 to represent the address so that's going to be an 8-bit value followed by the inverse of the address
+17:41 which can be used to do some error shaking on the address value so these two are going to take up 16 bits in
+17:47 total and then this is going to be followed by the command which is the value that we're actually interested in
+17:53 this case since I'm not going to care about the address since that's going to be the same for this IO remote
+18:01 so I'm actually in my implementation I'm just going to discard the address
+18:07 and then this is followed by similar to the address it's followed by the inverse of the command which can be used to do
+18:12 some error checking okay so in total for HK press we're going to receive 32 bits
+18:18 and these individual bits are either going to be a one or a zero and whether
+18:23 it's a one or a cro is determined by the time between the edges or the pulses and
+18:29 initially the way I approach this implementation was to implement a state machine to keep track of where inside
+18:36 the transmission that I'm currently in which meant that I had a state to track
+18:42 when I was at the beginning of the transmission and then some other states to keep track of where I was in the rest
+18:48 of the transmission and I was setting up the interrupt to trigger on both the rising and the falling Edge and while
+18:55 this implementation worked it forced me to write quite a lot of code which made the implementation take up more flash
+19:02 space and also made the implementation a bit harder to follow but then I realized
+19:08 there was a simpler way to implement the coding of the signal because I don't really need to track the both the rising
+19:15 and the falling Edge or to keep track of exactly where in the transmission I am with a big state machine because what I
+19:22 can do instead is just to track the falling edges and the time between the falling edges so in my implementation
+19:28 now I'm just going to track the time between the falling edges and use that
+19:33 to decode the signal and this makes the implementation much simpler first I'm going to create the struct to represent
+19:39 the total 32-bit message so this track is going to contain the command the
+19:46 inverted command the address and the inverted address exactly as I just showed you in that image and I have to
+19:52 put these individual values in this order so that I can interpret this entire struct as a 32-bit integer that
+19:59 matches the byte ordering of the processor on my microcontroller and to represent this as a 32-bit integer I'm
+20:06 going to be putting this inside a union
+20:17 so with this Union I can either interpret this IR message as a 32-bit
+20:22 integer whereas the this decoded message with the individual 8-bit values
+20:28 and when I receive a pulse the first thing I'm going to do is to stop the timer
+20:35 and then I'm going to have a variable that tracks the number of pulses that
+20:40 has occurred so for when the interrupt occurs I'm going to increment the variable that holds the pulse count and
+20:47 I'm going to add it up here
+20:54 and looking at the signal again I can say that it's going to take one two and three pulses before I start
+21:03 receiving the individual bits of the message so
+21:09 I'm going to have an if statement here that's going to check if the pulse that I receive now is a pulse that represents
+21:17 a bit so I'm going to have a separate function to check that colon is bit pulse
+21:28 to record bit value
+21:36 and I'm going to make that in line since I'm going to only call that function here and making it in line will remove
+21:42 the extra function call Overhead I don't actually need to pass the
+21:48 pulsing this function since the pull the pulse count is already available globally inside this compilation unit
+21:55 but I'm going to do that anyway just for clarity and as I said the first bit
+22:02 value in in this message is going to start on polls three [Music]
+22:07 so it's going to be this so it's going to be this pulse right here
+22:17 and then there's going to be a falling Edge for each bit value and since there are 32 bit values the last pulse is
+22:27 going to be 34. because if we count from 3 to 34
+22:33 including three we get 32 pulses or 32
+22:39 falling edges and if it is a bit false I can determine whether it's a cro or a one by looking
+22:45 at the time between the previous pulse and the current pulse or the time between the falling edges
+22:51 so when it's a one the time is going to be longer and when it's a zero the time is going to be shorter first of all I'm
+22:58 going to make room for the next bit by Shifting The Raw value of the message so by Shifting the 32-bit integer and then
+23:06 I have measured this and you can also check this in the specification of the NEC protocol that the time between to
+23:13 the two pulses or the falling HS when it's a one it's going to be slightly
+23:19 larger than two milliseconds and if it's a CR it's going to be shorter than a 2 milliseconds and this means that I can
+23:24 just check the timer value here and if it's larger than 2 milliseconds I count it as one and if it's smaller I count it
+23:30 as a zero and so this is going to keep on triggering this until the entire message has been decoded until we have
+23:38 reached pulse 34. and once we average pulse 34 it means
+23:43 that we have received the entire message so we had filled the value of this struct here and the next thing
+23:50 we have to do then is to save the message that we have received so I'm going to have
+23:55 a function called is message pulse and I'm going to have a ring buffer that
+24:01 I can save the message to here the ring at first I'm just adding a comment for now is that inline blue is
+24:09 message pause
+24:16 so if it's pulse 34 it means that we have received the entire message
+24:21 I'm also going to add a to-do here to handle the case when we keep the button
+24:26 pressed because then it's going to keep on sending a repeating pulse at a given
+24:33 interval but first I just want to have the implementation in place for receiving a single message and after
+24:39 I've received the message I'm going to start the timer again and note when I start a timer here I'm going to clear
+24:45 the value of the timer so that the timer start basically
+24:51 restart the timer from the beginning and this way I restart the timer for each pulse which makes it possible for me to
+24:57 track the time between the individual pulses okay so next I'm going to add the code for the ring buffer that I implemented
+25:03 in an earlier video in the uart video and I'm not going to explain this implementation in this video so if you
+25:10 are interested in how I implemented the ring buffer you should go and check out my previous video
+25:33 I just copied in the code from my main project into these two files and then I
+25:38 can Define ring buffer in this file and I'm going to have this ring buffer be able to store up to 10 elements
+25:52 and then inside this function I can simply call ring buffer put buffer and
+25:59 then add the decoded 8-bit value the command value IR message dot decoded dot CMD
+26:10 like that and then I can also add a function to retrieve a command from this ring buffer
+26:22 and here I'm going to first check if there is any element inside the ring buffer and if there are I'm going to get the oldest element
+26:30 and then I can return the command and since I access the ring buffer
+26:38 inside this interact function as well as in this function to make the access to a drink buffer
+26:45 mutually exclusive I will disable the interrupts in this function while I
+26:50 retrieve the value from The Ring buffer in case I call this function at the same
+26:55 time as I receive an incoming pulse
+27:02 I can also handle the timeout here now so when a timeout occurs I want to stop
+27:07 the timer but I also want to clear the pulse count and clear the message
+27:17 so that the next pulse that happens is counted as a fresh transmission so let's build this now
+27:24 oh yeah hi gave this the wrong name they should recall ISR Port 2 and this should not be
+27:32 abstract it should be static now it builds so let's jump to the main
+27:38 file and call IR remote in it and I are promote get
+27:48 also include command and then I'm just going to
+27:54 connect the launch part and then I can set up the trigger and
+27:60 interrupt when we have received a complete command Sony dropped right here
+28:08 and now if I press the button I expect to get an interrupt
+28:15 so now I pressed button one and now I get the message that's just filled with zeros which means that something must be
+28:21 wrong because I know there's one issue in my code I noticed that the interrupt kept on triggering and that's because I
+28:27 don't properly clear the bit here this should be the inverted with zero so I need to tilde character here
+28:35 so let's rebuild this and see if that's fixes it yeah so now I get the decoded
+28:41 message so for when I pressed button one I will get the value
+28:46 162. and then I can just try to press another button for example two
+28:53 and then I get another value for the command and if I press for example up
+28:59 I get another value and so on and then I'm just going to fill this enum here with these values so that each you know
+29:06 value corresponds to the command value like this
+29:13 the next thing I want to do is to implement the handling for repeating messages because if I keep one of the
+29:19 buttons on this remote pressed the transmission is going to look something like this so first I'm going to get the
+29:26 entire message just as I have implemented now but then if I keep it pressed I'm just going to get this small
+29:33 Transmissions here representing the repeat code so they are going to come at an interval of 108 milliseconds so for
+29:42 each of these repeating codes there is going to be two falling edges and once I
+29:47 receive the second falling Edge for each each of these repeat codes I'm going to count that as another message but I'm
+29:53 not going to count the first repeat code as another message because the first repeat code used marks the start of
+29:60 repeating messages so after I've received the first message that is the first 34 pulses then I'm going to skip
+30:07 the next two pulses and then I'm going to check all of the pulses after that so this means that I'm going to pulses over
+30:15 pulse 36 so after pulse 36 I'm going to count every other pulse as another
+30:22 message so I can add a Define here that you checked if
+30:27 the pulse count is odd and I'm going to add another Define for
+30:33 that let's move this down all right this odd and the most
+30:40 efficient way to check if a number is order notes is to just check the last bit value of the number because if the
+30:47 last bit value is or this the if the list significant bit of a number is one
+30:53 that means it's odd and if it's zero it's even and this is just to avoid the modular operation which is more
+30:59 expensive than simply doing the and operation here with this addition in place I'm also going to count the
+31:06 repeating messages but as you can see now I'm not actually checking the time between the individual
+31:12 pulses I'm just making sure where I'm just checking the number of pulses I receive which means that this code is quite
+31:19 friendly when it comes to the timing of the individual pulses but I can make this more robust by adding another
+31:25 function that actually sanity checks the time between the different pulses just
+31:31 to make sure that I'm actually decoding the right signal
+31:40 foreign
+31:47 so let's say for example that I first received an initial message and then I received the start of the repeating
+31:54 messages so the first repeating code and then the next repeating code arrives much sooner than I expected to arrive
+32:01 that means that there is something wrong with the transmission or that I release
+32:07 the button here and press quickly press the button again to start a new transmission
+32:12 and with this new function in place I'm going to realize that I have got a new pulse when
+32:19 I don't expect to get it and then I can simply restart the transmission here instead and this just makes this code a
+32:26 bit more robust
+32:34 so if I get an invalid pulse or if I get the pulse when I don't expect to get a
+32:40 pulse I'm just going to assume that the new transmission has started so I'm going to set the pulse count to 1 and
+32:45 clear the message variable and note I'm just doing some rough sandwich check in this function because I'm just checking
+32:50 if the pulse has arrived within a given time and I'm not checking like if the time the pulse arrive is larger than a
+32:59 given value and smaller than a given value I just check if it's smaller than a given value and I roughly know when
+33:04 the pulses arrives because I've checked the value of the timer for each pulse by
+33:10 putting a breakpoint for each pulse value and let's see if this builds now
+33:16 it does not of course oh yeah I should pass timer I'm just here as well so now
+33:21 that is isolated implementation is done I'm going to move this code to my main project instead
+33:54 so in my main project code I use my audio functions to configure the
+33:59 interrupt for this pin so I just passed the interrupt handle function to this function and then I can also add
+34:07 a test function for this
+34:15 and I'm actually going to trace the command value in this test function so I'm going to initialize Trace in it
+34:22 as well as IR remote in it and then this weight for let's say 250
+34:31 milliseconds and I'm going to create another function
+34:37 to translate the value of the command to a string
+34:45 and make sure that I also include iron mode
+35:05 so we just one big switch statement and then return a string for each test
+35:12 and build
+35:19 should be common
+35:24 and I also need to include IO
+35:31 and yeah and for the launch pad I need to
+35:39 replace this with IR remote
+36:17 oh I have to remove void here as well
+36:23 let's call this gets command
+36:28 so let's test this function now
+36:42 so when I press the buttons now so for example if I press one
+36:49 it seems to kind of work but well it doesn't seem to work perfectly
+36:56 because I'm getting a bunch of unknowns as well so let me debug this okay so I noticed
+37:02 one mistake I made here this should be and and not over
+37:11 let's just clean and try to build this
+37:20 so now if I press button one I get one two three four five
+37:36 so all button seems to be working and if I for example keep the button up pressed
+37:47 yeah so the repeating code seems to work as well
+37:52 good
+37:58 okay so now that this code works as part of my main project it's time to commit it but before I do I want to fix one
+38:05 issue that one of you pointed out in my previous video which is related to the
+38:11 uart driver because in the put character function
+38:17 here I got the carriage return and line filled mixed up that should be the other way around
+38:24 so I'm just going to move this up here
+38:37 and I have this handling here because there are some terminals that requires this I think it's primarily terminals in
+38:44 Windows and I'm going to do the same for the
+38:50 polling function
+39:01 okay let's build this again to make sure that works
+39:12 yeah and it still works so then I can go ahead and Commit This so first create a new local branch
+39:25 and format static analysis
+39:32 so finally I get some complaints when running CPP check and that's because I have a bunch of
+39:38 values inside the decoded strike that are not used
+39:45 and that's true because I don't because I'm just using the command value
+39:57 and I can suppress those warnings by just adding a comment about the values
+40:03 so like this and after that I can go ahead and
+40:08 add the changes so I'm going to add all changes except for the viewer file
+40:13 because I'm going to put that in a separate commit
+40:42 or I should also write a comment on top of the header file as I usually do
+40:60 and then I can add the fix in the uart driver to a separate commit
+41:14 I should also run the build script
+41:20 now I can push the changes and then head over to GitHub to open a
+41:26 pull request and make sure that the CI pass
+41:33 and it passed so I can go ahead and merge the pull request
+41:38 okay so now I have a way to send command from this IR mode I'm mostly going to use this when I start controlling the
+41:44 motors and have to test the different Drive commands but this was all for this video so see
+41:50 you in the next one

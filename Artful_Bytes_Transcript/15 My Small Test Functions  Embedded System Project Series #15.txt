@@ -1,0 +1,281 @@
+00:00 hello and welcome back to this video
+00:02 series where I'm programming this robot
+00:04 from scratch
+00:06 in this video I'm going to improve on
+00:08 the handling of my test functions the
+00:11 functions that I add throughout the
+00:13 development of this project to test
+00:15 isolated parts of the code for example
+00:17 so far I've added two functions to test
+00:20 the ipins as input and output as well as
+00:23 a function to test a sort Handler which
+00:25 I added in the last video These
+00:27 functions are not prop unitest and I've
+00:29 decided to not write any unit tests in
+00:31 this project but I still like to have a
+00:35 way to write these kinds of scratch
+00:37 functions during development but the way
+00:40 I've handed this function so far have
+00:42 not been very nice because right now I
+00:44 add them straight to my main file and
+00:46 when I want to run a particular test
+00:49 function I have to handle the file by
+00:51 commenting out the function I want to
+00:53 run and comment the rest of functions
+00:55 that I'm not running which means I have
+00:57 to keep on editing the main file each
+00:59 time I want to run another test
+01:01 and in this video I want to improve on
+01:04 this by moving the test functions to a
+01:06 separate file and also make it so that I
+01:08 can pass the name of the test function
+01:10 as an argument to my build command
+01:12 instead so as an argument to make and
+01:15 I'm also going to add an additional step
+01:17 to my CS system to make sure that I
+01:19 might see a system builds all of these
+01:21 test functions each time it runs so
+01:23 let's get into the code as always I
+01:25 begin by creating a new local ligit
+01:27 branch
+01:28 and then I'm just going to move the
+01:30 functions from the main file to the test
+01:34 file test.c under Source slash test and
+01:38 also clean up what's inside my main
+01:40 function here
+01:41 and add an assort at the end
+01:46 then I can just go ahead and remove the
+01:48 to-do's above all of this function and
+01:50 make sure that all of the functions are
+01:51 uncommitted
+01:54 and then I'm actually going to add
+01:55 another main function inside this test
+01:57 file because while I build the tests I'm
+02:00 going to use this test file as my main
+02:03 file and exclude my normal main.c file
+02:06 and then when I do a normal build I will
+02:08 be using the regular main file and
+02:10 exclude this test file and I'm going to
+02:12 select between these two files inside my
+02:14 milk file and then inside this main
+02:17 function I will use a Define that takes
+02:19 the name of the test function so this
+02:22 defined here called test all uppercase
+02:25 will be replaced by the name of the
+02:27 function and I'm going to set this
+02:28 defined by passing a Define argument to
+02:31 my compiler
+02:32 and then I will list have an assert here
+02:34 after this function has been called
+02:35 yesterday I don't exit out of the main
+02:37 function not that it really matters but
+02:40 it is going to be more visible that the
+02:41 test has finished if I have an assert
+02:43 here and then I'm just going to remove
+02:45 the test.h file here that I added in a
+02:48 previous commit because I'm just going
+02:50 to need the C file then I can go into
+02:52 the make file and similar to how I added
+02:54 the hardware argument I can now add the
+02:57 test argument so first I check if the
+02:60 test argument has been passed by
+03:02 checking if the test variable is not
+03:04 empty and then I'm going to have an
+03:06 additional check here to make sure that
+03:09 what's passed inside the test variable
+03:11 actually begins with the prefix test
+03:14 underscore since all of the test
+03:16 function is going to be prefixed with
+03:18 the test underscore and if it's not I
+03:20 will just post an error here because
+03:22 then I have made a typo so just an extra
+03:25 shake to make it more user friendly and
+03:27 with what I passed that begins with the
+03:29 test underscore I'm going to assume that
+03:31 it's a test function and set the
+03:33 variable Target name
+03:34 I'm also making another change here
+03:36 because right now depending on which
+03:38 Target I'm building for I'm going to end
+03:39 up with a different binary named
+03:41 according to the hardware Target so if I
+03:44 built for the Launchpad it's going to
+03:45 end up under build slash launch pad and
+03:48 if I build for into the mode the robot
+03:50 is going to end up under build slash on
+03:52 Sumo and if I build a test I want to
+03:55 name the binary according to the test
+03:57 function name instead so I'm going to
+03:59 introduce another variable for the
+04:01 hardware Target called Target underscore
+04:03 HW
+04:05 and yes as before I'm going to set the
+04:07 target name to Target Hardware
+04:09 but if I've also passed a test argument
+04:12 I'm going to overwrite the Target name
+04:14 with the test function name instead
+04:16 and then for my final Target variable I
+04:19 changed this to be buildier slash bin
+04:23 slash Target Hardware slash Target name
+04:26 which means that under the build
+04:28 director I'm going to end up with a
+04:30 subdirectory called bin and inside bin I
+04:32 would have two subdirectories one for
+04:34 each harder Target and then under these
+04:36 two subdirectories I will have the name
+04:37 of the final binaries which is going to
+04:39 be the name of the test functions and
+04:41 then just as before the name of the
+04:43 hardware for the normal build and as I
+04:46 said before I'm adding a well here to
+04:47 switch between the two different main
+04:50 functions that I have now so the main
+04:51 function is side test.c and the main
+04:54 function inside the normal main.c so if
+04:57 I pass a test function or want to build
+04:59 a test function I'm going to build using
+05:01 the test.c file and if it's a normal
+05:03 Bill I'm going to build with a normal
+05:05 main.c file and then under the defines I
+05:08 add another variable for the test Define
+05:10 and I add this in the same way as the
+05:12 hardware defined
+05:15 and then a test to see that it works by
+05:18 passing one of the test functions uh
+05:20 test blink LED
+05:25 but here you get a compiler because I
+05:27 don't actually pass the test Define in
+05:29 the right way
+05:33 I actually have to write it like this
+05:35 because I am setting the defined value
+05:39 and I'm not just simply defining it as I
+05:42 do for the hardware defined so that was
+05:44 all the first issue but I'm still
+05:46 getting compiled warnings or compilers
+05:48 here because it sees that I have a bunch
+05:51 of functions that are defined but not
+05:53 used and that's true because I'm used
+05:54 building and running one of these
+05:56 functions At A Time To Get Away With
+05:58 These Warnings I need a way to Mark
+06:01 these particular functions as unused
+06:03 similar to how I Mark variables as
+06:06 unused so what I'm going to do here is
+06:08 add another Define so that I can Mark
+06:10 specific functions as unused because I
+06:12 don't want to turn off this compiler in
+06:14 general because normally I shouldn't
+06:16 have any unused functions inside my code
+06:19 so I add another Define called suppress
+06:22 unused and use a preprocessor directive
+06:25 for the GCC compiler to Mark functions
+06:27 as unused
+06:31 and then I can just put this above all
+06:33 of the functions that I want to suppress
+06:35 this warning for essentially all of the
+06:37 functions inside test.c
+06:42 and if I build this again it works
+06:44 and then I can try to build another
+06:46 function
+06:54 and as you can see the different test
+06:55 functions end up as separate binaries
+06:58 inside my build directory and I can also
+06:60 try to pass a function that doesn't
+07:01 begin with test underscore and see that
+07:03 I get the error
+07:05 but now I actually notice an issue here
+07:07 I can build a function that doesn't
+07:08 exist and that's because I'm just
+07:10 changing the argument to make when
+07:12 building another test function which
+07:14 means that make is just going to use the
+07:17 already built object files and not going
+07:19 to rebuild test the dot C which would
+07:21 cause the compiler so it actually just
+07:23 keeps on rebuilding the same test as a
+07:26 build the first time regardless of which
+07:28 tests I pass to it and I didn't come up
+07:31 with a nice way to solve this so instead
+07:33 I solve it in a more abusive Way by
+07:36 removing the test object file each time
+07:38 I run milk
+07:44 so now it's time I build a test it's
+07:46 going to rebuild test.c so I will get a
+07:48 compiler if I pass a test function that
+07:50 doesn't exist
+07:54 then I can go over to my GitHub
+07:55 configuration file to add another step
+07:58 to my CI system that builds all of the
+08:01 test functions but I don't want to add a
+08:03 separate line for each test function so
+08:05 what I'm going to do instead is add a
+08:07 script that builds all of the test
+08:08 functions that I can call from here
+08:10 instead so I'm adding this script under
+08:12 Tools and I'm calling it build
+08:14 underscore tests a regular bash script
+08:17 and inside this batch script I'm first
+08:19 going to run cat where I'm going to read
+08:21 test.c and then I'm going to grip and
+08:24 use regex to extract the name of the all
+08:28 of the test functions so inside the
+08:30 regular expression here I'm first
+08:32 matching the beginning of the function
+08:34 it's always going to begin by void space
+08:37 and then test underscore and then I
+08:40 extract the functions all the way until
+08:42 I see a parenthesis so I'm matching
+08:45 against this part and just extracting
+08:47 the function name like this and then
+08:50 inside the batch script I can just have
+08:51 a for Loop that Loops over all of the
+08:53 functioning times
+08:57 first I have a variable to hold the
+08:59 location of the script so that I can run
+09:01 this script from anywhere
+09:04 and then I put the output from the regex
+09:06 command into a separate variable called
+09:08 test functions
+09:12 and then I Loop over the output of this
+09:14 command in a for Loop and build each
+09:16 test for both targets
+09:20 and I also have to make the script
+09:22 executable
+09:24 and then I run the script but it doesn't
+09:26 work because I made a typo but if I fix
+09:29 this typo it builds all of the test
+09:30 functions
+09:31 and I can say let's build all of them by
+09:33 looking inside my build directory and
+09:36 all of these tests have different sizes
+09:38 which means they are different
+09:41 and then I can just go ahead and call
+09:42 this script from my CI system
+09:53 at this point I was done with my code
+09:54 changes so I format the code run static
+09:57 analysis add the files to git
+10:01 and create the commit
+10:16 then I push it to GitHub
+10:19 and open up a request and wait for the
+10:21 CI to run
+10:23 but see I failed because I accidentally
+10:25 included milk inside my command here so
+10:27 I have to remove make and then I just
+10:30 amend my existing commit
+10:33 and force push it to the same pull
+10:35 request
+10:46 this time see I passed and I can go in
+10:49 and check the logs to see that it
+10:51 actually built all of the tests and it
+10:53 looks like it did
+10:55 so then I merged my pull request
+10:60 okay so now I have a good way or well I
+11:02 have a way to handle this test functions
+11:05 or scratch functions uh I'm not entirely
+11:09 satisfied with what I ended up with here
+11:11 but I think it's going to get the job
+11:14 done for this project but what I've done
+11:16 here you shouldn't see as any best or
+11:19 good practices it's just a way of doing
+11:22 things
+11:23 so see you in the next video

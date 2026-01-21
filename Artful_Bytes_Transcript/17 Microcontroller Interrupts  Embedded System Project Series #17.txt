@@ -1,0 +1,495 @@
+00:00 in this video I will talk about interrupts because on this robot
+00:06 the robot that I'm programming in this video series I have a few cases where I'm going to be relying on interrupts
+00:13 and also this video series wouldn't be much of a video series about embedded
+00:18 systems unless I at least said something about interrupts because interrupts is
+00:23 such a fundamental mechanism when it comes to or when you work on low level
+00:30 Hardware on a microcontroller for example more specifically in this video
+00:35 I will first of all I'm going to talk about
+00:42 why we need interrupts and how they work I will try to keep my explanation pretty
+00:49 brief because there are already so many other resources on the internet explaining how interrupts work so I
+00:55 don't feel the need to go into it in depth in this video instead I want to more focus on showing
+01:02 some code examples and also implementing some better handling for interrupts in my in this project that I'm covering in
+01:10 this video series so after I explained why we need interrupts and how they work I want to
+01:16 show a code example so first I'm just going to show an isolated code example and I'm actually
+01:24 going to have a shot GPT generate this code example because I want to show how
+01:30 surprisingly well shot GPT is at generating examples even in this context
+01:36 of embedded systems for this specific microcontroller and once that code
+01:42 example works I'm going to move on to my actual project code and in my project
+01:48 code I'm going to add a couple of functions to make it easier to register new interrupts to my gpio pins because
+01:55 normally when you add an interrupt you will have to write to the registers of the microcontroller directly which is a
+02:02 bit cumbersome and as I did in the video where I show you how I program JPI pins
+02:07 if you haven't watched that go check it out I like to write some C code or an abstraction layer that makes it is more
+02:14 pleasant for me as a programmer to work with the ioping so I'm going to do something similar are for registering
+02:20 interrupts and finally I will take the opportunity to also increase the clock speed of my microcontroller in this
+02:27 video because currently the clock speed is running at one megahertz and I want
+02:34 to increase it to 16 megahertz which is the maximum for this my controller not
+02:40 because I really need to do it since 1 megahertz is enough for the application or for this project because the clock
+02:47 speed is not a limiting factor when it comes to the code that I'm will be running on this robot bottom is doing
+02:55 mostly because I can and if I'm going to change it it's better if I change it now before I start working on the rest of
+03:02 the drivers because some of the peripherals depend on the main main
+03:07 clock because they derive their own clock from the main clock so for example I Square C and the timer peripheral okay
+03:13 so let's now talk a bit about why we need interrupts and how they work to
+03:18 understand interrupt I think it's best to First Imagine a world without
+03:24 interrupts which is arguably a world not worth living in this world we will have
+03:29 our Mac controller and the processor on the smart controller is going to be executing its instructions one after the
+03:36 other so it's going to have a bunch of instructions inside its flash memory which it's going to be executing one
+03:42 after the other so the PC is going to be pointing to one of the instructions and
+03:47 then it's going to execute the next one and the next one and the next one it's executing the instructions that we have
+03:54 told it execute by writing our CD code and compiling the silicode into
+03:59 Machining code and then flashing it onto the flash memory of this magnet roller if you want to know more about how the
+04:05 memory or from Microsoft Works you should check out my previous video where I go into depth about that and having
+04:11 the mic controller execute instructions exactly as we have told little is going to work well as long as the mic
+04:18 controller doesn't have to react to any kind of events or anything happening inside its environment in other words
+04:25 it's going to work perfectly well as long as the mic controller is in an environment that is perfectly
+04:31 deterministic and that we can when we write our code already predict when everything is going to happen but of
+04:38 course in practice this is normally never going to be the case because for the my controller to be useful in most
+04:44 cases it's going to have to react to events that we can't fully predict when we are writing our code so for example
+04:51 let's say we have our my controller and maybe it's connected to a button and
+04:59 when the user presses this button we want the mic controller to react to this button press and to do something so
+05:06 maybe the microcontroller is also connected to a display and maybe this display is showing some kind of
+05:12 graphical user interface and when the user presses the button we need use of
+05:17 interface to be updated so maybe the button press causes another menu item to
+05:23 be selected and since we don't know when the user is going to press the button we can't just write a predetermined program
+05:29 that is going to upgrade the user interface after a given amount of time because maybe the user presses the
+05:36 button after 10 seconds or 12 seconds or
+05:42 333 milliseconds or whatever we can't know and as such for this to
+05:49 work we need the mic controller to have some sort sort of mechanism to detect
+05:55 when the price happens and then to react to it and if we stay in the world without interrupt for a little longer
+06:01 the way we can solve this is by having the CPU periodically check if a button
+06:06 press has happened so let's say that the pins on the mic controller is connected to some sort of Hardware block so I'm
+06:13 just going to redraw this here and this Hardware block handles the where this
+06:18 Hardware block detects when the logic level or the voltage level of the iopane changes and when it does it's going to
+06:27 write to some sort of register so for example let's say that when the button
+06:32 is pressed the voltage level of the first pin changes and then this Hardware block here writes to the register and
+06:39 that's the first bit of this register to one and the CPU can then access this register to figure out whether the
+06:46 button has been pressed or not this means that we can have the CPU figure out if a button press has happened but
+06:52 by inserting an instruction that reads this register here so
+06:58 read register and then we can have an if statement to check whether this the
+07:04 first bit in this register is set to 1 and if it is we know that the button has been pressed and then we can
+07:10 react accordingly to in this case update the menu on our user interface so for
+07:16 this to work when the CPU or the market control is executing we would have to check this register periodically so we
+07:23 will have our my controller executing its normal program and then periodically from time to time we will have it check
+07:29 this register to see if a button press has happened and this approach where we detect if an
+07:35 external event has happened by periodically checking for a condition to be met is what we refer to as polling
+07:43 and while polling can be a viable solution to this problem in certain
+07:48 cases for link does come with some obvious disadvantages first of all since the CPU is going to
+07:56 periodically shake the register to notice if something has happened it's going to have to spend the extra CPU
+08:03 Cycles doing that and as long as nothing has happened it's essentially is going to be wasting those CPU cycles and
+08:10 ideally we want our microcontroller to always be bending its CPU Cycles on
+08:15 doing useful work and secondly the time it takes for the my controller to react
+08:21 to the external event is going is entirely going to depend on how often we
+08:26 check the register that is the latency is going to vary depending on how often
+08:31 we check the register and where we want a very low latency we will have to check
+08:36 the register more often but that also means that we're going to be wasting more CPU Cycles the third big
+08:42 disadvantage with the pulling is that it entirely relies on the microcontroller being up and running and this means that
+08:49 the mic controller can't be in a low power mode where we clock down mic
+08:54 controller or simply turn it off or put it inside the standby mode which is
+08:59 often common is that is in battery powered devices when most of the time
+09:04 the device is going to be in some sort of standby mode and it's only going to be waking up when we press a button or
+09:12 it needs to collect some data or whatever it's doing and if we are going to be reacting to events by through the
+09:19 means of polling that means the mic controller has to be up and running all the time and that's going to consume
+09:24 current I'm going to reduce the battery life of these devices so these are some of the disadvantages with polling you
+09:30 can probably come up with more disadvantages but it's safe to say that polling is not a very good approach to
+09:36 solving the problem of having the mic controller or the CPU be reacting to external events and this is where
+09:42 interrupts come in to make the handling of these events more efficient
+09:48 and at a high level an interrupt is basically a signal sent to the CPU that
+09:53 tells the CPU that something just happened and when the CPU receives this signal it's going to stop what it's currently
+10:01 doing that is it's going to stop executing its normal program
+10:06 to jump into its handling for the event that just happened
+10:13 and when it's done handling the event that just happened it's going to go back and continue executing where it was
+10:19 interrupted so from the program point of view it's going to be like nothing happened the only difference is
+10:24 basically that there is going to be an additional delay between two instructions of the main program of
+10:30 course this is a very simplified explanation of what an interrupt is so if we take a closer look at how this is
+10:36 actually implemented first of all interrupts are mostly implemented in hardware and this means that the exact
+10:42 implementation is going to vary between processors and microcontrollers and so on but in general how it's going to be
+10:49 implemented is that the CPU is going to have some Hardware lines connected to it
+10:54 so called interrupt lines and usually there's going to be some dedicated
+10:60 circuitry or dedicated Hardware block for handling link drops and this
+11:05 Hardware block is usually referred to as the interrupt controller and this interrupt controller is in turn
+11:11 connected to all of the other forward blocks that may cause an interrupt so
+11:17 for example we may have a uart peripheral which may cause an interrupt
+11:22 for example if it has received a byte or if it for example has finished sending a
+11:28 bite and similarly I Square C may have an interrupt to notify when its transmission is down and then we may
+11:34 also have an interrupt coming from the io ports and this interrupt controller is usually going to have some registers
+11:40 associated with it so it may for example have a register for enabling and disabling interrupts which we sometimes
+11:48 call masking and interrupt and you will see later in the code example that I'm going to show that we have to explicitly
+11:54 enable the interrupt for the event coming from one of the peripherals to actually trigger an interrupt so if we
+12:01 continue with the example that I showed before with the button press we can take a look at what steps are taken from when
+12:07 the button is pressed until the interrupt has been handled so let's say that the button is connected to this
+12:12 port one here so when this button is pressed it's going to assert the line connected to the interrupt controller and if this
+12:19 specific interrupt has been enabled the interrupt controller is going to forward this interrupt to the CPU by assorting a
+12:27 line connected to the CPU and when the CPU notices an interrupt
+12:32 it's going to finish executing its current instruction
+12:38 and then it's going to save the state of the program
+12:50 and by Saving State I mean that the CPU has a bunch of register that it uses to
+12:55 keep track of the current state of the program so it has a register for keeping track of the
+13:01 current program counter which is a register that points to the current instruction the CPU is executing and it
+13:09 also has a radius term to keep track of the stack pointer which is the register that points to the top of the stack and
+13:16 then it's going to have some status registers and some general registers and
+13:22 when It prepares for handling and interrupt it's going to save some of these ready Stars exactly which register
+13:28 it's going to save is going to depend on the CPU but in general it's going to have to save the program counter the
+13:35 stack pointer and some status register and maybe some general registers as well
+13:40 but for this example let's just assume that it saves the only saves the PC ASP and the status register and it's going
+13:47 to save these registers to the stack so let's just SketchUp a memory map here to
+13:53 make it easier to understand
+14:02 and saving the state is going to be done in Hardware so this fifth step here some of that may actually be done in parallel
+14:09 to the fourth step so it's done in parallel as the CPU finish executing its
+14:14 current instruction and then when it has saved its state it's going to retrieve the address to the function that is
+14:20 dedicated for handling the particular event that has just happened
+14:26 and this function is usually referred to as ISR the interrupt service routine and
+14:32 this is a function that we programmers have to explicitly Define inside the code which I'm going to show you in the
+14:38 code example later on the ISR function is going to be located somewhere inside the program memory and as with any other
+14:45 function it's going to have an address but but also as with any other function it's called it's not going to have a
+14:51 fixed address it's that address can end up anywhere in our program code and this means that the CPU must be a bit
+14:58 flexible in how it retrieves this address to the ISR function and the way that's usually implemented is that there
+15:04 is going to be a dedicated table that's towards the address to all of the interrupt functions and we call this
+15:10 table the interrupt Vector table and every type of interrupt is going to have a dedicated location inside this table
+15:17 so for example your art is going to have a location dedicated for it I squirt C
+15:23 is going to have a dedicated location for it and port
+15:28 2 and so on one of this location is also going to be dedicated for the ISR that
+15:34 we are looking at in this example so in this example if we assume that ISO has the address one two three four
+15:42 this address will be stored inside this table here and it's going to be the
+15:48 compiler or the Linker that's going to take care of making sure that this ISR or the address to this eyesore ends up
+15:55 at this location inside the memory because this entire table is going to be part of the flash memory and you'll see
+16:02 that in the code example that I'm going to show in order to make sure that ISR or the address of the ISR ends up in
+16:08 this table you have to explicitly Mark the function to tell the compiler that this function is going to be used for
+16:15 handling the interrupt coming from a port one okay so there is going to be a table that contains the address to this
+16:21 ISR and this table were the addresses to the individual elements in this table
+16:28 are going to be fixed so the address is here let's just assume for
+16:33 simplicity's sake that they start at zero zero one and counts up from there
+16:42 so for example the address to the memory location that contains the
+16:47 address to this ISR is let's say that store that address three
+16:53 this address 3 is going to be fixed and when the interrupt controller handles one of these specific interrupts here
+16:59 besides just asserting the line to the CPU it's also going to make sure that there is a register that gets filled
+17:07 with the address to this memory location here or usually it's going to be the offset from the start address of the interrupt
+17:13 Vector table
+17:20 so okay so the CPU is going to read this offset register and it's going to add it to the starter address of the interrupt
+17:26 table and that's going to give this address
+17:31 and then it's going to take the value from this address which is in this example one two three four
+17:38 the address to this interrupt service routine and it's going to load the program counter with this address
+17:48 and when it has done that the program counter is pointing to the first instruction of the interrupt service
+17:55 routine which means that it has started executing the interrupt service within and the first thing that happens when
+18:02 the interrupt service routine is executing is that there may be some additional instruction that the compiler
+18:07 adds for us here to save some additional registers that are used inside the interrupt service routine and exactly
+18:13 which registers it saves here is going to depend on what interrupt function is doing that is if it's keeping track of a
+18:20 lot of local variables it's going to be using more CPU registers I'm going to have to save more registers and if it's
+18:26 a very simple interrupt service routine it may not save any additional registers at all but the saving of this Edition
+18:32 already starts is going to be completely invisible to the programmer because that's taking care of the C compiler but
+18:39 if you for example for some reason Implement your interrupt services in assembly then you need to make sure that
+18:44 you save the registers that you make use of inside your interoper routine and then once this registers are saved it
+18:52 executes the code inside the interrupt service return and then once it reaches
+18:57 the end of the interrupt service routine it's going to restore the state and that means that first the additional
+19:02 registers saved by the iisor are going to be restored and then any status registers PC counter and
+19:10 stack pointer are going to be restored
+19:19 and then once that's restored it's going to continue executing where it was interrupted
+19:31 and one thing to note here is that all of the steps between two until seven is
+19:37 done entirely in hardware and step 8 to 11 is done in software that means that
+19:45 from Step 2 to 7 when the CPU is preparing for executing the interrupt under
+19:51 it doesn't actually spend any CPU Cycles doing it because that's done by Hardware
+19:57 in parallel note the flow I'm explaining here is a very rough explanation of what
+20:02 happens because exactly how this is implemented and the exact flow is going
+20:08 to be very implementation specific so it's going to depend on the particular CPU and my controller and so on and
+20:15 there is also going to be more complexity to consider on a modern CPU because you are going to have to
+20:21 consider like the priority between interrupts when multiple interrupts happen at the same time
+20:27 and a lot of other details that I don't want to get into here but this is broadly what happens when an interrupt
+20:33 occurs so if you shortly compare interrupts to the polling that I showed before there are some obvious advantages
+20:40 first of all since interrupt doesn't require the CPU to periodically execute
+20:45 extra instructions to notice if an event has occurred it doesn't waste any CPU
+20:50 Cycles it's also going to react to the event quickly so the interrupt latency
+20:55 is going to below and it's also possible for the CPU to be in a low power mode where it's not executing any
+21:01 instructions and then to just wake up when an interrupt occurs so it improves on all of the problems that I mentioned
+21:07 about Paul link before so given all of these advantages with interrupts we should also ask ourselves if there are
+21:13 any disadvantages with them and I think the biggest disadvantage with interrupts is the complexity they introduced I mean
+21:19 having all of these events that may get handled at any point in our program execution
+21:25 can easily end up introducing a lot of unexpected behavior in our code
+21:31 and it can sometimes be hard to debug why something happens because we can't step through our code as we usually do
+21:38 when interrupts the car so let's now see if I can use chat GPT to give me a
+21:43 simple example that enables the interrupt on the first pin of this mic
+21:51 controller
+22:03 so now it has given me a code example here that I'm going to paste into my IDE and it has also explained exactly what
+22:10 this code is doing pretty awesome essentially what it's doing is first
+22:16 it's disabling the Watchdog timer and then it's enables interrupt on the first pin of Port 1 and it sets the PIN to
+22:24 interrupt on the falling Edge so when the pin goes from high to low and then it clears the interrupt flag
+22:31 just in case and finally it enables Global interrupts so as you can see here to enable the interrupt for a pin it's
+22:40 not only enough to enable the interrupt for the this specific pin you also have
+22:45 to enable interrupts globally for interrupts to even work at all and then we have our interrupt Handler up here
+22:52 and it's marked specifically as an interrupt Handler for the port 1 vector and this
+22:59 means that it's going to end up inside what the address to this function is going to end up inside the table the
+23:05 intrap vector table as I explained before okay now I'm just going to add some additional code here so it's easier
+23:10 to see that it works when I run it on my microcontroller I've only added a simple
+23:16 variable that I increment inside the interrupt Handler and then I keep on looping inside the main function until
+23:23 the count reaches 100 and I'm working this as volatile here and here it's
+23:29 really important to mark it as volatile since it's changed inside the interrupt function otherwise the
+23:36 compiler may think that it can just optimize this account variable away because it's not changed inside the
+23:43 context of this function then it's going to plug in my LaunchPad
+23:52 and run this sometimes it doesn't work on the first try for some reason
+24:13 and then I can put a breakpoint inside the interrupt function and run the code
+24:20 so when I'm not doing anything the interrupt shouldn't trigger but if I connect the jumper wire between
+24:27 positive like in this case 3.3 voltage and connect it to the first pins well
+24:34 you probably don't want to connect it like this because there is no resistance in between but I'm going to do this
+24:39 anyway now so when I connect it it Go the pin goes
+24:46 high and then when I disconnect it it goes low again and since it it set ups the trigger on the falling
+24:51 Edge it's going to trigger when I disconnect the jumper wire again and as you can see it has triggered now
+24:58 oh and yes it's going to keep on triggering here because on the micro on
+25:03 the msp430 you have to actually explicitly clear the interrupt after you're done inside the ISR
+25:10 otherwise the the interrupt flag is going to remain active and keep on triggering the interrupt so at the end
+25:16 nothing dropped I actually have to clear the interrupt for this to work you can run this again
+25:24 so if I connect the first pin pull it tight [Music]
+25:31 now it triggered immediately here since when I connect the line it may like the voltage may wiggle a little and that may
+25:38 cause an interrupt even though I haven't actually disconnected the wire yet but
+25:44 if I resume it no longer keeps on triggering the interrupt but if I disconnected it now it should trigger
+25:49 the interrupt and it does and then I can have a look inside the memory browser to see
+25:56 where the like to see the memory location of the interrupt Vector table and I don't remember where the address
+26:04 to this table starts so I but since I have chat TPT here I can just ask shut
+26:10 up so the interrupt Vector table starts at
+26:17 the address FFC 0 and chat GPT is also giving me a lot of additional information here
+26:24 but if I search for this address inside the memory browser I should see the
+26:29 address to this interrupt the service routine so I can even hover this so This the
+26:37 address to this function is this value here
+26:43 but it seems that I think the memory browser feature of
+26:49 the ID doesn't work when you use the GCC compiler perhaps
+26:55 so let me just see if this work on the ti compiler instead
+27:02 so I'm going to ask chat DPT to make this code compilable
+27:10 so now it's just going to change how the interrupt service routine is marked
+27:16 because it's marked in a different way when you use the ti compiler instead of the GCC
+27:21 compiler otherwise the code is going to be mostly
+27:27 the same though it for some reason put the count variable inside the
+27:33 interrupt service written here that's not going to work so we'll have to change that the coach will work the same
+27:38 now it's just that I've compiled it with a different compiler
+27:45 so we can just double check [Music]
+27:54 yeah it still triggers down the interrupt
+27:60 so the address to the interrupt service routine is located at this address now and if I search for
+28:08 the start address of the in traffic table again I hope to see
+28:14 with the tier compiler I can actually inspect this area of the memory that contains the interrupt Vector table
+28:21 and if I check the address of my interrupt function here it's c1ba and I
+28:26 can see that that's the word that this address here ffe4 so the address toting drop service return is stored inside the
+28:33 interrupt Vector table as we expect so when the interrupt happens the CPU is
+28:39 going to take what's the word this address and load it into its into the PC register
+28:46 now I would also like to show you the disassembly of the interrupt service routine just to see if this interrupt
+28:53 service routine saves any additional registers at the start of the function but in this case since the interrupt
+29:01 service return here is very simple it immediately is the increments this
+29:06 variable here and it doesn't save any additional registers then we clear the interrupt flag and at the end we call
+29:12 directly operation and this is the instruction that's going to restore the PC SP and the status registers and maybe
+29:19 some additional registers depending on what registers the CPU say when it entered this interrupt service routine
+29:25 but if I make this function a little bit more complex maybe have a couple of
+29:32 local variables here and just for demonstration sake I'm just
+29:38 going to make them volatile to ensure that the compiler doesn't optimize them away and then I will just add them to my
+29:44 account variable with this additional variables now if we
+29:50 look inside the disassembly view you can see that before we increment the account variable there is some additional code
+29:56 that has been generated by the compiler that saves in this case register 12 to
+30:02 the stack and then at the end of the function when we are done it's going to pop and
+30:10 restore register 12 and this means that depending on how complex your intra function is depending on like how many
+30:17 variables it's using the compiler is going to make sure that additional code
+30:22 gets generated at the beginning and at the end of the function to save the
+30:27 state of the registers so so at the beginning it saves the registers it's going to make use of to the stack and
+30:33 then at the end it restores the registers by popping the values from the stack what I would like to do now is jump into
+30:39 my normal project code and add some better interrupt registering and interrupt handling for the iupins on my
+30:48 microcontroller so I'm basically going to add some additional functions inside my i o driver
+30:58 and I'm doing this to make it easier for me to register new interrupts on the io pins
+31:08 and these are the functions I will have in my interface so the first function is going to configure and interrupt for one
+31:15 of the ipins the ipins that's passed as the first argument and the next argument decides if the interrupture trigger when
+31:22 the pin goes from low to high or high to low on the msp430 it's not possible to
+31:28 configure it to a trigger on both edges you can only trigger at one Edge at a time and then finally
+31:34 I would have this function take the interrupt service routine as an argument
+31:40 and I've actually created a typedef here just to allow me since usually when you
+31:45 write a function pointer it's quite ugly in C and not very readable so if I type f it like this I can just write ISR
+31:52 function which I find much easier to read this will essentially let me in the file that I'm calling this IO configure
+31:59 interrupt I'm will be able to have a Define my own interrupt function like
+32:05 this and then I can just call IO configure interrupt pass the first argument and
+32:12 then I can just pass the name to my Sr function like this I also need to add this trigger enum at the top of this
+32:18 file next to the other enums
+32:26 then I can jump into the implementation file
+32:34 and I'm going to access the interrupt related registers in the same way as I access the rest of the i o registers and
+32:41 if you want to know more about how I do this you should check out my previous video how I program gpios
+32:57 first array holds the registers for the interrupt flags and as I showed before the interrupt flag is set every time an
+33:04 interrupt happens and I have to explicitly clear it inside the code after I've handled the interrupt and then there is the registers for enabling
+33:11 the interrupt and this must be set for the interruptive event trigger and finally the registers for selecting the
+33:17 whether the pin should trigger on rising or falling Edge and on the msp430
+33:24 even though there are three ports on the version I have on my robot only the
+33:29 first two ports are interrupt capable so you can't get interrupts on Port 3 and
+33:34 that's why the io interrupt Port count this Define I'm going to set this to 2.
+33:40 and then I'm going to create a table to hold the individual interrupt service routine that are associated to each pin
+33:51 and since there are eight pins per Port there are going to be eight possible interrupt service routines
+33:59 and at the beginning none of these are going to be assigned so all of them are going to be set to null and then I also
+34:05 need to add a new enum for the port since I don't have that yet
+34:18 and as I mentioned before the difference between the mic controller on my robot
+34:23 and the one on the development board the Launchpad is that the robot has three ports and the
+34:30 Launchpad only has two ports but interrupt wise there is really no
+34:35 difference since only the first two ports are interrupt capable and then I can go ahead and
+34:42 implement the functions that I declared in my header so these functions
+34:49 let's go to the bottom of this file starting with IO configure interrupt
+34:57 and I'm going to have this function called to other functions so first of all it's going to set the interrupt trigger and then it's go and
+35:04 then it's going to register the interrupt service routine then I can go ahead and Implement these functions and this
+35:10 should be static since I'm only accessing them inside this function and for this function I'm going to implement
+35:16 that in a very similar way to my other ifunctions here so I can basically just copy one of these functions and then
+35:23 replace some of the variables inside it so switching on the trigger
+35:30 trigger Rising are you trigger
+35:37 solid one thing to note here is that something that's mentioned in the data sheet is
+35:42 that when you configure the trigger of a pin that may actually trigger and interrupt itself so just to avoid any
+35:49 unintended Behavior here I'm going to before I configure the trigger I'm going
+35:55 to disable interrupt for this pin an offer I've configured the trigger I'm
+36:00 also going to make sure I clear the interrupt flag because another detail to be aware of here is that even if you
+36:06 disable the interrupt that's not going to prevent the interrupt flag from being set if this pin triggers an interrupt
+36:13 and since this is not obvious I'm also going to add a comment above this function
+36:23 set then I also need to define the i o clear interrupt function and this is also only
+36:30 going to be called inside this function so I'm setting that to static so it's only available inside this completion
+36:35 unit and this is just going to be a one-liner [Music]
+36:42 okay and then I'm going to implement the io register ISR function which is also going to be static
+36:50 and I'm going to begin this function with an assert data search if an ISR has
+36:56 already been set for this particular pane so that I get an error if I accidentally call I register ISR on the
+37:03 same pin multiple times
+37:09 and if it's null it means it's not set and then I just set it to the ISR function that was passed
+37:17 and then I can go ahead and implement the opposite function of IO configure interrupt which is IOD configure
+37:23 interrupt I'm probably never going to call this function inside my project but
+37:28 I'm just adding it here for completion sake and that's first of all going to unregister the ISR
+37:35 and I'm also going to have this disable the interrupt and then I also have to add a function for unregistering
+37:43 an ISR and then and for this function I can just copy the implementation of the register ISR
+37:50 and remove the assert and you set this to null and this function is only going to be
+37:58 called inside this function so I can also Mark this as inline
+38:04 to avoid the function called overhead which should save me a couple of bytes of flash memory then I can
+38:13 implement the function for enabling and disabling and interrupt
+38:18 and also is going to be one-liners next I'm going to write a code that's
+38:24 necessary to ensure that when they interrupt occurs on one of the
+38:30 pins the the right eyesore function gets called because as the code is now there
+38:35 is no one that's going to call the iso function and just as I showed in the example from
+38:42 the IDE I need to add a function that's attributed like this so that's what I'm going to do now
+38:51 one important thing to note is that there is only one ISO repair Port so all
+38:56 of the pins of a port the eight pins of the port are going to share the same ISR
+39:02 and we have to explicitly check the individual interrupt Flags to see which
+39:07 interrupt that actually triggered the ISR so I'm actually only going to have two of these functions here one pair
+39:13 Port put one and Port two like that and just to make this code a little bit more readable I'm going to put this in my own
+39:21 Define instead a defined call interrupt function
+39:27 and this is going to let me show this to interrupt function
+39:35 Port one Vector instead and I think that's a bit more readable
+39:40 and I'm also going to name the function a bit differently
+39:48 so when I pin on one of the ports on either Port triggers if it's Port 2 it's
+39:54 going to trigger this function and if it's Port 1 is going to trigger this function and now
+39:60 inside these functions I have to check which pin actually triggered interrupt and to keep things as short as I
+40:06 possibly can and to waste as little flash based as possible I'm going to have a for Loop looping over the
+40:12 individual pins
+40:26 and the same in the other function and then I'm going to Define this
+40:33 iuisor function and in this function I'm first going to check if this was the pin that triggered
+40:40 interrupt so I'm going to check the interrupt flag and if this was the pin the triggered interrupt I'm also going
+40:46 to see if there is any ISO function registered to this particular pin oh I
+40:52 think I made a mistake in the function up here this should be
+40:58 IOP index
+41:12 same goes for this
+41:20 and if this is not null it means that there is an ISO function registered to this interrupt and then I'm simply going
+41:27 to call this ISR function like that and once I've handled the interrupt I
+41:33 also must make sure that I clear the interrupt can add an additional comment here
+41:42 so what okay so once again when an interrupt Triggers on one of the pins of Port 1
+41:48 this function is going to get called because the compiler and linkers made sure that this function is part of the
+41:55 interrupt Vector table and when this function gets called where
+42:00 I'm going to Loop over each individual pin to see which pin it was that
+42:05 triggered the interrupt and when I find the pin that triggered interrupt I will end up inside this if statement
+42:12 and then I'm going to check if I registered an interrupt service return for this particular pin and if I have
+42:17 I'm going to call that interrupt service return and once I'm done I'm going to clear the interrupt
+42:24 and then to test to make sure that all of this works I'm going to add a simple test function inside
+42:30 file
+42:41 and the way I'm going to implement this test function is that I'm going to configure two pins one pin on Port one
+42:47 and one pin on Port 2 as input pins with the pull up resistor and
+42:52 I will be configuring the second pane of Port 1 because I'm going to use the first pin to Blink an LED
+42:59 and then I will configure the interrupt for this individual pins and I'm going to have both of them
+43:04 triggered on falling Edge and then I'm going to Define
+43:10 the interrupt service returns up here and I'm going to have the first interrupt service routine turn on the
+43:15 LED and the second one to turn off the LED so if I build this code now it's
+43:21 probably not going to compile because I most likely made a mistake
+43:30 Mr semicolon so I will just have to fix my mistakes should be pin index
+43:37 and Port interrupt Edge so I'm not actually
+43:43 using that so whatever this should be named rig is instead
+43:52 that if a bill again yeah so since I'm using null I also have to include STD
+43:59 standard definition now it build
+44:05 so now if I flash this onto this launch pad I should be able to pull the two pins low in order to turn the LED on and
+44:12 off so let's see if that works
+44:21 it's not working because the LED is blinking and this means that I trigger and start for some reason so let me use
+44:27 debug where that is the reason it was not working was because I had made several mistakes
+44:34 first of all I was trying to build for the wrong
+44:40 target so I built for the robot instead of the launch pad and
+44:46 that's why I got an assert because I have an assert inside io.c inside IU init where I check
+44:54 whether I built for the right target so I was triggering this interrupt here
+45:01 and the second mistake I made was that I hadn't actually enabled interrupt here
+45:06 and I also need to make sure that I study in this function so I have a while loop at the end here so that I don't end
+45:13 up triggering this assert instead and finally I also need to in another
+45:19 building interrupts globally and there's already a function provided for this and that's the enable
+45:26 interrupts so that enables to interrupt globally
+45:31 because it's not enough to use enable the individual interrupts the interrupt also has to be enabled globally so
+45:38 if I build and Flash this code now um
+45:47 okay so at both the LED is not going to be on
+45:52 but if I pull the second pane of part one down
+45:58 the LED turns on and then if I pull the first pane of Port 2 the LEDs should
+46:06 turn off and it does and then I can do it again
+46:13 turns on and turns off
+46:20 so that works that is when I pull the pin down or the two pins down it
+46:25 triggers these two interrupts here so the first interrupt function turns the LED on and the second interrupt function
+46:31 turns the LED off this is a very simple test function so it's not actually testing all of the code that I've used
+46:36 to return so there may be some additional bugs here but I'm going to take the risk here and assume that everything works now and then I can go
+46:43 ahead and commit the changes that I just made but first I need to create a local branch and then run static analysis on
+46:50 the code format the code I should also run the script that builds all of the test functions that works
+47:02 then I can go ahead and add my changes
+47:07 and commit
+47:16 and then I can push it to GitHub open a pull request and make sure that
+47:22 it passes CI and it did so I go ahead and merge the pull request by him
+47:29 the last thing I'm going to do in this video is to increase the clock speed of the mic controller
+47:35 from the default one megahertz to 60 megahertz and
+47:41 the microcontroller I'm using in this project is actually aimed at low power application and Associate has many
+47:48 different plugs and you can configure them in different ways to trade it off performance for power consumption but
+47:56 for my application I'm just going to configure the microcontroller to run at its maximum clock speed because I don't
+48:04 really care how much current or power the mic controller consumes in my robot because even when it's clocking at its
+48:11 maximum rate the amount of power weight consumes is going to be negligible compared to how much my Motors consume
+48:18 and the other sensors connected to this board and there are a lot of details to go into when it comes to the clocks on this
+48:25 microcontroller and as always how these clocks on the mic controller is configured is going to be explained
+48:31 inside the datashet so if we just have a quick look inside the datasheet there is an overview of the
+48:38 Club module on this mic controller and the clocks that I'm going to configure
+48:44 now is going to be the subsystem clock as well as the main system clock and the main system clock is used to clock the
+48:50 CPU and also some peripherals and the subsystem clock is only used for clocking some of the peripherals and I'm
+48:57 going to have both of these clocks derived their clock from the from the digital controlled oscillator which is
+49:04 an oscillator that you can configure to run at different clock speeds and by
+49:11 default it's running at one megahertz and I'm going to increase it to 16 megahertz there is also another clock up
+49:16 here called the auxiliary clock but I'm not going to configure that in this video but I will use this clock later on
+49:23 in this video series another thing to be aware of with this mic controller is that you are going to have the option to connect an external oscillator and that
+49:31 is if you have an application that requires an oscillator that is more precise than the one that's provided
+49:37 internally but I'm just going to rely on the internal oscillator so what I'm going to do now is I'm going to
+49:44 configure the digitally controlled oscillator I'm going to configure that to 16 megahertz and this configurable
+49:51 oscillator also have a reference oscillator and this is an internal oscillator and that oscillator is also
+49:58 configurable and it also has to be configured to 16 megahertz so that's
+50:04 also something I'm going to do in the code and then I'm going to make sure that the main system clock derives its
+50:09 clock from the dco and also the same for the subsystem clock so both of these are
+50:14 also going to run at 16 megahertz and the way you configure the clocks is going to be similar to how you configure
+50:20 anything else on the mic controller there is there are a couple of registers you need to write to and first of all
+50:26 I'm going to make sure that the Define I use for busy waiting is going to work
+50:31 the same after I change the clock rate to 60 megahertz I'm going to add another
+50:36 Define here so when the CPU runs at 16 megahertz it's going to be clocking 16
+50:43 000 time per millisecond and that means that if I want to busy weight for one millisecond I need to visit weight for
+50:50 16 000 clock cycles and then inside MCU init I've already prepared a function
+50:57 that configures the clock so I have a function called init clocks and the first thing I do in this function is to
+51:02 send it to shake the calibration value because when the this much control is manufactured there are going to be some
+51:09 variations between the units so all of the units are not going to run at the same clock speed by default because they
+51:16 are going to have some differences in their physical properties so as part of the manufacturing TI runs calibration
+51:23 and it stores the specific calibration values for that for the particular unit inside the memory and the first thing I
+51:30 do here is just to send it to check that there are actually calibration values inside these memory locations if they
+51:37 for some reason have been erased I'm going to assert here and then I configure the main clock or the internal
+51:45 oscillator this reference clock here that's used as
+51:50 a reference for the dco to run at 60 megahertz this essentially takes the
+51:56 calibration value and writes that to this register and next I configure the dco to also run at 16 megahertz and
+52:04 similarly there is a different configuration value to configure this and then I must also ensure that the
+52:10 main clock and the subsystem clock actually derives their clock from the
+52:16 dco and to configure that you should write to this register but this register
+52:21 is already configured to do this by default so I don't actually have to explicitly write to this register so I'm
+52:27 just leaving a comment here to make that more clear then I call this function inside the function where
+52:35 I do the rest of the initialization so immediately after I've stopped the Watchdog and to test that this still
+52:42 works I can just run the test function that asserts because the assert blinks
+52:48 the LED every 250 milliseconds and it should blink at the same rate as before
+52:54 if everything works
+53:02 and it looks like it does and I can actually use to double check I can go into the assert
+53:08 function and modify it to Blink every second instead
+53:15 yeah and now it blinks every second so the configuration works but I'm going to
+53:21 change this back to 250 again then I can commit this code as well but
+53:27 first I have to well I'm going to stash the changes and then I'm going to
+53:33 fetch the latest Main checkout man
+53:41 and then check out the new branch so that's going to be fixed increase
+53:47 looks speed 16 megahertz
+53:52 the stash now I have to run all of this again
+54:03 oops no then I can add my changes commit
+54:20 foreign
+54:27 Quest see I see I see I I rebellious and merch
+54:36 so that's it for this video see you in the next one

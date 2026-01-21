@@ -1,0 +1,290 @@
+00:00 hello and welcome back to artful bytes
+00:02 in the last video i talked about the
+00:04 software architecture of this sim robot
+00:06 and in this video i'm going to continue
+00:07 talking about organizing software but
+00:10 instead of talking about how to organize
+00:12 the functionality i'm going to talk
+00:13 about how to organize the files and how
+00:15 to create a good directory structure for
+00:17 those files because when you move beyond
+00:18 simpler projects not only does cool
+00:20 complexity increase but so does the
+00:22 number of files and it doesn't take that
+00:23 many until you want to put those files
+00:26 into separate directories to make your
+00:27 project easier to navigate and if you
+00:29 have any sort of lcd tendencies like me
+00:31 you may even start chasing after the
+00:33 perfect directory structure
+00:34 unfortunately i'm here to tell you that
+00:36 there is no base larger structure not
+00:37 only is it going to depend on the
+00:39 specifics of your particular project but
+00:41 it's also going to come down to your
+00:42 personal preference even if we narrate
+00:44 only embedded systems based on c or c
+00:46 plus plus there are still many technical
+00:48 factors that may affect the directory
+00:50 structure or you may be depending on an
+00:52 operating system an rtos or embedded
+00:54 linux or you're using a particular test
+00:57 framework or build system do you have a
+00:58 specific development environment or your
+01:01 dog or a cat person well maybe the last
+01:03 one doesn't directly affect the
+01:04 directory structure but my point is that
+01:06 even after you sorted out the technical
+01:08 specifics of your project you may still
+01:09 decide to go with one structure over
+01:11 another you start off personal
+01:13 preference so well i have some good
+01:14 reasons for the structure i'm going with
+01:16 in this project i think you should only
+01:18 look at this for inspiration and use
+01:20 whatever structure that makes sense for
+01:21 your project also this is a small
+01:22 project that is only going to involve 20
+01:24 or something files and at that small
+01:26 scale it's not going to make much
+01:27 practical difference whatever structure
+01:29 you go for but even at this small scale
+01:31 i still like to put some effort into my
+01:32 layout
+01:34 before i decided on a structure for this
+01:36 project i was curious to see what other
+01:38 people use for their cnc plus bus
+01:40 projects so i did some searching on the
+01:42 internet and found a couple of examples
+01:44 that i thought worth mentioning in this
+01:46 video the first one i found is a
+01:47 structure called the pitchfork layout
+01:49 and this layout is an attempt to
+01:50 formalize a layout based on the what the
+01:53 professional experience but also on the
+01:55 opinion of several c plus plus
+01:56 communities including reddit and i think
+01:58 this layout does a pretty good job at
+01:60 capturing and explaining some of the
+02:01 common patterns that i've seen in many
+02:03 cnc plus but project and judging by the
+02:05 comments it seems to be well received
+02:07 and there seems to be many people using
+02:09 some flavor of it and the structure i'm
+02:11 going with for this project is also
+02:12 going to be similar to this layout
+02:14 another example i found is one called
+02:16 the canonical project structure and this
+02:18 is a structure proposed by someone in
+02:19 the c plus plus committee tooling group
+02:22 and while this layout mainly focuses on
+02:24 c plus plus packages and only some
+02:25 aspects of the layout i still think it's
+02:27 a worthy read besides these two i also
+02:29 found other good examples and i've put
+02:30 all of these examples in the description
+02:32 below i'm not suggesting you should
+02:34 follow any of these examples blindly and
+02:37 only look at them for inspiration but i
+02:39 also think there is a point in trying to
+02:40 adhere to what other people are doing
+02:42 because then your project will be more
+02:43 familiar to more people
+02:45 so let's now get to the structure that i
+02:47 came up with for this project and just
+02:49 to remind you this is a smaller
+02:50 microcontroller project that is going to
+02:52 be written in bare metal c and i'm going
+02:54 to build it with make so this is what
+02:56 i've had in mind when i came up with
+02:58 this structure okay so starting from the
+02:59 top of the project the lobby of the
+03:01 project so to speak as you can see i've
+03:03 created a couple of directors here and
+03:05 only have a few individual files while i
+03:06 don't like to overdo it with the
+03:08 directories i still like to have a clean
+03:09 lobby to make the most important things
+03:11 easy to find because the first time you
+03:14 go into project what you're likely to
+03:15 search for is going to be some sort of
+03:17 documentation maybe the readme and you
+03:19 want to know how to build the project
+03:21 and that's going to be the make file and
+03:22 then you probably want to find the
+03:23 source files and this lobby makes it
+03:25 easy to find all of that and the most
+03:26 important directory here is arguably the
+03:29 source directory which contains all of
+03:31 the source files i decided to put all of
+03:32 the source files into the same directory
+03:34 the implementation files as well as the
+03:36 header files some people keep their
+03:38 headers in a separate directory but i
+03:40 don't like to do that and just find that
+03:41 annoying there may be good reasons for
+03:43 doing that in other projects such as if
+03:45 you're creating a library and want to
+03:46 place the header files in another
+03:48 directory but for this project i see no
+03:49 good point for doing it furthermore i've
+03:51 created a couple of subdirectories
+03:53 because as i explained in the last video
+03:55 about the software architecture i made a
+03:57 clear distinction between the app layer
+03:59 and the drivers layers and i thought it
+04:01 made sense to also reflect this division
+04:03 in the folder structure and that's why i
+04:05 have a folder called app and drivers of
+04:08 course everything is not going to fit
+04:09 into those two folders and there's going
+04:10 to be some code shared between the two
+04:12 folders and for this i've created a
+04:14 third directory called common where i
+04:16 put all of the common code but actually
+04:17 it's not going to be that much common
+04:19 code it's mainly it's going to be some
+04:21 common defined i also have a directory
+04:22 called tase and as i've said before i'm
+04:24 not going to do any unit tests in this
+04:26 project but i am going to have a test
+04:28 file with some functions that i can run
+04:30 to test isolated parts of the code and
+04:32 i'm going to place this file under this
+04:34 directory well you will see what i mean
+04:36 later on when i start writing code of
+04:37 course i could have gone even further
+04:39 with the subfolders here and maybe
+04:40 divided into folders based on
+04:42 functionality but i'm also aiming for
+04:44 simplicity i don't want to incur too
+04:45 much navigational overhead or too much
+04:48 in direction when including header files
+04:50 and i think it's important to have
+04:51 simplicity in mind because while you can
+04:52 come up with a structure that makes
+04:54 conceptually sense more importantly you
+04:56 should ask yourself if it's actually
+04:57 practical i also thought about not
+04:59 having any folders at all because since
+05:00 there is only going to be 20 or
+05:02 something files even having four folders
+05:04 seems like kind of a stretch but i
+05:06 decided that i at least wanted to have
+05:07 some division but that's just my
+05:09 personal preference also if i didn't
+05:11 have any folders then i wouldn't have
+05:12 anything to talk about another thing i
+05:14 like by having the folders here in the
+05:15 source directory is that it makes it
+05:17 very easy to find the entry point of the
+05:19 project which is the main file here so
+05:21 moving on to the next top directory i
+05:22 have a directory called external and
+05:24 this directly supposed to hold any
+05:26 external code that i depend on in this
+05:27 project and for this project it's
+05:29 actually only going to be one project
+05:30 and that is the stripped-down pre-type
+05:32 implementation i'm using when sending
+05:34 log traces over ur to my host computer
+05:37 and since this is an open source git
+05:39 project i like to include that unchanged
+05:41 as a git sub module so it's obvious
+05:43 where it came from and which commit i'm
+05:44 using and then i have a folder called
+05:46 docs which is short for documentation
+05:48 and there is not going to be that much
+05:50 documentation for this project and most
+05:52 of the written documentation is going to
+05:53 fit inside the readme file but i do have
+05:55 some documenting pictures of the project
+05:58 for example the hardware block diagram
+05:60 as well as the software architecture
+06:01 diagram and i thought it was suitable to
+06:03 put these pictures under the
+06:04 documentation folder i also include a
+06:05 picture of the finished project besides
+06:07 just having them under this directory i
+06:09 also refer to them in the readme because
+06:11 i find it really nice to see some images
+06:13 when i visit the project on github and i
+06:15 think images are often underestimated
+06:17 and then i have a directory called tools
+06:18 and this directory is meant to hold any
+06:20 related scripts or tools that is useful
+06:23 for the project right now i don't have
+06:24 anything particular in mind to put under
+06:26 this directory i created it just in case
+06:28 lastly as i mentioned in the makefile
+06:30 video i have a directory called build
+06:31 and this directory is meant to hold any
+06:33 files that are generated when i build
+06:34 the project it's just nice to have a
+06:35 separate directory for these files to
+06:37 avoid littering the rest of the project
+06:39 it also makes it easy to remove them as
+06:40 well as ignore them with git and that's
+06:42 it for the directories as for the
+06:43 individual files they're pretty
+06:45 self-explanatory i have a readme that's
+06:46 going to include some explanation of the
+06:48 project how to set it up and how to
+06:50 build it i have a make file that i've
+06:51 already gone through in a previous video
+06:53 and this file explains how to build the
+06:55 project and then i have a license file
+06:57 which is a text file that holds the
+06:59 license which describes what you're
+07:01 allowed to do with the code if you
+07:02 decide to use it and next there is the
+07:04 git ignore file which holds a list of
+07:05 files and directories that git should
+07:07 ignore i will talk more about this in a
+07:08 coming video where i explain how the
+07:10 version control would give finally i
+07:11 have a file called clang format and this
+07:13 file holds the coding style i'm adhering
+07:15 to in this project and this file enables
+07:17 me to run a command called clang format
+07:18 to autoformat all my code according to
+07:20 my coding style i will demonstrate this
+07:22 later on in the video series for an
+07:23 embedded system you probably also have
+07:24 some hardware related files such as the
+07:26 pcb design files and you could put them
+07:28 under the same project directory as your
+07:30 software files but i prefer to have them
+07:32 under a separate project directory and
+07:34 repository but that's also just my
+07:36 personal preference another thing i
+07:37 should mention is the naming convention
+07:38 i follow when i name my directories and
+07:40 my files two main rules i follow no
+07:42 capitalization and no spaces and this is
+07:45 mainly to make it easier to navigate the
+07:47 project from the command line because it
+07:48 makes tab completion smoother i've also
+07:51 seen some issues with having spaces in
+07:52 file names in the past so instead of
+07:54 spaces i'm using underscores and also
+07:56 honestly i just think it looks better
+07:58 okay so i think that was all i wanted to
+07:59 say about this skeleton structure and
+08:01 this became a pretty short video because
+08:03 there is not really that much to say and
+08:04 the main takeaway here is that there is
+08:06 no best directory structure and it's
+08:07 going to come down a lot to your
+08:09 personal preference especially for a
+08:11 simpler project like this that doesn't
+08:12 have hundreds or thousands of files then
+08:15 it doesn't really matter in the end
+08:16 which structure you go for but i like
+08:18 order so by creating a few directories i
+08:20 got to scratch my order leach but in the
+08:22 end i could as well put everything under
+08:23 the same directory so don't overthink
+08:25 this one be reasonable and go for
+08:27 something simple that was all for now
+08:28 see in the next video

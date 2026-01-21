@@ -1,0 +1,306 @@
+00:01 [Applause]
+00:06 hello and welcome back to artful bites into another video in a series of videos where i'm programming an embedded system
+00:12 from scratch or more specifically this sumo robot in the previous video where i introduced
+00:18 this project if you haven't seen it go check it out i said that these videos are primarily
+00:23 going to be about programming but before we get to the programming i want to first talk a bit about the hardware
+00:30 because when we are programming an embedded system what we're essentially doing is writing code to control hardware so i think it's important that
+00:36 we at least have some understanding of it before we start programming it and even for a relatively simple project
+00:43 like this there's still a lot of decisions to make regarding the hardware so i thought a good format for this
+00:49 video would be for me to start from the beginning and explain how i picked the parts for this project this should give
+00:55 us a good structure to follow as we build up an overview understanding of the hardware and should also give me an
+01:00 opportunity to give you some more background and context and in the next video i'm going to do a walkthrough of
+01:07 the pcb i designed to connect the parts and after that we get to the programming so let's get into it i want to first
+01:13 show you a block diagram i drew of my sum robot this block diagram shows the
+01:18 parts that i picked the sensors the motors and the batteries and so on and
+01:24 what interfaces they use to connect to my microcontroller i just wanted to give you this overview
+01:30 first before i start talking about each part i will get back to this diagram at
+01:35 the end of the video before kicking off this project it was just as with any project uh only
+01:42 an idea and then i had to figure out how this similar robot was to come about
+01:47 at this stage a project can be pretty vague but it's not like a snowboard hasn't been built
+01:53 before so i already knew before i even started kind of what i was going to build and what parts i was going to need
+01:60 and as i explained in the first video the rules for
+02:05 assume robot competition or simple two of these robots are put
+02:12 inside a circular platform called uh duhaio and the one that
+02:17 pushes out the other one first is the robot that wins and from these simple rules i already knew what my sumobot had
+02:24 to do it had to locate the enemy he had to push the other enemy out of the ring by driving towards it and it has to stay
+02:32 inside the ohio and further on the competition has some rules
+02:39 which further helped me define the requirements for my robot
+02:44 first of all there are several different weight classes but i decided that i wanted to compete in the
+02:50 mini class which meant that microsoft robot couldn't be larger than 10 by 10 centimeters and 500
+02:57 grams and with these limitations i had already limited myself quite a lot in
+03:02 terms of what components i was going to be able to pick and secondly it has to be autonomous
+03:08 which is an aspect that makes this project a bit more interesting in terms of programming
+03:14 and you also have to be able to start the robot remotely because at the beginning of the competition
+03:20 round the judge will use a remote control to start the robots at the same time and there are also some things the
+03:27 robot is not allowed to do most importantly it's not allowed to intentionally harm the platform or the
+03:33 other zoom robot i mean this is not as fun as robot worth
+03:40 perhaps where the robots are allowed to destroy each other
+03:45 unfortunately furthermore it's not allowed to stick to the platform so it's not
+03:51 allowed to have a suction mechanism or glue that gives it some unnatural amount of traction or
+03:58 friction and two things worth noting is that the platform is 77 centimeters wide
+04:05 and one round can't last for more than three minutes these metrics were important to consider when i was picking
+04:11 my sensors and my battery and with these requirements in place i could start
+04:16 thinking about the parts i was going to pick it was quite obvious that i was going to need some
+04:23 input sensors to locate the enemy and to detect the surrounding edge and to
+04:31 drive towards the enemy and push it out i was going to need some input motors and since it had to be autonomous i
+04:38 needed a controller to make sense of the input and to produce a desirable output
+04:44 to the motors these three was going to be electrical so i obviously needed a way to power them as well
+04:51 so beginning with the motors i had two main questions i had to answer i had
+04:57 to decide which motor i was going to use and how many motors i was going to use there are
+05:03 many motors to choose from but by considering the requirements of a sumo robot i could start narrowing down which
+05:10 type of motor that would be most suitable for a robot like this first of all a superbot is a robot that drives
+05:16 around continuously it's not like there is any mechanical movement that requires an exact positioning so i could quickly
+05:24 rule out any type of servo or stepper motor basically any positional motor and
+05:31 i also knew that i was going to power it with a battery which meant i was going to get dc and not ac so i could discard
+05:36 all kinds of ac motors and this meant i could narrow down my choice to some sort of
+05:42 dc motor and when considering these motors there are mainly two types of dc motors there are brushless dc motors and
+05:48 there are brush these motors i'm not going to go into detail exactly on the difference between these two types of
+05:54 motors but in summary the brushless this motor is the better motor because it's
+05:59 more efficient has lower noise and it's more durable but of course that comes at the price of
+06:05 being more difficult to control it requires more complex software and it also requires additional electronics and
+06:11 it's more expensive for a sumobot i wouldn't say that durability efficiency or noise
+06:17 are that important so i would say it's overkill to put on brushless dc motors and looking at other sim robots of this
+06:24 size i saw that almost all of them used brushed these motors so i also decided i
+06:29 was going to use brushed dc motors for my summer robots and then came the question of how many motors i was going
+06:35 to use and considering the size of this robot you're kind of limited in how many motors you will be able to fit
+06:40 mechanically i would say that at most six motors but that would require you to have quite small motors and small wheels
+06:47 so maybe the reasonable choice is between two or four motors my thinking kind of
+06:52 went that if i were going to use four motors that would give me more pushing power because i would have more motors
+06:58 which meant more power and more torque but at the same time having two motors
+07:04 would make the design more simple and it would make the steering more clean
+07:09 because having four static wheels won't turn as smoothly as having two wheels but as you can see i went with four motors primarily because of the
+07:16 additional pushing power now in hindsight i think i would have gone with two motors because it would have made
+07:22 the mechanical design simpler and more flexible and it will also used to make the
+07:27 electronics design easier because in general the less part you have the less things you have to think about and if i
+07:32 had gone with two motors and two wheels i could perhaps have used larger motors
+07:37 and in turn gotten a similar pushing power as opposed to having four motors another thing that i didn't consider but
+07:43 that would have been worth considering and that i've seen some other robots use is to use tracks just like a tanks have
+07:50 that should probably give some good traction and torque but it wasn't something i considered for my robots
+07:55 knowing i was going to use four brushed these motors the next step was to find the exact motor i was going to buy and
+08:01 brush these motors are specced with a lot of different parameters but i mainly concern myself with
+08:07 the input voltage at the voltage level it takes from the power supply and rpm
+08:12 revolutions per minute which tells how fast the motor spins and to estimate rpm
+08:17 i needed at this point i came up with a ballpark value of the speed i wanted my sumbot to have and i thought that maybe
+08:24 two meters per second would be reasonable because that would allow my symbol to drive across the platform in
+08:30 half a second now in hindsight that was a little wishful thinking because my robot is not able to drive that fast and
+08:36 still keep up with detecting the enemy and detecting the border and regarding the wheel radius i hadn't actually
+08:42 picked out the wheels at this point yet but i kind of knew mechanically how how big the wheels could be so with the
+08:48 value for the speed and wheel radius i could calculate the estimated rpm i was looking for and the value calculator was
+08:54 somewhere around 400 but when i went looking for a suitable dc motor i saw that many of them are spec with a much
+09:01 much higher rpm than i was looking for and this is because by default at least
+09:07 small dc motors are designed to have a very high rpm high speed and a low
+09:12 torque and to fix this or to adjust the balance between rpm and torque they must be equipped with gears or gearboxes
+09:19 similar to how the engine in a car is complemented with gears and while you can buy the motors and the gearboxes
+09:25 separately and then attach them together it's easier to buy a brushed motor that comes with a gearbox attached to it and
+09:32 when it comes to the voltage for a robot of this size common values we'll see are
+09:37 3 6 9 or 12 volt and in terms of performance it doesn't
+09:43 really matter which voltage you go for what's more important is to consider what power supply you're going to use so
+09:50 at this point i also started thinking a little bit about what battery i was going to pick for my robot because that
+09:56 would determine the voltage level i would input to my motors and i found two single cell lipo batteries with a good
+10:02 form factor for my mechanical design so that would yield me a 7.4 voltage
+10:08 therefore i thought a good input voltage for my motors would be 6 volt i think my general advice when it comes to motors
+10:14 even my limited experience with them is that if you don't have much previous experience with motors i think it's
+10:20 better to just buy a couple of different ones and try them out prototype and get a feel
+10:26 for what works instead of trying to calculate the perfect specs because at least for small these motors like these
+10:32 if you buy them from cheap vendors like ebay or aliexpress you can't really trust the specs anyway if you want to
+10:38 trust the specs you have to buy them from a trusted brand which would be much more expensive in the end i picked four
+10:44 brushless motors specked at 400 rpm at an input voltage of six
+10:51 and similar to the motor i'm holding here they came with a gearbox attached to them i also bought four wheels with
+10:56 silicone tires attached to them i picked them up at an online shop called jason mo which sells super bowl parts after
+11:03 having picked out the motors i started looking at how i was going to control them and as i mentioned earlier controlling a
+11:10 brushed dc motor is much easier than controlling a brushless dc motor because brush this motor basically takes voltage
+11:16 on the input and then produces a proportional speed so the way we vary the speed of a
+11:21 brushless motor is to vary the voltage we input to it but it's not as simple as connecting the
+11:29 brushless motor directly to the eye pin on a controller ship or for example the gpio pin on a microcontroller because a
+11:36 gpio pin can't source the amount of current required by a motor so if you even try to you might even damage the
+11:43 microcontroller ship what i needed was some sort of electronics in between my controller ship and motors to be able to
+11:49 control the motor more specifically something called a motor driver and a motor driver is a
+11:55 ship that contains transistors that act as switches and we connect these switches to an i pin on our controller
+12:02 shape and by toggling the iopin we produce a pulse width modulated signal
+12:08 that allows us to switch these transistors on and off to vary the voltage output and in turn
+12:14 control the speed of the motor so the motor driver connects to the battery and the larger current from the battery is
+12:20 controlled by the smaller current from the controller ship i will talk about this more in a future video when we
+12:26 program the driver for the motor driver there are two common types of transistors used in motor drivers
+12:34 bjts and mosfets in short the mosfets are better because they're more
+12:39 efficient and produce less heat so it's preferable to pick a motor driver that has mosfets instead of bgts because then
+12:47 it's less likely you will have issues with your board overheating in the end the motor drivers i picked out for my
+12:52 some robot was the tb6612 fng these smooth drivers are mosfet based
+12:59 and they can produce up to one amp of constant current and around 3m for short periods and they are able to operate
+13:05 between 2.5 and 13.5 volts and also include some protection circuitry they're able to control two
+13:12 motors so since i had four motors i needed two of them but also note that on my robot i
+13:19 have four static wheels and the motors on either side should always drive in the same direction
+13:26 so when i hook this up i actually use the same input signal from my controller shape to
+13:32 produce the pvm signal for both these motors so i only actually need two pvm signals but i will talk a bit more about
+13:38 that later having the motors and motor drivers picked out the next thing i started looking at was the sensors and there's
+13:45 some robot needed sensors for two purposes first and foremost it needs sensors to
+13:50 detect the enemy and secondly it needs sensors to detect the surrounding edge
+13:57 border of the platform and let's start with the first one the sensors i needed to detect the enemy
+14:03 okay so starting with the enemy detection when i had a look at what other sumobots were using i quickly
+14:09 realized that none of them used a camera for this purpose and i guess that makes sense because
+14:15 a camera would require more beefier controller and more complex software to parse the video stream
+14:21 and it would probably not be as fast or reliable as i want and it will
+14:26 kind of be overkill because all that the robot really needs is a way to detect the distance to the enemy so it should
+14:32 be enough with a simpler range sensor having a look at the available range sensors there were a couple of different
+14:38 options i could choose from there are ultrasonic sensors and these
+14:43 measure the distance by utilizing sound waves and their ir sensor which
+14:49 sends infrared light and measures the amount of light reflected back and then there are different types of
+14:55 laser-based sensors that also utilizes light but mainly measures the time it takes for the light to travel
+15:01 back and forth from the obstacle looking at available ultrasonic sensors i quickly ruled them out for being too
+15:06 bulky and slow for a small summer robot and looking at the difference between
+15:12 these i would say that the ir sensors that i was looking at seemed to have a simpler interface but
+15:19 they were also a bit limited in terms of the range interval they could either measure at a smaller interval like
+15:26 between 0 and 10 centimeters or a longer range 10 to 80 centimeters and i wanted
+15:33 a sensor that could measure from zero to around 80 centimeters because that would allow my symbol to detect the other
+15:40 summerbot regardless of where on the platform that is and what was it could be right in front of my robot or on the
+15:46 other side of the platform and my robot would still be able to detect it and to give you an example
+15:51 this was one of the ir sensors that i tried out for my sumo robot and even if this was smaller than
+15:57 the ultrasonic sensors that i found it was still a bit large for my summer robot and it couldn't measure very close
+16:04 distances so if i were to use this i wouldn't detect the enemy if the enemy was right
+16:09 in front of the zoom robot instead i found a smaller laser-based sensors that seem to
+16:14 be the perfect fit this is a tiny time-of-flight lace-based sensor from sd
+16:20 it's a small and powerful little sensor that comes at a surprisingly low price
+16:25 and it measures accurately between c ramp tutors at the frequency at around 50
+16:31 times per second it's also quite cheap the downside of course which i realized later is that it
+16:37 takes quite some effort to get this working because it interfaces with sqrc and has a microcontroller on it that
+16:44 requires quite a lot of configuration and setup code and especially when using more than one of these sensors but other
+16:50 than that it's quite hard to find something better at this small size after selecting the range sensor i was
+16:55 going to use i had to similar to the motors decide on how many of them i needed
+17:00 first i could conclude that i was at least going to need one of them but having only one range sensor in the
+17:06 front would mean that it would be hard to distinguish between different cases the enemy could be oriented in different
+17:12 ways and it could lead to my robot attacking the other robot in a
+17:17 non-optimal way so i realized it would probably be better to use more than one range sensor
+17:23 in the front because then i would know if the enemy was a bit to the left or a bit to the
+17:28 right or right in front of my robot and if it wasn't right in front of the enemy i could use these measurements to make
+17:34 sure that my robot aligns with the enemy next i consider putting range sensors on the tool side because that would kind of
+17:40 allow a strategy where my robot could detect the enemy on the side and then could do a quick hard turn and attack
+17:46 the enemy from the side i didn't really consider putting a wrench answer on the back perhaps that could be useful if the
+17:52 enemy is pushing my robot from the back so with this kind of thinking i ended up going with three wrench sensors in the
+17:58 front and one on either side now in hindsight i would have just gone with the wrench sensors in the
+18:04 front because after some time i realized that the wrenches on the side didn't work so well because it actually mattered the way you
+18:11 oriented these sensors so i got a lot of false detection the way i placed the side sensors and i also found that using
+18:17 the front sensors just worked well enough and it was unnecessarily complicated to have five of these
+18:22 sensors because as i said before they're a bit finicky to interface with and having five of these connectors were a
+18:28 bit troublesome and it would have just been easier overall mechanically to have three of these sensors instead of having
+18:34 five of them so i'm kind of getting back to my advice that i gave regarding the motors the
+18:40 less parts you have the less problems you will have when it came to a line sensor that was a fair bit easier
+18:46 because it essentially came down to just one choice an iron sensor that could distinguish
+18:51 the white border from the rest of the black platform so the one i picked is called
+18:58 qre113 and interfaces with just one adcp i put
+19:05 two at the back and two in the front it's perhaps not necessary to have two
+19:10 in the back but it allows more robot to get out of a few more situations and there is not much more to say about the
+19:15 line sensors really on the topic of sensors my robot also required high receiver to pick up the start signal
+19:22 that is sent at the beginning of the competition round so i picked up this three-legged component which is an eye
+19:28 receiver that can pick up the start signal that is specified at 38 kilohertz
+19:34 besides meeting the requirement of being able to pick up the start signal a very useful thing with having an eye receiver
+19:40 like this is that it also allows me to control my robot remotely which is very
+19:47 useful during development and with output and the input out of the way now is a good time to talk about the power
+19:53 supply i used for this robot and there are many types of batteries you can choose from but what you will commonly
+19:58 see on a smaller robotics project these days or even hardware devices in general
+20:04 is that they use some sort of lipo battery and this is for good reason because black batteries packs a lot of
+20:09 energy in a very small package and it comes in many different shapes and forms so it's easy to fit a live battery into
+20:15 your mechanical design to last through the competition i knew i didn't need a very large
+20:21 battery because the each competition around only lasts for at most three minutes and probably most of time
+20:27 shorter than that but it's nice to have a larger battery during development because you don't want to be switching
+20:33 out the battery all the time and i was also a little concerned with having a small capacity because while um
+20:41 lipo battery discharges it loses some of its voltage and unless i compensate for
+20:46 that that would mean that my robot loses some of it pushing power as the battery discharges so capacity device i was just
+20:53 trying to fit as large of a battery as i possibly could but having four motors meant that i didn't have that much space
+20:60 over for batteries what i found during my search were two small single cell lipo batteries that had a capacity of
+21:06 750 milli amperage hours since they were single set they had an output voltage of
+21:11 3.5 voltage and having these in series meant i had 7.4 voltage in total and i
+21:17 had a discharge rate of 30c which is well beyond what this robot would need to source at worst case this battery is
+21:24 actually meant for a drone but it works pretty well for my robot as well i had plans on making the batteries easy to
+21:30 swap out but i couldn't come up with a good mechanical design to do that without making my robot very bulky i
+21:36 also thought about having separate batteries for the electronics and the motors because i was afraid that the
+21:42 noise from the motors would interfere with the rest of electronics but it's not something that i've had any issues with okay so now i had picked out the
+21:49 surrounding parts i picked out the input that is the range sensors and the line
+21:54 detectors and i had picked out the output that is the motors and now it was time to pick out the central piece of
+22:01 this robot the piece that would take the input from the sensors do some processing and then produce a desirable
+22:08 output to the motors to make this robot behave as it should before i go on to talk about how i pick my microcontroller
+22:14 i want to first explain why i didn't go for an arduino i'm not trying to pretend that this robot is anything but a
+22:21 toy project and a relatively simple robot and for a project like this an arduino would be the obvious choice it
+22:27 would provide the required functionality and make the programming easy and if i wanted to throw this together as quickly
+22:34 as possible i would probably have picked an arduino or similar and call it a day but i wanted to develop my summer robot
+22:39 more like a real product i wanted to pick my computer ship and design a pcb
+22:44 around it and then write the driver for it i wanted it to be more than just plug-and-play so that i would actually
+22:50 get something out of the project and i can tell you that if you want to get more serious about embedded development
+22:55 and move on to more advanced projects and perhaps work on real products and do this as a profession then you must leave
+23:02 the comforting world of arduinos and get your hands dirty with other ships and i think a good way to get started can be
+23:08 to pick a simple project like a zoom robot that would typically use an arduino and then replace the origin with
+23:15 some other ship that forces you to do more of the hardware and software yourself and it may seem stupid to over
+23:21 complicate a simple project but once you get comfortable at that level then you can advance to more complicated projects
+23:29 where an arduino is not even a viable option note i'm not saying that an arduino is a bad thing or that embedded
+23:35 systems development always mean that you pick a microcontroller and then write all the code from scratch just for the
+23:40 sake of it i'm all for taking advantage of the resources and tools that helps you develop your project faster
+23:47 but there's so much more to real product development than just prototyping and if you want to work on this side of the
+23:53 product development you will need to know proper and better systems development and everything that comes with it you will need to know how to
+23:59 pick the right part the right microcontroller how to design a pcb around it how to write a driver and so
+24:04 on and it's in this area i want my youtube channel to be focusing on and since i wasn't going to limit myself to
+24:10 an arduino the next question became what i was going to use instead and there are many ships to choose from
+24:17 everything from tiniest 8-bit microcontroller with a few hundred bytes of flash to high-end a6 running
+24:22 full-blown operating systems and if you develop a real product choosing the right ship is an important
+24:28 decision and a lot of research can go into making a good choice especially for a high volume product where every cent
+24:35 counts but for a one-off hobby project like a summer robot i didn't need to be near as
+24:41 rigorous in my decision making what it roughly comes down to is listing out the things that the chip is going to be
+24:48 connected with which is basically what i've done in this video we've gone over the parts i'm
+24:53 going to use and based on the surrounding components i can start listing out the interfaces my
+24:58 controllership requires to talking with them and then from this i can start sketching out some
+25:05 of the requirements that my controller ship needs to have for example the peripheral the
+25:12 code size clock speed power consumption and so on for this simple robot there are
+25:18 many ships that would get the job done it might even be harder to pick a ship that wouldn't work than one that does
+25:24 work and while it can be tempting to pick a very powerful ship for a simple project that will just make the hardware
+25:30 design and software design more complicated now there was no good reason to put on a high-end application
+25:37 processor running an operating system when i could get away with a simpler microcontroller so i limited my search
+25:43 to the microcontroller segment and according to the flow that i just described i started listing out the interfaces i required based on the
+25:50 components that i had chosen two pvm signals to control the motors i was going to have five sensors i was going
+25:57 to talk over i squared c so i wouldn't need an i square c peripheral and for the line detectors i was going to need
+26:02 four adc channels and then i was probably going to need some timer and gpio for the high receiver as well as an
+26:08 additional of 10 or more gpio pins
+26:14 and then there were some other factors to consider and when it came to clock speed i knew i didn't need anything
+26:19 super fast because there is no heavy computation required and the processing speed is limited by how often i can get
+26:26 input from the sensors which for the sensors i picked were somewhere around 30 times per second regarding code size
+26:33 that can be a bit difficult to estimate if you don't have previous experience with a similar project but a
+26:39 good idea at this point can be to look at what similar projects use for example another announcement to do fine on a lot
+26:45 of sumobots so having a look at the microcontroller on an arduino seems like a good idea for getting a rough ballpark
+26:53 value so that mega 328 on the arduino is an 8-bit microcontroller it says
+26:59 20 megahertz clock speed 32 gigabytes of flash regarding power consumption i
+27:05 didn't really concern myself with that because i was not going to have any like low power mode and i knew that the power
+27:11 drain from my microcontroller would be negligible in comparison to my motors and other components and regarding price
+27:17 and the available stock this is also something that i kind of discarded because this was a one of hobby projects
+27:23 so it didn't really matter if the microcontroller would cost me one dollar or ten dollars or ten cents of course
+27:29 price and available stock is a much more important question when it comes to a high volume product and then to a factor
+27:36 that must not be underestimated which is ease of development including the available tools
+27:42 surrounding documentation tutorials forums and so on things that makes the
+27:47 microcontroller pleasant to work with because picking a mic controller that is pleasant to work with is going to save
+27:53 you so much time and frustration after i had a decent idea what i was looking for i started searching on the internet for
+27:59 a microcontroller that would fit my requirements so i had a look at digikey mouser and other
+28:07 components render and use their search to list my requirements and to see the available
+28:12 microcontrollers and i also did some general searching on the internet for recommended microcontrollers finally for
+28:17 this bot i picked the msp430 which is a 16 bit microcontroller with
+28:24 16 kilobytes of rom and 16 megahertz of clock speed i mostly picked it because i had used it
+28:30 before and i knew it had good documentation books tutorials forum and overall provided tools for a pleasant
+28:36 development experience it's actually commonly used in university for getting started within better systems and can be considered a
+28:43 beginner friendly mic controller and i think this would be a good microcontroller to use throughout this
+28:48 series regarding the technical specs it's perhaps not the optimal choice for a silverbots
+28:53 the flash or the rom is on the small side it has few pins and few dedicated pvms it's really meant for smaller low
+29:01 power devices in hindsight i think i would have picked a beefier microcontroller just having some extra
+29:08 flash and a few extra pins would have made things easier but it worked out anyway in the end
+29:14 if you're someone who's just getting started with a better development and is about to pick your first microcontroller
+29:19 i would say go for something simple maybe an 8-bit microcontroller that is
+29:24 well known and don't be afraid of making the wrong choice if you prototype you will find out soon enough if you made
+29:30 the wrong choice and all microcontrollers fundamentally works the same way and what you learn on one
+29:35 microcontroller applies to other microcontrollers and as a hobbyist you have the luxury to make mistake it's a
+29:40 whole nother question if you're picking a ship that will be placed in millions of devices but that's not what we are
+29:46 doing here not yet at least okay so now i've gone through everything i wanted to cover in this video it got a bit longer
+29:52 than i expected but i think it was a good idea to talk this through because as i mentioned in the beginning of the
+29:57 video embedded systems development is so much about hardware and we must really understand the hardware when we are
+30:03 programming it and this video also gave me a chance to give you some more context and background around the project which i
+30:09 hope will be helpful for following along in the coming videos okay so just a quick recap i started by talking about
+30:15 the motors and the multi-drivers i picked out and then i talked about the range sensors and the
+30:21 line detectors as well as the eye receiver that is needed to remotely start the robot i also talked
+30:28 about the power supply and finally we got to the most important piece the microcontroller
+30:34 i didn't talk about this part here but i will do that in a future video i will get back to this diagram throughout this
+30:40 video series just to keep ourselves oriented as we go about writing the drivers for the individual parts here
+30:46 okay this is all for now and in the next video i will do a walkthrough of the pcb design that i made to connect all of
+30:52 this and then we will get to the programming so see you in the next video
+30:58 artful bytes

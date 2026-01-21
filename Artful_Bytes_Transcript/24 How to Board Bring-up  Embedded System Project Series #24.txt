@@ -1,0 +1,280 @@
+00:00 the components of a modern Electronics device or as I call it on this channel an embedded system or connected through
+00:07 what's called a printed circuit board a PCB and when working on a better system today you will come in contact with pcbs
+00:14 even as a software engineer especially during the stage referred to as board bring up which is what I'm going to talk
+00:21 about in this video because after the PCB is designed the day will come when the manufactured boards finally arrive
+00:28 which is an exciting time on one hand because there is nothing like the smell of fresh boards but on the other hand
+00:33 also stressful because there is a high risk there are mistakes in the design and this needs to be discovered and
+00:39 fixed so that new boards can be ordered as soon as possible exactly what board bring up entails in practice will of
+00:45 course vary but the overall goal is always to ensure that the hardware works as intended typically assuming a large
+00:52 team the first thing that's going to happen when these boards arrive is that the hardware engineer gets hold of the
+00:58 boards and they will likely do some preliminary inspection and maybe some electrical measurements they could for
+01:04 example check that the components are mounted correctly and gets the power as expected and what not but then once the
+01:10 hardware Engineers are done it may be after having patched the board the software Engineers gets hold of the
+01:15 boards at this point the software nearest hopefully have had some time to prepare some software that can be
+01:22 flashed to verify that the board is working and this software May toggle gpios and send stuff over common
+01:28 communication interfaces such as SPI isquility and uart to pinpoint any
+01:33 incorrect connections of course then as the design is finalized in later revisions there will be less and less
+01:40 work required to bring up the boards because there will be less changes made between the different revisions and I
+01:45 will also play more code in place I myself as you know developed a Sumo robot a while back and this is what I've
+01:51 used in this video series to demonstrate embed assistance programming it also has a PCB and this means that at one point
+01:58 I've also had to do bring up of it but so far in this video series I haven't actually used this PCB but instead I
+02:04 have written all code using the development board for the same microcontroller but in this video it's
+02:11 finally time to move over to the actual PCB in other words it's time to do board
+02:16 bring up although it's going to be a bit of a fake one since I've already verified that this board works also for
+02:23 this board bring up I'm further along with the software than it usually are at this stage I mean I basically have all
+02:28 the drivers in place as well as a list of tests to verify them all and a separate build Target for the actual PCB
+02:34 and this should in theory make the board bring up go very smoothly though there may be some code mistakes I've made that
+02:40 I need to fix in this video okay so here is the actual robot and here is the PCB and if this was for real I would
+02:48 probably do some visual inspection here first but now I'm just gonna skip that step and go straight to powering up the
+02:54 board okay good no smoke that's a good sign
+02:60 and the LED lights up which is also good because this means that I have power and this was actually not the case when I
+03:06 got the first revision of this board because this board is the second revision and when I got the first revision and I powered on the board the
+03:14 LED didn't light up and the reason for that was because I had accidentally oriented one of the diodes the wrong way
+03:21 around but fortunately that was easy to patch but then I also made another mistake on
+03:27 the first generation and that was the connections to these two motor drivers here I had mixed up the input signals to
+03:34 the smooth drivers and that was a bit more of a hassle to a patch I I don't
+03:39 think I even patched it and just did a new revision because the footprints are
+03:44 pretty small so it was hard to patch but in general when you get the new board that has some issues or hard ratios and
+03:51 you think you have a pinpoint what is wrong you should always try to patch the board to actually confirm that that is
+03:57 the issue and try to patch the board as far as you can so that you can actually
+04:02 confirm what is wrong before you spin a new moderation anyway after powering up the board the next natural step is to
+04:10 try to flash some software onto the microcontroller and by doing that I can verify that the battery controller is up
+04:17 and running and that the debug interface Works note on this design I don't have a proper debug connector and instead I
+04:24 just connect some wires so jumper wires from my launch pad I used the debugger on the Launchpad
+04:31 instead okay so now I'm just going to build my software for the actual PCB the
+04:37 Anselmo Target and then I'm just going to try to flash that to the microcontroller
+04:44 and yes that seems to work so that means that the mic controller is up and running and that the debug interface
+04:50 also works so that's a good sign then in order to know what I need to shake next or what I
+04:55 need to check during the bring up I must understand the hardware and to understand the hardware it's probably best to refer to the schematic
+05:03 so I can open up the schematic
+05:12 okay so here we send overview of the schematic and doing board bring up is it really just a matter of verifying that
+05:17 the connections and the ICS on this schematic works as intended and from the schematic I can basically extract a
+05:25 checklist that I can go through during the bring up and as I said before fortunately during this video series
+05:32 what I've done I have written all of the code necessary to test the different parts in this schematic which is going
+05:39 to make it quite easy to run through this checklist during this video and I won't also press on the fact that
+05:45 to verify that the hardware works you don't need to have all of the software in place because for example to verify
+05:51 that I squared C works here it's really enough to send some data or read some data over the I squared city lines I for
+05:58 example don't need to have a full driver for the range sensor that I'm using so if you are preparing software for board
+06:05 bring up you should write the minimum amount of code needed to verify each part so that you can get a complete
+06:10 board bring up software in place as soon as possible because if it's one thing when it comes to warping up it is that
+06:17 time is of the essence because the faster you're able to verify that the
+06:22 hardware works as intended or that there is some issues with the hardware the sooner the hardware designer can rework
+06:30 the design and order new boards because ordering new boards well it costs on money of course the critical part is
+06:36 that it takes time for the for them to be manufactured and sent back and can often be driving factor of the timeline
+06:44 of a project okay so let's now move on to the actual World bring up and what
+06:49 I'm going to do now is essentially run through the different tests that I've created during this video series and see
+06:56 if I run into any issues the first test I'm going to run is the the test that
+07:01 blinks the LED to verify that the test LED works
+07:06 so now I'm just going to build this test and Flash it to the mic controller
+07:15 and I already know that this code is supposed to work since it can run on the Launchpad but now we will have to see if
+07:21 it also works on this other test Target so now I expect this led over here
+07:29 to Blink
+07:37 yeah the LED blinks so that test seems to be working so let's move on to the next test
+07:45 I'm not going to run this test because I can't really measure all of the output
+07:51 pins or well I could maybe do that but I'm not going to do it and I think I'm actually going to add a
+07:56 Define here to only run this test on the launch pad
+08:07 same goes for this test I should not run this on the actual PCB
+08:19 yeah there's a bunch of test functions here that I can't where that's not useful for me to verify the PCB
+08:30 foreign okay so then I can run the test for
+08:36 verifying the uart driver and this will verify whether the uart lines actually
+08:41 works and are connected as they are supposed to be
+08:52 so if I open the terminal now I should expect to see these letters written out
+08:60 yeah and I do good so stuff seems to be working so far
+09:07 let's move on to yeah now I've already verified that the
+09:12 tracing actually works but so I don't really need to run this function to verify the uart but I'm gonna run that
+09:19 function anyway so it's better to just go through all of the functions [Music]
+09:30 and then open up the terminal again yeah and that works
+09:35 good and in the next test here I will verify
+09:40 whether the IR receiver on the PCB Works whether I can pick up the signal sent from this eye remote
+09:49 so let's build and Flash this and then try to send or press some keys
+09:55 so that's going to be IR remote and for this test I'm checking this I
+10:01 receive right here whether that's connected correctly okay so open up the terminal again
+10:09 so if I just press on Keys here yeah good
+10:17 yes that works can hold
+10:24 yeah [Music] so that confirms that the IRA receiver works good
+10:32 and then I'm going to move on to test the motors and for this I think I will just skip this test right here the one
+10:41 that just sets the pvm signal and instead jumps straight to the one that tests the entire motor driver to confirm
+10:47 that all of the connections to the motor driver works and for this I think I'm
+10:53 going to lower the speed here the Duty Cycles because I don't want the motors to be spinning at full speed
+10:59 that's just going to be annoying so maybe something like this
+11:09 and then I obviously have to put the robot up like this so it doesn't drive away from the desk
+11:17 so now if I build this
+11:30 I should expect monsters to be spinning maybe I can show that as well
+11:42 yeah good
+11:50 so the motors are changing the right direction and also the speed
+12:04 so this verifies that the connections to the motor drivers work
+12:10 very nice
+12:16 okay so then I can also
+12:23 run this next test here test drive which is going to which I don't really need to
+12:28 run for the board bring up either because I've already verified that the I receive it works and that the motor
+12:33 drivers work but this is kind of a fun test to run because it allows me to steer the robot so let's do that now
+12:45 [Music] Flash
+12:53 [Applause]
+13:03 foreign so given that that worked I can move on to test ADC that are connected to the
+13:08 line sensors below the robot
+13:14 so now I also need to find some white paper here
+13:22 like this and open the terminal again
+13:31 [Music] so let's see if I do it like this
+13:44 you can even see that the LED lights up here which is a virtual indicator that the
+13:49 white paper is detected and I also get a low reading on the channel 4 here so if
+13:56 I remove the paper now that value goes up and I can do the same for all of these
+14:02 bottom sensors
+14:08 LED lights up and channel 5 changes
+14:14 nice and the front sensor
+14:21 so that's channel three LED also lights up it's really nice having this kind of
+14:27 supporting LEDs on the board while doing your board ring up to get some visual indication on the
+14:33 board and not only just checking in the firmware
+14:38 and then the last one yeah so that's Channel Zero
+14:47 nice so that works as well
+14:57 yeah and then I'm going to run the next test which is also for the line sensors
+15:04 [Music] and this is more to verify that the code
+15:11 works because I've already with the previous test verified that ADC works as issued so now
+15:17 this is the back right yeah back left
+15:23 yep and
+15:29 see front right
+15:35 front left nice
+15:40 and then we might as well run test line as well then I can also open up the header file
+15:48 for this line yes to see
+15:57 okay now the robot should be detecting the line in front right
+16:03 so long line front right so that's value six and that's correct and if you move away
+16:09 line zero it doesn't detect any line good and if I just have it like this it
+16:14 should be line front Yep this one here [Music]
+16:20 and if I do it like this it will be line back that's also correct
+16:28 yeah so that seems to be working as well great
+16:34 and then I can move on to the I squared C test and this first is crochet test here that
+16:41 I wrote in the last video use tests the front sensor let's just start with that one
+16:49 for testing the rest of the sensors thermal again
+16:56 yeah so this is exactly as the last video it reads the expected value from this front
+17:03 sensor and it's also able to write the value and read it back so it has connections to the front
+17:10 sensor so let's run the other taste that tests multiple sensors
+17:17 to verify the rest of the sensors and also the interrupt line on the front sensor [Music]
+17:24 Okay so
+17:32 yay
+17:41 okay so we're getting the value out of range now even though I have my hand in
+17:46 front of the sensor so this means that something is not working
+17:52 so give me a moment to debug that
+17:59 okay so I realized what issue were and that's inside the driver
+18:06 because right now in the test I'm not starting the range measurements for all
+18:12 sensors because as I said in last video I'm skipping the sensor on the left and right but then in this function I still
+18:19 wait for all of the sensors to finish the range measurements but since the left and right are now
+18:26 going to finish it means that we never get any values [Music] well we never get any readings
+18:33 so I need to add a case here A Defined case [Music]
+18:42 that returns true if we encounter sensor left or right
+18:53 like that so I'm going back to test again I'm also going to change the thing
+18:59 here I should print
+19:04 fresh air as well
+19:14 like this okay so if we build this again now
+19:22 okay so now we're getting some readings here so if I put my hand in front
+19:30 and further away yeah even further away
+19:35 remove my hand and if I put the robot up like up like
+19:41 this I should get some out of range still yes
+20:02 yeah so that seems to be working
+20:08 and then I can also run the last test here
+20:30 okay so now I find my hand in front kind of at the middle distance I get front all mid if I look closer
+20:37 front door close and further away from all four
+20:44 and if I move my hand a bit to the left or right
+20:49 okay so now it's a bit hard to get proper readings here since I have a lot of things in the way
+20:55 but yeah that seems to be working
+21:01 okay so with all of these tests run it means that I have basically verified all
+21:07 of the hardware so this would bring up doesn't really give a true representation of an actual
+21:14 warming up since it went so smoothly usually there are more issues than this
+21:19 but now since I have a board that I've already verified before it's kind of like a fake bring up really but I just
+21:25 wanted to show you kind of the process of what's involved when doing a board ring up for a very simple border bring
+21:30 up in this case just so that you can get a sense of what it may entail and kind of the thinking process what I'm going
+21:37 to do now before I end this video is that I'm going to take since this video is going to end up being quite short I'm
+21:43 going to take the opportunity to improve some things in the project and I'm going to start by fixing a buggy that I
+21:50 noticed while preparing for this video and that is in the assert Handler
+21:59 because right now when I assert I send a trace and in this function where I
+22:06 a trace desert I meant I'm supposed to configure the corresponding i o to moocs
+22:13 to the TX pin of the uart peripheral but what I actually do is I configure the
+22:19 error explain instead so I have to change this to B2 here instead
+22:25 and the reason I didn't notice this before is that because most of the time IO init will have run and this means
+22:30 that the pin is already configured correctly but if the saw triggers before IO init runs I mean in the beginning
+22:36 like in MCU init when I initialized the mic controller I'll I will end up
+22:43 asserting Without a Trace so I need to change that here
+22:49 another thing I'm going to fix is a thing that I noticed in a previous video
+22:55 when things are not rebuilt properly and the reason things are sometimes not
+22:60 rebuilt properly is because when I change targets between and Sumo and the
+23:05 Launchpad in this case I'm just changing the Define and this Define doesn't
+23:11 change the modified date of the file which means that make the make file doesn't pick it up but the Define
+23:18 actually changes the content of the of what's included inside the build since I have several if devs in the
+23:25 different files to select between the code for the Launchpad and the code for the actual PCB
+23:32 and the way I'm going to solve this is by having a separate build folder for the different targets and to do that I
+23:38 just need to change the path to the object files directory as well as the target
+23:43 directory so here I'm going to add a subfolder named the same as the target
+23:53 and also here by just moving bin to here
+24:01 and if I click now and for example make LaunchPad
+24:07 and then make enzumo and then move into the build directory
+24:13 I have two different directories for the different targets so now each time I switch between the
+24:20 two Targets the files will be rebuilt properly and while I edit I'm also going to make some other changes to this make
+24:26 file first I'm going to add two new rules one to start the terminal so that I don't
+24:32 have to write [Music] this line each time I can just copy this in here
+24:39 [Music] that and then I'm also going to sleep here for one second so there is some
+24:44 time to show what the command is not because I need it but it can be nice when I do these videos for you to see
+24:51 what the command is that I run and then also add some info about sudo
+24:58 so now if I run make terminal
+25:04 oh yeah I should also yeah I will fix that soon but now I will just add a Target so now if I run terminal it first
+25:12 shows the command and then it enters the terminal so that makes it a bit more convenient to run as to start the
+25:17 terminal and then I'm going to add a second rule for running all tests or building all tests tools
+25:24 build test.age you can also run that now
+25:31 and these rules are just here to make things more convenient [Music]
+25:47 okay but for this I don't want to run I have to add a Target so I'm going to fix
+25:54 that as well and they should also be added to phony since
+25:60 they don't produce an output really it's not going to be tests
+26:07 I mean all uh the other ones should also be here so
+26:13 address to line forgotten before symbols
+26:23 and size
+26:31 yes and right now to exclude or to make make
+26:39 gold not require the hardware targets I do that in quite an ugly ways I will
+26:46 improve on this by adding these to a separate variable instead I'm going to have a variable called goals without
+26:52 Hardware it'll be clean CPP Shake format
+26:59 terminal and tests and then we're gonna check if Google has Target by using the
+27:07 filter function on this variable okay so this is basically going
+27:13 to become true if the goal is not part of this list here and then I can just
+27:19 add an if equal this is kind of an ugly workaround but
+27:25 that's usually how it is with the make files unfortunately so
+27:30 if go as a Target then I should run this here and now I can also I can remove this as well as this
+27:38 select this and just add an if at the end so this makes it a bit cleaner than
+27:43 before so with this in place I should be able to run like terminal without
+27:49 supplying the target yes and if I try to for example just run
+27:56 make it should force me to add a Target yes and
+28:02 yeah maybe I used to add a test like this test [Music] blinking LED
+28:09 yeah so that works and one last thing I want to change is this here so I'm going to
+28:18 add a variable call Main file
+28:27 roll this down and
+28:37 like that since I have a different make file depending on if I'm building the test or not
+28:45 so then I can have magnified here and instead of deleting this object file
+28:52 I'm going to run touch on the source file instead
+29:01 like this you can add a command for that too
+29:08 and finally I also want to update the CI file or the GitHub action file first I'm
+29:14 going to create in here then I'm going to add tools path here instead because this will allow me
+29:21 to not repeat myself down here
+29:29 and here instead of running it like this I can just do make tests now let's just
+29:34 try to make run make test here again to see that it works yes okay so that's all of the changes that
+29:41 I'm going to be doing in this video and really the changes I did now has nothing to do with board bring up I'm just
+29:48 taking the opportunity to make these small improvements in this video so let's Commit This code now first CPP
+29:54 check though and format and then I'm going to create several
+29:60 commits here I think so first one for the build that's gonna make it
+30:06 tab well I should first actually create a local branch
+30:14 bring up and then I want to add the build related
+30:21 changes so that's going to be the CI file and the make file
+30:38 like that and then I can add the fix for the
+30:45 assort Handler the SR Trace
+30:57 yes and finally the test related changes
+31:11 and then I can push it
+31:20 and check to see that it actually passes the CI system
+31:29 create the pull request [Music] you can also go into this the details
+31:34 here to see that it runs my new steps and yes it does so it ran successfully
+31:46 so let's see if we can go into this put request
+31:54 yeah so now I can just rebase and merge this
+32:02 and that's it for the code in this video this will bring up went very smoothly for a good reason since as I said before
+32:11 I've already verified this board and I have so much code in place when doing
+32:16 the bordering up this time so it's yeah almost expected to go smoothly but I was
+32:22 still a bit surprised that all of the tests worked so well without any modifications basically overall I think
+32:28 board bring up is a fun part of developing in a better system because it's always exciting to see if the
+32:34 hardware works so but also of course stressful especially for the hardware designers but it's just the stage of the
+32:42 development where you as an embedded software engineer at least get very close to the hardware but that's it for
+32:48 this video and from now on I will not be using the development board anymore and
+32:53 just run the code on the actual robot or well I'm going to run
+32:58 some simulations on the host computer but other than that I will not be using the development board anymore finally
+33:04 but that was it for this video so thanks for watching and see you in the next one

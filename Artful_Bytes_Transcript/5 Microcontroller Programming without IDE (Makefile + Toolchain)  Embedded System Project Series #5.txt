@@ -1,0 +1,471 @@
+00:00 have you ever wondered how hacker pros are able to keep their fingers on their keyboard have you tried setting up a similar
+00:07 workflow and even thrown away your mouse only to have to pick it up again because the ide forces you to press a button i
+00:14 understand and that's why i'm going to show you how to program and a better system without an id in this video and
+00:20 while the hoodie is an obvious advantage i promise there are more benefits to adopting this workflow
+00:27 hi it's me i'm back with another video in this video series about programming and a better system from scratch this
+00:34 robot in the last video i set up the integrated development environment the id provided by the vendor for the
+00:41 microcontroller on this robot the msp430 and i managed to compile and load a simple example project that made the led
+00:49 blink on this evaluation board that has the same microcontroller and using an id is all fine and handy but i also
+00:55 mentioned there was another way to do this without an id and that's what i'm going to show you in this video okay so
+01:00 with an id as we saw compiling a loading code is just a matter of pressing a button
+01:06 and everything just gets magically taken care of but of course there is no magic going on and what's actually happening
+01:12 is that there is a set of tools underneath that does the heavy lifting a tool chain that most importantly
+01:19 include a compiler that takes the code we write and translates it into an executable that can run on our target in
+01:25 this case a microcontroller and to some extent we can see the idea as use the gui wrapper
+01:31 around this tool chain and in this video i'm going to discard the gui part that is the id and
+01:38 jack into the tool chain directly from the command line and while i can use the tool chain include devices studio by
+01:44 default i'm going to install another tool chain because there is actually more than one tool chain that supports
+01:49 the msp430 and this is commonly the case for most microcontrollers and then i'm going to run the compiler in this tool
+01:55 chain as a single command from the command line to build the same example project as in the last video but running
+02:02 the compiler this way is inefficient and cumbersome and that's where make and made files come in and to show how make
+02:08 and make files work i'm going to create a new make file from scratch that will be suitable to use as a starting point
+02:14 for the project in this series but for any of my controller project really and to clarify jumping out of the idea is
+02:20 not merely an exercise to make things more complicated there is actually some real advantages to it we're not bound to
+02:27 an idea anymore you can actually start setting up a development environment more to your own liking you can use your
+02:33 own editor choice your own terminal and your own tools basically and customize
+02:40 them in a way that makes for a more pleasant workflow and another good thing with such a setup is that you can reuse
+02:45 it across projects and actually improve it over time instead of having to
+02:51 relearn a new id every time you change target and these ideas also vary in how good they are some ideas are acceptable
+02:58 like cc studio but some ideas are also quite horrendous another important aspect is build automation which is a
+03:05 given in larger and more serious projects especially in the professional world we want our code to be checked and
+03:11 tested i mean a person makes a commit and this commits runs
+03:17 through an automated system to check it for errors and perhaps we run some unit tests and we want this
+03:23 entire chain to be automated and trying to automate this using the idea is going to be near impossible because ci system
+03:29 wants to run commands and not press gui buttons automation overall is just so
+03:34 much much easier if you have a command line based workflow in place instead of an id another advantage i think is
+03:40 understanding one of the reasons i went into embedded systems to begin with is because it's a field or subject that
+03:46 allows me to actually dive deep into how things actually work and an idea is
+03:52 really a barrier against that and when you interact with the tool chain directly it forces you to understand
+03:58 more about how the build process work and not only is that more satisfying it's also tremendously helpful when
+04:04 you're running to build issues which you eventually do regardless if you're using an id or not
+04:09 okay tool chains i already have a tool chain installed as part of the installation in the last video of cc
+04:16 studio and this is a proprietary tool chain that ti supplies and while i could
+04:22 technically use this tool chain from the command line to build my code and also
+04:28 use it from a make file i'm not going to use this tool chain and instead install another tool chain called gcc or you
+04:34 know compiler collection probably a tool chain you're already familiar with if you have ever compiled a c program on
+04:41 linux because it's the standard tool chain that comes with most distributions of linux and it's a tool
+04:47 chain that's widely used and supports many different architectures and it's used in large projects
+04:54 most prominently perhaps the linux kernel so overall a very popular tool
+04:60 chain and it's good to be familiar with it for this reason because if you learn this tool chain you will
+05:05 probably have use for it in many different projects and that's one of the reasons why i want to use it instead of
+05:10 the tool saying that the ti supplies because their tool chain is only applicable to msp for 30
+05:17 microcontrollers another reason is that since this is so widely used and it's also open source it's also better
+05:24 documented which is an important aspect when you consider using the tool chain directly because
+05:30 then you want to understand how to use the toolchain for example you want to know what flags or options you can use
+05:36 for your compiler and what they actually do it's also a free tool so you don't have to pay for it
+05:43 and yes i know tia compiler is also free but you may run into other
+05:48 microcontrollers where that's not the case and where you instead have to pay for the full version of the tool chain that
+05:55 the wender provides but at the same time has support for gcc
+05:60 and in those cases you have another reason for why you would want to use gcc relating to this there is also
+06:07 other tool chains developed by third-party companies such as ir systems kill or crossworks
+06:15 and these companies develop full tool chains and they have their own ideas that can be
+06:21 used to develop code for several different architectures including msp430 their selling points is typically that
+06:27 they produce smaller and faster binaries as well as provide better technical support but of course to get them you
+06:34 have to pay so you're probably not going to be using them in a hobbyist level project and i
+06:40 have no previous experience with them and i'm not going to use them here but i think it's good to be aware that they
+06:46 exist because you may run into them in a professional setting okay so now i'm going to head over to ts website again
+06:51 to download the gc toolchain the version of the gcc tool shine or compiler that
+06:57 the ti offers here is one that they own and actively develops this is different
+07:03 from the mainline gcc and i think some of the support for msp430s are actually
+07:08 been ported into the main line but i'm not sure to what degree and it's just gonna be a better bet using the one that
+07:15 ti provides here on their website
+07:22 and as i mentioned in the previous video i am on linux and it's going to be preferable to be on linux when you start
+07:27 working from the command line because linux simply has a better command line experience and of course there is
+07:33 another 100 reasons why you should be on linux but let's not go into that right now
+07:43 i've obviously downloaded this before and i can just show you that
+07:49 i can unpack it
+08:01 and then all the tools are available inside this unpacked folder
+08:06 yeah so here you have the some of the different tools most importantly the compiler
+08:14 now obviously that's not going to do anything unless i provide an input to it but since i have already unpacked this
+08:21 in another place more specifically in my home folder under dev
+08:26 and tools similar to where i installed cc studio i will be using this part from
+08:33 now on and one thing i can also can also show
+08:38 is that you can work with this tool chain also from cc studio
+08:44 by making sure you add it to one of your available compilers inside this studio
+08:50 so then you would go into properties and shows your compiler version here but
+08:56 before doing that to make it available here you would have to add it and find the path to it and
+09:02 and yeah simply add it and then you can build your project with the gcc tool chain from cc studio but
+09:08 i'm not using this studio in this video so let's move on
+09:14 so what i'm going to do now is i'm going to build that same blinky project that i built in the
+09:19 previous videos using system studio but i'm going to run the compiler from the new tool chain from the command line to build this
+09:26 project and to make this a bit more convenient i'm going to add my compiler to my pause so i don't have to type the
+09:32 entire path each time i invoke the compiler and the simple way to do that is just update the path variable
+09:41 [Music]
+09:50 and yes to confirm i can equate oops
+09:56 like this and as you can see i've added the current directory where the
+10:02 all the tools are available to my path so what i can do now is simply write it like this
+10:08 yeah and let's now head over to the folder where the blinky project is
+10:14 and that's going to be located in the workspace i created in the last video
+10:22 and let's try to invoke the compiler to
+10:27 build the blinky project just doing it like this first
+10:33 and now you will see that i will get a couple of errors because in order for this to work i also have to add a couple of options to the
+10:39 compiler okay the first error we get here is that the compiler tells us that it can't find
+10:45 this header file and i talked about this header file in the last video
+10:50 it's a header file that contains some useful definitions when we are working with the registers of the mic controller
+10:57 and this header file is provided by the vendor that is texas instruments
+11:02 and the reason the compiler can't find this file is because we haven't told it where to look for it
+11:08 and this file is located in the site well for one it's included in the directory of css studio
+11:16 but it's also part of the tool chain that i just downloaded so what i'm going to do now i'm going to add another
+11:21 directory to the search path so that the compiler can find this file okay so first of all let's have a look
+11:27 at where it's located
+11:33 so
+11:39 yeah so it's located in this include directory okay so the path i want to add to the
+11:45 search path is this path
+11:50 and the way i do that is by using a flag
+11:57 a large i and now i can run this again and i
+12:03 should get another error yeah and now it starts complaining about these definitions that we expected to be
+12:10 declared inside this file that they are not declared and
+12:16 the reason and it doesn't think these are declared is because this
+12:22 header file that we just told it where to find it's not only used for the particular
+12:28 microcontroller i'm using here but it's also used for other mic controllers so in order for it to match up with the
+12:34 with this mic controller i have to tell it which microcontroller we are compiling for
+12:40 and as you can see in this file here we have this large if if else defined here so what i have to make sure is that the
+12:47 appropriate define is defined and one way i could do that is to simply
+12:52 write define uh underscore underscore inside the source file
+12:58 but there is a better way to do it and the way we do that is add another flag
+13:05 and that flag is dash mmcu and then we can tell it which
+13:11 microcontroller we are targeting [Music]
+13:17 and besides adding this define this flag also does a couple of
+13:25 other things for one it tells the compiler which isa we should use that is which instruction set architecture and
+13:31 it also tells the link here which link your script that should be used and the link script is basically a script that
+13:36 describes the memory layout of the microcontroller so how big it is and where things are located such as
+13:42 peripherals and so on and if you aren't familiar with the compiler linker in short what the compiler does is it
+13:48 simply just translates each source file to an object file and then it's the job
+13:54 of the linker to bring all of these objects files together into one big executable of course it's a lot more
+13:60 complex than that but i don't want to go into the details in this video and if you want to know more about how it works
+14:05 there is a lot of resources on the internet so if i run this now i once again get another error this is
+14:13 because while the flag we started tells the link here which linker script to use it doesn't tell the link where to find
+14:19 this link script and the link script is actually located in the same directory as the header file
+14:25 that we just helped the compiler locate so it's in this include directory and i can actually
+14:32 open it up it's going to be named like this
+14:37 and as i told you it contains information about the memory layout and yeah lots of other things here which i'm
+14:44 not going to go into right now okay and in order to tell
+14:49 the linker where to find things we have to use the l flag instead and we can use
+14:55 the l flag with the same path as we just
+14:60 added to the i flag so like that
+15:05 and now if we run this again [Music] it succeeded so now i've actually
+15:12 compiled the blinky project from the command line without involving cc studio
+15:18 and as you can see i have the binary right here the a out which is a default name if you
+15:24 don't tell it what but i can also run the command with o flag to define the name
+15:29 of the output so for example i can name it blink and then the output is named blink one
+15:36 thing you may wonder is i knew which option i needed to use in order to make this compile and the way i knew that is i
+15:43 read the documentation that ti provides on their websites and it's located on the same page as where i
+15:50 downloaded this so under technical documentation and then there are a couple of guides here
+15:55 so so and this is pretty well written so if you go through this you will find out which flags you can use and how they
+16:01 work another trick you can use to find out which flags to use is to actually
+16:06 look at what this studio uses to build the example project so i'm gonna just create a new project now because i
+16:13 wanted to use the gcc tool chain instead of the ti compiler now for some reason the our
+16:19 target is not available in this list as it has been in previous studio version so just for the sake of
+16:25 this example i'm going to pick a similar target so we get similar flags so i'm
+16:31 going to use this target here and then i'm going to use the blink
+16:37 example blink pcc [Music]
+16:47 let's go and now i forbid this i can have a look
+16:53 on in the console here to look at what flags it's using to compile this program
+16:59 so it's invoking the compiler and linker separately and here you can see a couple of the flags it's using yeah and we can
+17:05 break these flags down let's copy them to my editor instead
+17:14 we have this c flag here and that just tells the gcc to only run the compiler since they run
+17:21 the compiler linker separately and that's what we're going to do later when i write the make file as well
+17:27 and then they have this flag that we've already defined and then they have another flag here which tells the
+17:34 compiler explicitly that there is no hardware multiplier on the microcontroller and what this means is
+17:41 that there is no dedicated hardware to handle multiplications and this means that when
+17:47 the microcontroller does multiplication it has to do the computation in software which requires more instruction and is
+17:54 slower and this flag is tells the compiler that it has to use this code and can't rely on a
+18:00 hardware multiplier and i think we don't need to define this flag anymore i think this was a problem
+18:07 before because none was not the default and the fault was that compiler assumed that there was a hardware multiplier but
+18:13 i haven't used this flag in my project and i haven't had any issues with the multiplication so i don't think we need
+18:18 this anymore so i'm not going to add it to my command yeah and then we have a couple of eye flags here to
+18:23 add a search path to different directories which we've already done and this oj flag sets the optimization level
+18:31 so there is different levels you can set here one two three and so on
+18:37 and the j flag is basically a compromise between optimization and the
+18:43 ability to actually debug the code with the debugger so this is a good flag to use when
+18:49 you're developing code and then the jflag is a flag that tells
+18:54 the compiler to add relevant debug information for jdb and jdb is the debugger that's part of
+19:01 the gcc tool chain and then there are two flags here referring to dwarf and i'm not very familiar with
+19:08 dwarf but that's another format for debugging information basically but i'm not going to concern myself with those
+19:13 and then this dash will tell the compiler to turn on all
+19:19 warnings so when we define this the compiler is basically going to complain about everything and then there are some
+19:25 additional flags i'm not going to use or concern myself with okay so now i'm just going to add these flags to the
+19:31 command we used ram because we're going to want to have them when we compile our program so we're
+19:38 gonna want to have o dash j as well as stat j
+19:44 and dash wall and we can run this again to make sure
+19:49 it compiles one thing we can do is to see that it actually makes a difference we have to check the size of the binary so if we
+19:58 do if we check the binary with the flag zone it should be
+20:05 larger i think
+20:11 yes so since these flags change the optimization level as well as that debug information they obviously make the
+20:17 executable larger and that's what we're seeing here okay so now i haven't actually tried to
+20:22 flash the executable to the microcontroller but i will do that later in the make file and you will see that
+20:28 it actually still works okay so what i would like to do now is make this project a bit more complicated we're not
+20:34 complicated but i want to break out some things into a separate file so we have multiple files we're dealing with yes so
+20:40 you can see how we compile when we have multiple files and you can see how that becomes more
+20:47 cumbersome so what i'm going to do is break out the led specific stuff to separate header and source file
+20:54 so let's create those files now
+20:60 okay so let's open the main file as well as the led files
+21:08 i'm going to create two functions for the led related functionality one function to
+21:15 initialize initialized led that is to configure the gpi port that's toggling the led
+21:21 i'm just gonna name that led init and then i'm gonna
+21:27 i have to give it a return value as well
+21:33 void and then the functions actually toggle the led i'm gonna name that led toggle
+21:43 and i'm setting the argument to void here because that's good practice
+21:48 in c and this is because in c if we leave this empty it actually says that the function can take a variable number
+21:55 of arguments of unknown type and if that's not what we mean we should write void here okay so
+22:02 switching to the source file let's first include the
+22:08 header file and then
+22:14 define these two functions
+22:20 okay so this init function is just going to be one line it's going to
+22:28 it's going to be the same as this line here so let's copy that
+22:38 and then the toggle function
+22:44 will also be a one-liner it's going to be this line here so let's
+22:50 copy that as well and then
+22:56 we should include the ld header file in
+23:02 this file and replace these with the functions
+23:07 instead so led
+23:15 and led toggle okay so now if i run the same command
+23:21 again this should fail to build because it couldn't find the led
+23:27 function because i have until it also compiled the led
+23:32 source file so let's add that to the line and now it says that it can
+23:39 yeah and that's because i haven't actually i need to add this line as well
+23:52 so now if i run it it should build and yes it does
+23:58 okay so i get all of these warnings inside the inside my editor here so because i haven't set this up
+24:05 properly for this project so i'm just going to disable this for now and the editor i'm using here is beam
+24:12 and it's quite a quirky editor because you have to learn all sorts of key bindings and commands and configure it
+24:18 to be able to work efficiently and effectively in it and it's quite a steep learning curve but once you get used to
+24:25 it's actually pretty nice i'm not sure i would choose it if i were to start over today because i mean there are better
+24:31 things you can spend your time on than learning a new editor and there are also many other good editors available these
+24:36 days such as vs code and but this is just one of the aspects that's really nice when you work from the command line
+24:42 like this because then you're really free to choose whatever editor you like
+24:48 especially if you work in a project with several others because then everyone else can choose whatever editor they
+24:53 like as well and you know everyone has different preferences but at the same time you can share a single common way
+24:60 to build the project okay so now i have this way where i can build the project from the command line with a single
+25:06 command this command here and while this is kind of acceptable right now what you
+25:12 may realize is that once this project goes to be more complex when we add more
+25:17 files then it's going to become quite cumbersome to have to run this command every time and it is going to become one
+25:24 long line that's hard to read and keep track of and it's also going to be inefficient if we run this command every
+25:31 time because what this command does it compiles everything from scratch each time and while it isn't noticeable right
+25:38 now for a very large project this is very inefficient to do because if we just changed one text file we don't
+25:44 actually have to recompile the entire project we only have to recompile that file so it would be nice if there was
+25:50 another way that could make this easier and this is where make and make files come in and make file is a file that
+25:57 describes how to get a certain output from a set of inputs which is often
+26:02 executable from a set of source file but it can be other things besides that which i'm going to show later in this
+26:07 video and make is the program that processes the make file and make keeps tracks of if the inputs has changed and
+26:14 if it has to recompile a certain part of the output which means it solves the problem
+26:19 of having to recompile everything every time in other words in this case the make file can act as a way to organize
+26:26 and keep track of our build process instead of us having to remember this long command and if you're on linux you
+26:32 probably already have make available to you okay so now i'm going to create a new
+26:37 make file from scratch to build this project so let's first create an empty night file
+26:44 and open it as i said a make file describes
+26:50 how to get a certain output from a set of inputs and our output in this case is
+26:55 the compiled output this binary here blink so let's define a new rule for this
+27:03 so this is going to be our output here and then the syntax is that we put a cool on here and then define our inputs
+27:11 in this case that's going to be the two source files main.c and led.c
+27:17 and then on the next line we describe the recipe on how to get the output from these two inputs and we must make sure
+27:24 that this is tabbed and not spaces because that's how make parses it and here i'm just going to copy the command
+27:31 that we just had [Music] now we can just write make here and make
+27:36 will just assume that there is a make file in the current directory and now since the output already exists
+27:43 make is just going to say that the output is up to date so let's remove the output and run the command again
+27:50 yeah and and since this line is a bit lengthy we can break it down using
+27:57 backslash
+28:03 and this is like the simplest make file we can create for this project i mean while we have already gotten some
+28:09 benefits from make there's still a lot of things we can do to make this make file a bit more general uh i mean easier
+28:15 to extend if we start adding more files add more options to the compiler and so on as well as making a make file that is
+28:22 easier to reuse across different projects and i should also say that there is no perfect way to write the
+28:29 make file and it often just comes down to personal taste and what i'm going to show in the rest of this video is how i
+28:35 prefer to do it but of course there are some good practice tests you will find in most make files okay so the first
+28:41 thing i like to do is create a set of variables to make this command a bit
+28:47 more readable so starting with the directories and first i can just define some
+28:53 variables for where to find the tool chain files and like the way you
+28:59 refer to a variable is using the dollar sign and parenthesis like this and now i
+29:04 can replace some of the things in the command as well and then i also like to create variables
+29:09 for the different commands so using the make file [Music]
+29:16 so starting with the compiler i typically name that cc and that's one of the practices you see in most make
+29:22 files and then i can replace this inside the
+29:27 recipe as well and then another thing i would like to give a name is the output
+29:36 so the target then i replace that here
+29:45 and now we can run make again to make sure that this still builds first let's remove blink
+29:52 yeah and it works and i've also added a couple of comments here as you see and the way you add a
+29:57 comment is through by adding a hash symbol like this and i just add these comments to make the make file a bit
+30:03 more readable the next thing i like to do is separate
+30:10 the flags into variables as well
+30:16 so let's start with a variable for the my controller name
+30:23 let's create a flag for the warning flags we want for the compiler and the ones i'm going to put here is
+30:29 first of all wall which i already mentioned enables all warnings and then i'm gonna add w
+30:38 error and this makes all the warnings uh appear as errors which means we can't compile our
+30:44 program is if there are any warnings and this is just a good way to ensure that we never let any warnings through and
+30:51 actually fixes the warnings as soon as they appear it's just generally good practice and
+30:56 there's also another flag i would like to add before this one it doesn't really matter which order they come in it just
+31:02 makes more sense to me to put this before the w error and this is w extra
+31:09 which enables some additional warning flags that are good to have and as i said before if you want to know
+31:14 more about what these options do and what kinds of warnings and so they enabled you can just take a look at the
+31:20 general documentation of gcc and finally one additional warning i would like to enable is shadow
+31:27 and that's just to get a warning or error if i accidentally name a variable in a nested scope the same as a variable
+31:34 in the outer scope there's actually a good blog post about good compiler flags on a blog called interrupt memfold and i
+31:41 will link that in the description and next i want to have separate flags for the compiler and the linker
+31:51 so i'm going to include a warning flag for the compiler
+31:57 and then add the specific linky flags which is going to be the mmcu flag
+32:04 using the mcu variable which is defined and next i could just write dash l and
+32:11 simply write leave beers like this but i don't want to do that because in case i start adding more directories i would
+32:17 have to break this up into multiple variables and make sure i use l before each directory and to avoid that i'm
+32:23 going to use a make function called add prefix and this function adds a prefix to every
+32:31 string in a list of strings and the list of strings in this case are the directories
+32:40 and i'm also going to do the same for the include directories to the compiler
+32:46 and to the compiler flags i should also add the optimization and debug flags
+32:52 and now let's replace them in the recipe as well
+32:58 and we can shorten this even further now and keep it on one line so let's remove blink again and run it
+33:08 now we got an error we can actually see the entire command that was run and it's this one
+33:13 here and we can notice that actually made a typo here and use the same prefix for both the
+33:19 link we include as well as the compiler include this should obviously dash i so we have to fix that
+33:32 and now it works okay so the next thing i'm going to do is separate the compilation stage and the linking stage
+33:38 and the way i do that is by using the c flag which tells the
+33:44 gcc program to only run the compiler let's do that for the
+33:50 two files
+33:56 and the output of the compilation state is an object file and not the complete executable and that's why it has an
+34:02 ending like this the dot oh
+34:10 and then add this effect to tell the programs only around the compiler and the output and the input
+34:16 and then we have to do the same for the led file
+34:22 a separate thing it like this is what's going to let make work more efficiently by only compiling
+34:28 the things that actually need to be compiled then we should replace the input here with object files
+34:38 as well as here and i previously forgot to replace this with target as well
+34:46 and we can add a comment here as well and say that this is the linking and we should remove the compiler flags
+34:52 because we are only linking here and we don't need to add a specific fact to link here it's going to recognize that
+34:58 it's object files and just do the linking so let's remove the
+35:05 output file again and rebuild this oh yeah and now we also have to add the
+35:13 mlm flag to the compiler [Music]
+35:23 and as you can see now it has first built the two object files for the main file and the
+35:31 led file and then it does the linking in the third step here so if we look into the folder we can
+35:38 also see these separate object files of course we don't want to repeat the
+35:43 compilation stage like this for every file i mean it's acceptable when we only have two files but imagine having a lot
+35:50 more files then it's going to be really tedious having to do this for every file so what we're going to do now is
+35:56 instead use some make file tricks to avoid this
+36:06 first off i'm using the percent sign here to match any output with the ending
+36:11 dot o so when make reaches this line here it's going to see that it requires these
+36:17 prerequisites or these inputs and then it's going to look for how to generate those inputs and it's going to find a
+36:24 match here because it's going to match this output right here
+36:30 and once it matches that it's going to replace this ampersand here with the match it made here so for example for
+36:37 main it's just going to replace this with main and since main.c is a file that is in
+36:43 our directory it's going to be able to run this recipe and to avoid hard coding the name here we can instead refer to
+36:50 the output and input using special symbols so for the input it's going to be this
+36:56 dollar sign and this upper sign and for the output is going to be the
+37:02 dollar sign and the add sign and then i can remove the line below and
+37:08 i can also replace these two with the dollar sign and up sign as well well i
+37:15 don't need to use target here either i can also use the dollar sign and add sign here too let's
+37:21 remove the object file and the output file and run this once again and yeah as you
+37:27 can see it works as before and now we avoid repeating ourselves for every source file we add of course it takes
+37:33 some time to get used to these cryptic symbols and that's why it may if you haven't if you aren't familiar with make
+37:39 files before and you open up a new make file that someone else has written it can be a bit cryptic at first to
+37:45 understand what's going on but i think if you write a make file from scratch like this it's going to be much easier
+37:51 to understand what's going on one thing i would also like to improve is that right now we litter the main folder with
+37:57 all of these object files and output files and i would like that to get generated to a separate directory
+38:03 instead so what i'm going to do here is define a new build directory
+38:09 and a separate directory for the objects files
+38:14 and a separate directory for the the final executable
+38:20 and i'm also going to put the files i'm compiling into a separate variable as well
+38:26 as well as the obx files and then let's replace that in the rules
+38:32 below and just to make sure that the folders exist or that they get created in case
+38:38 it doesn't exist i'm going to add just the newer more command line command here which is the program used to create
+38:44 directories in linux and i'm going to add a dash p flag here just it doesn't
+38:50 give me an error if the directory already exists and then i'm going to use the deer
+38:55 function here to get the directory of the target so i could either use just right target here or i could as i did below
+39:03 use the special symbol to get the target as well and i'm gonna prefix this with a
+39:09 an add sign just to avoid having this printed
+39:15 like these lines here because i'm not really interested in seeing that the directory was created or that this
+39:21 command was run and then i'm gonna do the same for the compilation stage okay so now if i remove
+39:29 the object files again as well as the output yeah we can remove this one too
+39:35 and run this again and now we should expect the energy files to be put in a separate
+39:42 oh well i also have to prefix the output of this rule with the object here as well
+39:52 oh and yeah i should this should be named led and not blink
+40:01 and there we go now we have a separate directory
+40:07 but it didn't actually build the main file oh well the target should we should also
+40:14 add a prefix this [Music]
+40:22 now we should yeah and then object files inside here yep
+40:30 okay so now we're still kind of repeating ourselves here with the source files and the object files i mean if i
+40:36 add a new source file i have to add it both to this variable as well as to this variable so what i'm going to do now is
+40:42 make sure that i only have to add it to the sources variable here so i'm basically going to create the object
+40:49 variable from the sources variable and the way i do that is first replacing the
+40:54 suffix of each source file of the source variable and i can do that like this
+41:07 and this is just a built-in way to replace this effect of a list of
+41:12 strings basically and then i can use a function called path
+41:19 substitution
+41:24 to prefix each source file name with the object there
+41:32 and all the special make functions i'm using here are documented in the make documentation
+41:40 then take a big names come to think of it i might be able to
+41:47 use the add prefix instead of the path substitution here i don't quite remember where i use path
+41:55 substitution here but i guess there might have been a reason for that so let's not try replacing it with that prefix for now
+42:02 then i can remove the objects here okay so this way i can okay so let's see you see so that it works as
+42:09 well so remove the little directory
+42:16 does not work oh yeah i say what's wrong there shouldn't be an h here
+42:27 [Music] yeah and it built again okay so this way every time i add a new
+42:34 source file i can just add it to this variable and while i could simplify this further
+42:40 by having the make file add all the c files automatically i don't want to do
+42:45 that i much rather prefer explicitly adding each make file separately because
+42:51 it just gives me more control and just reduces the chance of me spending a lot of time figuring out the compiler or
+42:57 only to realize that i accidentally tried to build a file that i shouldn't build okay so as i also mentioned before
+43:04 a make file is not necessarily only for building things you can also do other things with these recipes here and where
+43:10 each rule or recipe doesn't actually have to produce an actual file the way we can add such a recipe is by defining
+43:17 something called phony targets that is fake target and two funny rules you will often see
+43:24 inmate files or all and clean
+43:32 all is geostickly used to build everything and clean
+43:38 is to remove all the output basically clean the building directory so that you can rebuild everything from scratch again
+43:45 and in this case that's going to be removing the build directory
+43:54 and i'm also going to separate this command into a variable
+43:60 okay so now if i run make clean it should remove the build directory and then if run make all it should build
+44:06 everything again and the reason we have to set them as phone here is because if we don't set the target as phony and
+44:12 there is a file with the same name it's not going to run this recipe because the output will
+44:19 already be satisfied so let's say i just for example add a file named clean and i
+44:26 remove clean from here and then i try to run my clean it's just going to say that clean is up to date
+44:32 so that's why we need that now one last thing i want to show uh
+44:40 from the make file is that we can actually add a rule to flash the compile
+44:47 output to our microcontroller but once again let's add a couple of more variables and i'm going to use the
+44:52 debugger that's available as part of the cc studio installation i made so let's add a variable for the directory where
+44:59 the debugger is located and then some additional variables
+45:12 and then add the actual command
+45:25 and then finally create a rule for flashing and then add it as a phony target
+45:30 because it doesn't generate an output
+45:38 and then we need to add tlight here for this microcontroller because this debugger
+45:45 supports different microcontrollers and can load different drivers and the drive with it is this one i'm not going to go
+45:51 into details about this debugger here i made a blog post a while ago where i
+45:57 described this whole process a bit more details and i'm going to link that in the description as well and this prog
+46:03 command will erase the flash and then program the flash with the target
+46:11 so now if i plug this launch pad into my computer as in the last video i should be able to
+46:19 just write make flash to build and flash the program to the microcontroller on
+46:25 this evaluation board [Music]
+46:32 as long as i don't make any stupid typos
+46:45 and now it's flashing and that and now it's done and as you can see the led is still blinking okay so and just to
+46:52 confirm that it's actually working let's uncomment the line that toggles the led and i also saw that i missed another
+46:58 thing i should add target here to make sure that we actually rebuild the target before we flash it now if we run make
+47:05 flash again we should expect the led to stop blinking
+47:12 and as you can see it stopped blinking as expected this was everything i wanted to show
+47:18 with make files in this video there is of course much more you can do with make but i think this is a pretty good
+47:24 starting point and i will use this make file throughout this video series to build the project for this robot uh i
+47:32 might add a couple of more lines to the make file but overall this makefile is pretty much going to look like this
+47:38 through the entire series and i also think it's not just a good starting point for this project series it's also
+47:43 a good general starting point or make file for smaller microcontroller projects so you should be able to easily
+47:49 use it in one of your own microcontroller projects another thing i should mention is that modern projects often use cmake these days and cmec is
+47:57 similar to making that you that it enables you to build your project from the command line but instead of actually
+48:04 producing executables c makes its one level above and produces build files so
+48:09 it's able to generate make files but also build files for other build systems such as visual studio or ninja and so on
+48:18 and cmake is really powerful when you want to build a project for multiple platforms
+48:24 or generate files for multiple build systems and i could have used
+48:29 cmake for this project as well but it's really overkill and i wouldn't gain much from it and
+48:34 just using a bare make file is very reasonable for a project of this size and you don't have to always use cmx
+48:41 these days but there is one advantage to using cmake even for a project like this and that's if you are using a an id or a
+48:49 editor that can parse you make files because then you can actually build your project directly from your editor and
+48:56 probably get some better linking and so on so that can be something to consider if you're using an editor that supports
+49:01 that it's just to recap a little i've showed you two workflows for developing code for microcontrollers or really for
+49:08 any c c plus plus project in the last video i showed you how to use the integrated development environment provided by the
+49:14 vendor and in this video i've showed you a command line based workflow where i use my own editor of choice together
+49:19 with a make file and the command line-based workflow is the one that i prefer because there are several advantages to it as i've already
+49:26 mentioned and it's the workflow i'm going to be using most of the time throughout this video series but i will
+49:31 also open the ide from time to time and i'm probably going to open it more than i usually do because they're going to be
+49:37 things that i want to show with that said if you're new to embedded i don't think you should over complicate things
+49:43 by stepping into a command line-based workflow immediately and create your make file and all that because you have
+49:49 enough on your plate as it already is and it's just going to be easier to be sticking to the idea to begin with but
+49:55 it's of course good to be aware of what options you have when you start becoming more comfortable and to be honest the
+50:01 benefits of a command line-based workflow or make file is not obvious for a smaller
+50:06 project like this robot and it may seem a bit tedious and time-consuming having to create a make file but once you have
+50:12 a make file in place you can pretty much reuse that for most of your project and especially if you use the same tool
+50:18 chain the last thing i want to leave you with is that if you go down the route of the command line-based workflow try
+50:25 avoiding getting stuck in the endless loop of tweaking your development environment to perfection i have been
+50:30 there and i still have a lot of things i would like to improve with my development environments including my
+50:35 editor and the tools i use but i think it's just better to get something up that is good enough and then let it
+50:41 organically evolve over time and the same goes for make files start simple that was all for today if you have any
+50:48 questions or feedback please leave a comment below and see you in the next video
+50:59 you

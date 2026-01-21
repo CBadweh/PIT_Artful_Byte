@@ -1,0 +1,123 @@
+00:00 do you want to know more about writing
+00:02 software starting from scratch with the
+00:04 bare metal microcontroller how to pour
+00:06 schematics data sheets right drivers for
+00:08 peripherals like uart i squared c gpio
+00:11 adc and more
+00:12 well then you've come to the right place
+00:14 so throw away the arduino and put on the
+00:16 big boy pants and let's get started
+00:18 hello and welcome back to awful bites my
+00:20 name is niklas and i'm an embedded
+00:22 systems engineer and on this channel i
+00:24 make practical videos about embedded
+00:26 systems in this video i'm introducing a
+00:28 project that i'm focusing on over a
+00:30 series of upcoming videos and that
+00:32 project is this thing right here a
+00:34 summer bot versus robot which is a
+00:37 embedded system project that i recently
+00:39 built and i thought it would be a good
+00:41 idea to use this as a launching point
+00:43 for my new youtube channel
+00:46 a sumobot is as the name suggests a sumo
+00:48 wrestler but in robotics form it's made
+00:50 to compete in a competition called
+00:52 robotic sumo and the competition rules
+00:55 for robotic sumo are simple two of these
+00:58 robots are put in a ring and the one
+00:59 that pushes out the other one first wins
+01:02 the main challenge is that the robot has
+01:04 to be autonomous which means that it has
+01:06 to use sensors to detect the opponent
+01:08 and to make sure it doesn't drive out of
+01:09 platform and there are several weight
+01:11 glasses you can compete in the one i
+01:13 built here is in the mini class which
+01:15 means it can't be larger than 10 by 10
+01:17 centimeters or above 500 grams
+01:21 which means it's quite a small robot
+01:23 overall i think a sunbot is a good
+01:25 project for getting started with
+01:27 electronics robotics or embedded systems
+01:31 it's flexible in terms of how
+01:33 complicated you make it you can buy
+01:34 pre-made parts and use an arduino and
+01:36 throw something together in a day or two
+01:39 or you can
+01:41 design things from scratch more as i've
+01:43 done here design your own pcb put on the
+01:45 micro color and write the code from
+01:48 scratch and make it into a more
+01:49 well-rounded and better project and the
+01:52 competition aspect just gives some extra
+01:55 direction and motivation which is great
+01:57 when getting started with this kind of
+01:59 stuff in this series of videos i'm going
+02:01 to make we are primarily going to focus
+02:03 on writing software so i'm not going to
+02:06 go into details about how to design a
+02:08 pcb like this or how to make a
+02:10 mechanical design like this but since
+02:13 this is an embedded system and we're
+02:15 going to do embedded system programming
+02:16 we must understand the hardware so i am
+02:19 going to go through the system design
+02:21 and explaining video parts that we're
+02:24 going to program but overall the main
+02:26 focus is going to be on
+02:28 programming a complete number the
+02:29 systems project in the programming
+02:31 language c it's going to be bare metal
+02:33 we're going to start with an empty
+02:35 microcontroller and write all the
+02:37 drivers we need from the beginning it's
+02:39 going to be hands-on we're going to be
+02:41 using tools like an oscilloscope logic
+02:43 analyzer multimeter we're going to read
+02:46 schematics data sheets
+02:48 all that stuff so the overall structure
+02:50 of this video series is going to be that
+02:52 in the first few videos i'm going to
+02:54 talk about the hardware in an overview
+02:56 fashion i'm going to sketch out the
+02:57 block diagram talk about the individual
+02:59 parts and go with the schematic and pcb
+03:01 design then i'm going to do a quick
+03:03 video where i talk a bit about my
+03:04 development environment and tools
+03:07 this is maybe not strictly necessary but
+03:09 i will do a few things from the command
+03:10 line so i think it's a good idea to have
+03:12 an understanding of the setup then we're
+03:14 going to do a lots of videos on writing
+03:16 individual drivers including gpio uart
+03:19 pvm i squared c and so on
+03:21 for this i'm actually going to be using
+03:23 the evaluation board for the
+03:24 microcontroller the msp430
+03:27 launchpad
+03:28 used to make these videos a bit more
+03:30 isolated in general it also gives you an
+03:32 opportunity to follow along if you have
+03:34 the evaluation board yourself once the
+03:36 drivers are in place we transition to
+03:38 the actual pcb and start bringing stuff
+03:40 together here we get the code to a point
+03:42 where we can control the robot with a
+03:44 remote control and at last we developed
+03:46 the code to make the robot autonomous
+03:48 which we do by designing and
+03:50 implementing a state machine at this
+03:52 stage we will also do a bit of
+03:53 simulation using a 2d simulator that i
+03:56 built i'm really looking forward to
+03:57 making this series of videos and like
+03:60 even if you are not interested in
+04:01 building a summer book in particular
+04:04 most of what i'm going to do here is
+04:05 applicable to any embedded system and
+04:07 since these are my first youtube videos
+04:09 i really appreciate any feedback
+04:12 questions or suggestions just post them
+04:14 in the comments below

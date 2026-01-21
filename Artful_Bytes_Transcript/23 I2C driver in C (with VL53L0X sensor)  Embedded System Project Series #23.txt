@@ -1,0 +1,557 @@
+00:00 this Su robot is meant to push another suot out of a circular platform and in order to do this it needs a way to
+00:07 detect the other sumobot and for this I have five range sensors uh three in the
+00:12 front and one on either side and in this video I'm going to write the code
+00:18 necessary to take the input from these sensors and convert that to a corresponding enime position and this
+00:24 video is going to be structured in the same way as the last video where I worked with the line sensors in that I'm
+00:29 going to structure the code in different layers so uh here is the software
+00:35 architecture and at the bottom I have the I'm going to implement an iqu C driver because that's the interface that
+00:42 these sensors have and then once I have that working I'm going to implement a driver for the actual sensor H but I'm
+00:50 not going to implement that driver in this video because uh these sensors are actually quite complicated they even
+00:57 have a microcontroller on them and it requires quite a bunch of to get this uh driver working and I already have this
+01:04 driver ready and I have written a Long blog post about how it works so I'm going to link that blog post in the
+01:10 description and so if you're interested you can read that and in this video I'm simply just going to move the code into
+01:16 the project but then I'm also going to implement a third uh software layer called enemy which is going to translate
+01:23 the individual range measurments into discrete enemy positions and this is just here to give a nicer interface for
+01:29 the rest of the application code which I'm going to write later and this is similar to what I did for the line
+01:35 sensors uh so let's get started with the iqu c driver so first I begin by creating a new new local G
+01:44 branch and call that feature enemy detection and then I'm going to create
+01:50 the two files for the I switchd driver so that's just going to be an
+01:56 implementation file and a header file uh and then I can add that to my make
+02:04 file
+02:09 immediately and moving into the header file I Can Begin by uh creating the
+02:16 interface to the I driver so first I will have a function
+02:22 to initialize the driver and then I will have two functions to transmit data over
+02:28 the i squ c lines uh so I need one function to write data to the sensors
+02:33 and one function to read data from the sensors so one is going to be called i squ c right and basically what I'm going
+02:40 to be using the i sare c driver for in this project is going to be to write and
+02:45 read from the registers of the range sensors so this function is going to take the address to this register as
+02:51 well as the data I want to write to the register and this uh address can be of
+02:57 different size um well in this case it's going to be either 8 Bits or 16 bits but
+03:02 to make the interface a bit more General I'm going to pass it as a bite array and
+03:08 then also pass the size of this bite array and this is going to allow me to use this function to send um addresses
+03:15 of different sizes and then do the same for the data and this function is going to return an error
+03:21 code which is just going to be a uh an enom to give some more information about
+03:28 the error that happened and then corresponding function for read
+03:35 which is going to look very similar going to take the address the size of the address and then it's going to take
+03:41 a pointer to the data uh that is received so this can't be const since I'm going to write to this um pointer
+03:48 inside the this function and then also the size so this value here is going to
+03:54 be the data that is read from with this function uh then I'm also going to have
+03:60 a a bunch of um wrapp functions to make
+04:05 theface a bit nicer and these are just going to wrap these other functions here
+04:10 and that's just going to make the calling code a bit nicer because I'm not going to have to pass four arguments
+04:17 each time because most of the time I will just be reading 8bit uh registers
+04:22 or 16bit register and then add include here and also a small comment and this
+04:28 ice driver I'm just going to to make this polling based so I'm will use be
+04:33 polling and I won't use any interrupts because uh for this application or in this project I'm not going to be able to
+04:40 do anything useful uh while the transmission is happening so there is really not any point for me to
+04:45 complicate things with interrupts here so this driver is actually going to be quite
+04:52 simple so that's it for the header file let's now move on to the implementation
+04:57 file or while there's one more thing function I need inside this header file and that is a
+05:04 function to set the address of the slave that I'm writing to because in this
+05:09 setup where I have my microcontroller connected to the range sensors uh the microcontroller is going to act as the
+05:15 master and the range sensors are going to act as slaves and since I have multiple sensors it means that I need to
+05:22 change the address when I want to write to another sensor also say that this is just a driver for an i Square C master
+05:30 so I'm beginning with the initialization
+05:36 function uh the first thing I will do in this function is to make sure that the
+05:41 IOP pins that are going to be used for the i squ c lines are correctly configured and they should be because I
+05:48 configure all of the IOP pins inside the io driver which I showed in a previous
+05:53 video so here I'm just going to assert uh that the configuration is correct and
+05:58 for i s c we only use two pins one for clock and one for data and this is the
+06:04 configuration I expected to have it should be selected for alternative 3 to be moed to the i squ c peripheral and
+06:12 then I can get the current configuration for both pin and assert that the configuration is correct like that we
+06:18 can just have a quick look inside the io driver as
+06:25 well so here is where they are configured
+06:32 and once we have checked that I can move on to actually initialize the i squ c
+06:38 peripheral and as usual to know how to initialize or configure the peripherals
+06:44 of a microcontroller you have to look inside the data sheet and the IC peripheral is well explained inside the
+06:51 data sheet of my microcontroller the msp430 uh I'm not going to refer to the it in this video and instead just show
+06:58 you the register writes immediately so first of all I have to write to a control register and put the icec
+07:05 peripheral in reset because it has to be in reset while you write the configuration of course exactly how an
+07:10 iqu C peripheral is a configure is going to vary depending on the microcontroller
+07:16 but regardless of the microcontroller you will have to write to a bunch of registers and I also think it's a good
+07:21 idea to just write some short comments explaining each register right and then I write to another control register to
+07:28 configure the peripheral for single Master synchronous mode and Ice squ C
+07:34 mode and this means that it's only a single Master uh because the is protocol
+07:39 also supports multimaster mode but in my case it's just going to be a single Master the microcontroller and then I
+07:46 enable synchronous mode uh because the communication is going to be synced with
+07:51 a clock signal and finally I set the i s c mode and this has to be set because
+07:57 this particular peripheral or module Hardware block can also be used for other uh protocols
+08:03 and next I need to select the source I'm going to use as a clock and similar to
+08:08 all of the other peripherals I will be using the subm clock and then I have to write to this register but this clock
+08:15 Source runs much faster than I can use for i squ c uh which means that I have to divide it down with a clock divider
+08:22 and then I write to these two registers which is going to divide the clock down by 160 which is going to be me man ice
+08:29 squid see clock speed of around 100,000 Hertz which is a reasonable clock speed
+08:35 for this application and this is actually all there is for the configuration in my case so now I'm
+08:40 going to put it out of reset again which means I have to clear the reset bit and
+08:45 finally I'm also going to set the default slave address and for convenience I'm just going to use the
+08:50 same default address as the range sensor has so let's then also add a function
+08:58 for writing the slave address and that's just going to be a right to this
+09:03 register so now we can move on to the functions for writing and reading data
+09:09 over the iord C interface but first let me just add this uh all of these functions as empty functions to make
+09:16 sure that the code builds
+09:35 and these functions are just going to call the other functions so this is going to be i s c
+09:41 read and that's going to take a pointer to this address and it's going to be one
+09:47 uh BTE size since it only takes one bite and same with the
+09:57 data and this one is going to be like
+10:04 this and then it's going to be a point to cast this to 8bit
+10:12 pointer that's going to be two this one I say
+10:20 read address
+10:27 one data and then four since it's a 32bit data
+10:34 value and finally uh I say
+10:41 right this one Dela one so let's see if this builds
+10:50 Now does not oh yeah I need to add some dummy return value as well
+11:02 and also include the microcontroller header
+11:09 file yes and also fix the mapping up
+11:14 here so one problem I noticed here is that the for the ice referral the only
+11:22 pins that can be assigned to i squ c are the pin six and pin seven of Port one
+11:30 and in a previous video I accidentally used PIN six for the uh pvm signal for
+11:36 the left motor so I'm going to have to change this now so that I can use i s c so I'm going to move that to 26 instead
+11:45 because the timer peripheral can be also be assigned to Port two pin 6 and I can also remove the configuration for five
+11:53 and 12 now let's see if this builds yep good so coming back to the ice C driver
+12:01 let's begin by implementing the function for writing data to a particular address
+12:08 uh but the first thing I will do in this function is to assert uh or do some sanity checking that I have given a
+12:15 valid address and valid sizes just copy paste this to the other function as
+12:23 well and then I'm going to create a separate function for handling the start of a uh transmission and I will call
+12:30 this i s. TX transfer and this is going to take the address and the address size
+12:38 so this function is basically going to send the address to get the transmission started and if this function returns an
+12:45 error I will return immediately here so let's also implement this
+12:51 function it's going to be a static function and this in turn I'm also going
+12:57 to use a separate function called iquid C send address and the reason I'm adding
+13:04 these extra functions here is because there is going to be some duplicated code between the IC write and the IC
+13:10 read so I just want to reduce the overall code application and I think it also makes the code a bit more readable
+13:15 to have these functions here so the first thing I will do when I'm going to start a transmission where the master is
+13:21 going to be sending the data is going to be to configure the I Square C
+13:26 peripheral as a sender and to do this I have to
+13:33 write to this control register here and in i squ c each communication or each
+13:39 transfer begins with a start condition and ends with a stop condition so what
+13:46 I'm going to do next is to send the start condition so I will have function called i s c send start
+13:53 condition and I'm making this a static inline function since it's just going to
+13:58 be a oneliner right to a single register uh one thing with the MSP 430 is that when you write the start condition it
+14:04 also sends the slave address so it's not just the start condition so I can just add this to my comment and then once I've sent the
+14:13 start condition I should wait for the start condition to actually be sent before sending any bytes or that's how
+14:19 it usually is but on the MSP 430 you also have to write the first bite you're going to send before waiting for the
+14:26 start condition to be sent so here I'm going to write the first bite so that's going to be bite uh
+14:35 the first bite of the address which I'm also going to have a separate function for and I'm adding a comment here as
+14:42 well and once I have transmitted or set the first bite then I can wait for the
+14:49 start
+14:54 condition and for all of these functions as soon as I see an error anywhere I'm going going to return from the function
+15:02 immediately and sending a bite is just a simple matter of writing to a single
+15:08 8bit register so this is also going to be an inline function like
+15:15 this and then for the function to wait for the start condition here I'm going
+15:21 to have a y Loop but with a time out well let's just start with the Y
+15:27 Loop first so I need to uh wait until this uh bit in the register has been
+15:33 cleared because then I know that the start condition has been sent and then I can also check if there is any error
+15:39 here by checking the status register or I can check here if I got a knack from the or non acknowledgement from the
+15:47 slave and in that case I can report an error and otherwise everything was okay
+15:53 and then as for the timeout I mean in case this never becomes clear I don't want to um be stuck here endlessly
+16:02 instead I want to return another error so I'm going to have a RTI count and for
+16:08 each iteration I'm going to decrement this retry account or this retri
+16:14 variable and if retri is zero here then I turn i s see result error
+16:23 time out like that and once I waited for the start condition I can then wait the
+16:29 bite to be transmitted so I'm going to have a weight function for that as
+16:37 well and this is going to look similar to the other function but here I'm going to check another bit basically the
+16:44 interrupt bit that is set when a bite has been transmitted and here I'm going to do the same to check if I got The
+16:51 Knack again and also similar to the other function I'm going to have a timeout
+16:59 and if retri zero I'm going to return timeout like that
+17:06 okay so if it's just a single bite I'm actually done at this point but if the
+17:12 address is uh several bytes I also need to send the rest of the bytes and that's what I'm going to do now inside a y Loop
+17:20 or inside a for Loop so I'm going to start this from one since I've already sent the first bite and go up to the
+17:28 address size and here is just a matter of setting each bite and I'm waiting for each bite to be sent and if there's ever
+17:35 an error I return immediately and then finally return the
+17:40 result so that's it for the send address function and continuing on with the
+17:46 right function at this point after start TX transfer has returned it means that
+17:53 I've sent the start condition and I've sent uh the slave address and I've also
+17:59 sent address to the register or to um the memory location I'm writing to so
+18:05 the next thing I need to do is to send the data and this is just going to be a for Loop and I'm going to make this a
+18:12 16bit uh index variable here because technically this could be larger than
+18:17 256 um it's not going to be in my application but why not data size and
+18:23 this is going to be similar to the other function where I sent the rest of the address byes so first first I set TX
+18:30 bite that I'm going to send and then I wait for it to be sent and if I get an error I return it and when I send data
+18:38 like this it's going to end up being sent from the I mean if there is a value
+18:44 that is multiple bytes there are two ways there are two orders you can send the data in either you start from the
+18:51 most significant bite or from the least significant bite and the range sensor
+18:58 expects the dat that to be sent from most to least significant so that's what I'm doing in this driver so I'm going to
+19:04 add a comment about
+19:11 that can also add that here and I will also comment about that inside my header
+19:21 file so it's clear and that's all there is to the
+19:28 right function so let's see if this builds now yes I have to Define this as
+19:35 well and since it's a 16bit integer I'm just going to use the max value for this
+19:41 um for a 16bit integer to make this delay as long as I can like
+19:48 that yeah good so moving on to the read function
+19:55 and then so the first thing I will do in the read function is going to be to start an ERX transmission or a read
+20:03 transmission so similar to the right function I'm going to have a function to start a r
+20:19 transmission it should be result here so the function for i c i c start
+20:28 ERX transfer but compared to the TX transfer function I'm not only going to
+20:35 send address here I also need to reconfigure the IC peripheral to act as a receiver but first I will send the
+20:44 address then I need to configure as receiver because when I read from the
+20:51 slave I I'm expecting to receive btes from uh the slave or from the sensor in
+20:58 this casee so then the peripheral needs to be in receiver mode so I need to clear this bit and then I need to send a start
+21:05 condition to start the RX uh transmission and I also need to wait for the uh start condition to be sent and
+21:12 once that's done then I'm ready to begin receiving
+21:20 bytes and when it comes to reading I'm also going to get the bytes in um in in
+21:26 a bite order from most to least significant the bite it's going to be for Loop and when I receive the bytes um
+21:35 or in this for loop I will have to iterate in the opposite order going from
+21:40 the last bite to the least uh significant bite so here I'm going to have a similar function for receiving a
+21:47 bite so wait ERX bite and if there is an error I will return and then I'm going to on once the bite has been received
+21:54 I'm going to set the bite inside the uh data array that I will return
+22:00 from this function uh so let's Implement these two functions as
+22:10 well think you're going to move this up instead so they next to each
+22:19 other static to say weight bite and here I'm also going to
+22:26 have a y Loop checking a specific bit or in this case it's going to be the
+22:32 RX interrupt so I might as well actually copy the content of this function I just paste it in
+22:37 here because it's very similar the only difference is this the bit I'm checking
+22:44 and oh I should this error return is wrong this should Bex and this should be
+22:55 TX like this and then I would have a function an inline function to
+23:03 retrieve the received bite and for that I need to read from the receive buffer
+23:10 like this then I can continue with the read
+23:15 function uh and note in this W in this for Loop I'm only
+23:21 I'm receiving all bites except for the last bite because uh the way the peripheral on the
+23:28 MSP for uh expects this to work is that I have to send a stop condition before I wait
+23:35 for the last bite so here I'm going to have a function to stop the I squid C
+23:40 transfer I can just explain what I'm doing here I'll stop before last bite
+23:46 and this is a detail that can trip you up if you don't read the data sheet carefully it took some time for me to
+23:51 realize that this was uh necessary oh yeah I should also stop the transfer inside the right function of course so I
+23:58 should have a call all to stop transfer here because as I said before each um
+24:04 complete iqu C transfer begins with a start condition and ends with a stop condition so what this stop transfer
+24:12 function is going to do is to send the stop
+24:26 condition so to send the stop condition I write to this register then I
+24:35 can copy this code
+24:48 basically and just replace register a check
+24:56 stop yeah looks good
+25:03 so once I've sent the stop condition then I can wait for the last bite I should also check the result
+25:14 here and if I waited for the or if I received the last bite successfully I
+25:20 will set the last bite inside the array I'm returning oh it should be RX here of
+25:27 course so here I think we have something let's
+25:35 build yeah it built uh this is all there is for the i squ c driver in this
+25:40 project since it's only as I said before I'm just going to pull so I don't need
+25:46 to configure any interrupts or anything like that which makes the driver a bit
+25:51 more simple so what I'm going to do now is just to test to see that actually works
+25:59 and for that I'm going to write a small test function
+26:06 called void test I squ C and to test i squ c i obviously need to connect um
+26:13 something to the i squ c bus and I thought it would be appropriate
+26:18 to use um the same range sensor as I have on the robot for
+26:24 this and I'm going to of course test it on the Launchpad because I'm still using
+26:30 the development board or the Launchpad in this video series for verifying all of the drivers
+26:37 so let's begin by doing test setup in it and then I squ C in it this also means I
+26:44 need to include I could see
+26:50 here so for a test purpose I'm just going to read out the one of read one of
+26:58 the registers of the range sensor and I think the most appropriate one to read is the register that contains the
+27:05 product ID because that contains a fixed uh number that I can check against and
+27:11 that's an 8bit register with an 8bit address and the address is this one here
+27:18 which you can find in the data sheet of the of this range sensor and if I get an
+27:24 error I'm going to print that I got an error otherwise I'm going to check if I got
+27:30 the expected ID and then I can print that I did and if not I can print that I
+27:36 read the unexpected ID and one thing I also need to do before
+27:44 trying to read the sensor in this case is I need to make sure that it's not in
+27:51 standby and to make that work I have to set one of the I need to pull one of the
+27:57 pins High a pin called the exot pin and that is just one of the pins that I'm going to
+28:04 be connecting to the Wrench Sensor so that's just going to be a pin that I need to write to here that's just specific to this particular I squid uh C
+28:12 sensor once again for details about this particular range sensor I have a blog post which I will link to in the
+28:18 description uh I should also set the slave address I'm writing to here even
+28:24 though the default address is going to work in this case uh let's just set it here also and the default address to
+28:33 this range sensor is uh 29 in HEX I can also wait for some time here to make
+28:39 sure that the sensor leaves standby so you just wait 100 milliseconds
+28:45 maybe and I'm going to add a comment here as well just to explain uh what I'm doing here since this taste uh
+28:54 requires this exact type of uh sensor this range sensor to be connected uh and
+29:01 before I run the test I'm also going to connect my uh logic analyzer here so that we can
+29:09 see the I Square C traffic sent on the I Square C bus and I think it's really
+29:14 important if you're working with any of the the common interfaces for example SBI i squ c uart or anything like that
+29:22 also have a logic analyzer because this allows you to under get a better understanding or see what's going on uh
+29:30 on the communication lines it's especially useful during debugging when something doesn't work or when you're
+29:35 writing a new driver so let me just hook this up
+29:44 now and and by the way in my case I'm using a more professional grade logic analyzer which is a bit more expensive
+29:52 uh but you can also get similar functionality from a cheaper logic
+29:57 analyzer something like this so this is what my setup looks like
+30:05 I have my logic analyzer here and then I have the range sensor here and it has
+30:12 six pins so one for power one for ground two for i c so the data and the clock
+30:20 line and then one pin for interrupt uh which I'm going to use to know when the
+30:26 range measurement is done in the actual Wrench Sensor driver and finally
+30:32 the exit pin which can be used to set this sensor in standby and similarly
+30:37 I've connected them to the corresponding pins on my microcontroller uh and one detail to be
+30:44 aware of when working with iqu C is that I squ C lines requires Pull-Ups so I
+30:49 have two pullup resistors here and these are rated at 4.7k ohms I think and these are just
+30:57 necessary to make the ISC communication work and for the logic analyzer I have
+31:03 one connected to ground and then uh two of the channels connected to either ice
+31:09 squ sea line so clock and data which is going to allow me to inspect the traffic sent over the lines so let's now try to
+31:16 run the test code so let's build this example now test test I C oh
+31:27 typo another typo oh yeah then I also need to fix
+31:36 this pin
+31:41 here be on I 24 and
+31:49 inside should remove on use there as well and
+31:56 then move this up to
+32:04 here ah and I should have three here I
+32:09 think because I have unus two 3 9 11
+32:15 13 yeah that is so now if we build this
+32:21 yes and then we can Flash open the terminal
+32:32 it's not working let me investigate why okay so I found a few mistakes I've made in my code uh the main one is that I
+32:39 forgot to configure or move these to uh
+32:45 here so that they're also configured for the Launchpad because now the pins was not configured for i s c which means I
+32:51 hit an a search them inside here when I check the io
+32:56 configuration uh and the second problem um is that that this that made me not
+33:03 realize I got an assertion is that inside the U driver right now I might
+33:10 get stuck in this function here since I'm waiting before I actually transmit
+33:17 uh the character and this function is only used in assertion and this is why I didn't
+33:23 notice it before so I have to move this down here so that I wait after I send the transmit the
+33:31 character and then another issue that wasn't really a problem uh is
+33:37 inside the assert function or inside the assert Handler here this should be two
+33:44 now since I moved uh the left pvm signals to this pin instead on the
+33:49 Launchpad so now if I build and Flash this well I should also fix another thing uh inside my
+33:59 test I should add a b weight here so that it doesn't go so
+34:05 fast now if you build this and then if
+34:11 I so this means that we get to here so this means that we successfully read the value from this register and we got the
+34:18 value that we expected so let's also look at the traffic with the logic analyzer and for this I'm going to use
+34:23 the software that comes with this logic analyzer from the same company Sal and
+34:31 in my case I have channel one connect the clock signal so let me
+34:39 just I can also just skip the analog channels and just have this as going to
+34:44 be i s c clock and then I don't actually have Z
+34:50 but instead of two this is going to be i squ c data then I can also turn on i squ
+34:57 c for this and select data and save so
+35:07 now okay so now you can see I can also see the traffic so let's just pause
+35:13 this and zoom into one of them so first here I send the start condition and then
+35:21 I set up to write the slave address uh which is this value here and this is followed by an act from the slave and
+35:29 then I write the register address c0
+35:34 which is also act and since this is a read um transfer I'm then going to
+35:40 reconfigure the iore C peripheral to act as a receiver which means I'll send a new start condition and then I set up to
+35:47 read and and then I send the slave address again and I got get an acknowledgement and
+35:54 finally I get the red value from the slave follow followed by a knack which
+35:59 signals that uh slave doesn't have any more bytes to send and finally I send the stop condition so up here is the
+36:05 clock signal and here is the data so as is visible here it's very useful to have a logic analyzer when you are dealing
+36:12 with a communication protocol like IC uh let's now also extend this test function
+36:17 to test the right function and for this I'm just going to write to one of the
+36:23 registers that I can write to on this range sensor and I'm just going to write the value a and then read the value back
+36:30 to see that it has been written going to write to this register the first register trace the error if I get an
+36:36 error then I'm going to read the value back replace
+36:43 read and if the red value is the same as the written value it means it works and
+36:48 if not then is something is wrong so let's build and Flash this as
+36:54 well uh okay
+37:03 oh shouldn't be a
+37:12 pointer yeah and that works as well so let's look at the traffic
+37:20 again zoom out a bit okay so
+37:28 yeah so this is the where we set up to write uh the slave address
+37:36 and then we write the address to the register and we write this value to this
+37:42 register and  and then we are done with writing
+37:48 the value send a stop condition and then we start the transfer to read the value back from this same
+37:55 register
+38:01 so here we reconfigure to read the value and then we get the expected value back
+38:09 and then we're done with this read uh operation so everything seems to be
+38:15 working with the iquid c driver so let's now Commit This driver or let's just run
+38:22 CVP check first uh
+38:28 so get some complaints oh yeah I missed adding
+38:37 the decrement here that's not
+38:51 good oh now it works so let's just also see that it actually works
+39:00 yes format let's just build
+39:22 everything inate
+39:36 and push
+39:43 it and check CI to make sure that it
+39:56 builds yep all checks passed good this means that we are done with the I Sid
+40:04 seed part of this video so now we're done with this part
+40:10 so then I can move on to the layer above the actual driver for the range sensor
+40:16 and as I said before I'm not going to spend the time writing this driver from scratch in this video because it uh
+40:23 requires quite a lot of code and it's would be a very long video and a bit tedious as well uh so I'm just quickly
+40:32 going to show you the blog post that I made to write here so on this blog post I go
+40:39 over in detail how this sensor works and how I create a driver for
+40:46 it so yeah quite a Long blog post so if you want the details about that um just
+40:54 head over to this page but for this video is going to add it and copy in the code just like
+41:08 touch so here is the interface uh for this driver and there's going to be one
+41:15 function to initialize it and then I will have one function to read a single
+41:20 sensor and then I also have a second function to read um multiple range sensors at the same time and yeah I add
+41:27 a comment here to explain exactly what these functions do and then here is the
+41:33 implementation for this so as you can see there is a lot of code here it's
+41:38 almost a thousand lines quite ridiculous
+41:43 actually I'm not going to get into the details of this uh but note if you read
+41:48 the blog post and check the uh Associated code there will be some differences compared to the code I
+41:55 written here because I made some uh improvements ments this time around but overall it works the same way
+42:03 okay so let's add this to the make file as
+42:10 well and I also need to
+42:16 update the pin configuration here I'm going to move this
+42:21 up here and I'm going to remove the internal resistor here because um I
+42:29 forgot that on the Range sensors that I'm using there is already a pullup resistor available on the breakout board
+42:36 so I don't need internal
+42:48 pullup this and going to use this pin
+42:58 so we can remove nine there e to see that it
+43:07 builds yes uh so then I'm also going to add a
+43:14 test function to verify that it
+43:26 works I also had to include the
+43:32 driver so that's going to be driver SL and then in this y Loop I'm just going
+43:37 to get a single wrench measurement in each iteration then I'm going to print
+43:42 the detected wrench and I for the Launchpad I only have the front wrange
+43:48 sensor connected so I'm going to retrieve the value first of all if it failed I'm going to otherwise I'm check
+43:55 if the range is a valid Val because if there is no obstacle detected in front
+44:00 of the range sensor I'm going to I return out of range and from this sensor I get the
+44:08 values in millimet and if it's out of range I'm just going to print that it is
+44:15 and a small delay in between so let's see if this
+44:24 builds does not uh oh I missed this
+44:32 one can Flash this so now I'm not holding anything in
+44:39 front of the sensor so I'm getting out of wrench but if my I if I move my hand above the
+44:47 sensor I get the reading if I have it a bit further away
+44:54 closer very close
+45:01 yeah so that's working and just for fun we can have a look at uh readings again
+45:06 with the logic analyzer so each iteration there is a
+45:12 bunch of traffic uh going to the range
+45:18 sensor and I'm not going to go through them all but this is just basically a bunch of register reads and writes yeah
+45:25 and then I'm also going to create a second test function to test the other function
+45:31 where I read multiple sensors uh but in this case I'm just going to read a single uh sensor still so I will not be
+45:37 able to test this function fully until I have the actual robot but I'm going to
+45:43 implement it now anyways so again I'm going to
+45:49 initialize but here I'm going to use the other function since I have five um Range
+45:55 sensors this function takes um this array here
+46:01 containing five values and write the readings to this
+46:07 array and then I have a second variable that I pass to the function uh called Fresh Value and this marks whether the
+46:16 values returned have just been sampled or not because for this function I'm not
+46:22 going to start a new Range measurement each time the function is called instead
+46:27 I'm going to retrieve uh the last values red and sometimes when I call this
+46:32 function that is going to be an ongoing measurement and then I'm just going to read the latest value uh but other times
+46:38 I may call it and there may be new values ready and then I'm going to read those values from the range sensors and
+46:44 this is just the way I decided to implement it for this application since uh the overall code on the sum robot is
+46:50 going to run in a while loop so I will be calling this function over and over again so implementing it like this uh
+46:56 make makes it make sense for this use case but once again exactly how this works I explain that in my blog post
+47:03 then I print all of the values then I can end with a VY weight here as well so let's build this as well to see that it
+47:17 works oh uh it does not work because I also realized while preparing for this
+47:24 video that I made another bug and uh and that's is inside the io driver where I
+47:32 set the interrupt flank so these here uh should be the other way around so now
+47:39 when I try to set it Rising it actually set it falling and vice versa so I have
+47:46 to just um reorder these but fortunately there's only one place where I set this
+47:52 trigger so far and that is in the iio remote so I just make have to make sure
+47:58 that I switch this to like that so now if I build this again it
+48:05 should work yeah and it
+48:12 does so if I hold my hand over now I get readings on the front sensor
+48:19 of course I get the value eight 190 on the all of the other sensors because that means they are out of range and yes
+48:27 that's just the default value I use now when they are not connected so this works as
+48:33 expected so let's move on to commit this
+48:39 code so first format CPP
+48:46 check it's status get add
+48:57 commit also I should probably have put the bug fix in a separate commit but
+49:04 well let's just put it in the same
+49:16 commit and
+49:31 PL so let's push
+49:39 this see that it passes CI oh I forgot to build everything let's just do that
+49:44 in the meantime then so that passed as well so this
+49:52 means that
+49:57 I'm done with this portion of the code as well so
+50:03 I'm done with all of the driver code necessary for the enemy detection let's
+50:09 now finally add the small software abstraction layer here that turns the
+50:14 measurements into discrete enemy positions which is going to be here to make the interface nicer for the rest of
+50:20 the application code so in this case I don't need to create any new files because I've already added
+50:28 the enemy uh files previously in a previous video but I'm adding a comment
+50:34 on top of here then I will add an enum for the enemy positions so
+50:43 there's going to be a bunch of positions that the enemy can be in depending on which range sensors are detecting
+50:50 something so if nothing is detected the enem is nowhere or we don't know where it is if uh the front left sensor
+50:58 detects it yeah and so on and then just for debugging purposes in case I have
+51:04 some issue where the left and right sensors uh detect something at the same
+51:09 time uh for whatever reason then I will just return position impossible because it's not really possible for uh the left
+51:17 and right sensor to detect enemy because there is only supposed to be another enemy on the platform and it can not be
+51:24 on both sides at the same time but for the bugging purpose as I said uh it might be good to be able to return this
+51:30 and I'm going to have a similar enum for the range to an enemy so instead of giving the exact distance to the enemy
+51:36 in millimeters I'm just going to return three discrete values either the enemy
+51:42 is close or it's far away or somewhere in between so these three values and then I'm going to group these two en
+51:49 nums into a struct struct which I'm just calling enemy so position and range and
+51:54 then I will have a function that returns this so it's going to be enemy
+52:01 get this and then I will just add a bunch of additional helper functions to
+52:06 make which will make the application code more readable later on these functions will just take the struct
+52:13 return from this function and well check if the enem is detector if it's at the
+52:20 left right or in the front basically and finally I will have two functions to turn these eoms into Strings which will
+52:29 make it a bit nicer when I trace them to the terminal of course these are going to take up some uh flash bace so if I
+52:37 see that I run out of flash bace later I might actually remove these functions later on but for now I will keep them as
+52:43 this so this is it for the interface let's now Mo into the implementation
+52:49 file uh I also need Bo here
+52:60 this is just going to initialize the ren sense driver which means I also have to
+53:05 include it here and we get the result
+53:10 here and if I get an error I will return but I will also print something here so
+53:18 let's now Implement enemy get function create an
+53:24 enemy stct and give this some default values and then I'm going to use the
+53:31 function for measuring multiple sensors at the same time maybe should print something here
+53:36 as well I don't actually want to spread too many traces since it takes quite a lot
+53:43 of flash bace but let's add this one anyway then let's
+53:49 extract the ranges for each s from The Returned array do this for all of them
+53:58 and then I will have a maximum threshold to decide whether the enemy has been detected or
+54:04 not so these are going to be bulls and I'm going to Define this
+54:11 threshold to be 600 because even though the sensors can measure longer than that they should never go above that given
+54:18 that the platform is around 80 cm in diameter and then I will have a variable
+54:23 to hold the range temporarily I'm just going to go through all of the possible cases here so first this case front left
+54:30 if I detect left and front left or left and right that means I have detected an
+54:38 impossible range lse I'm just going to set left here and also set the
+54:45 range else if right ah there should be front right here front left or or left
+54:56 going to be impossible otherwise uh but I'm actually not going
+55:04 to be using the values from the uh sensor on left or right because
+55:13 uh when I used this robot a while back I realized that I haven't actually mounted
+55:19 this in a proper way which means that I will get a lot of false readings so what I decided to do in the end was to Simply
+55:25 discard the sensors on the side and only use the sensors in the front uh but I'm
+55:31 still going to leave the code here but I'm going to undefine it and add a comment about it so let's move on to the
+55:38 sensors that I'm actually going to be using the sensors in the front so if all of them detect something
+55:46 it means that the enemy is right in front of the robot so then I should return position enemy P front all and in
+55:55 this case I'm going to add uh the range readings which I can do by
+56:01 adding the first two values divided them by two and adding this value to the third value and dividing that by two
+56:08 otherwise if I just take front left and front right that should not be possible
+56:15 then I'm going to set enemy position enemy P full otherwise if front left and
+56:23 if front it means enemy put front and front left and then I'm also
+56:31 going to average the range else it just going to be push front left and range
+56:41 range front left and then I will do the same for front right like
+56:47 so and then I will shake it's just the front sensor detecting it front and
+56:53 Range Front and finally if no sensors are detecting
+57:00 anything it's going to be enemy position n uh this should be wrench here and if I
+57:08 didn't get the proper wrench reading I'm just going to return enemy here otherwise I'm going to convert the range
+57:16 into an Enon value and then once I've done that then
+57:21 I can return enemy finally so that's it for enemy get and then for the other
+57:28 helper functions I will just this will just be oneliner so first I have the enemy detected so this is checks if the
+57:36 position is valid because that means an enemy has been detected and then the second function to sec to see if an
+57:42 enemy is at the left I will just check all if the position is a left position and then I do the same thing for Enemy
+57:49 at the right check if any of the positions are right positions and finally for Enemy at the front I check
+57:55 if any of the position are a front position and then I'm also going to add
+58:01 the string functions so first this function which takes the enimy position
+58:07 enum and turns it into a string for each enum value so that I can print them
+58:12 nicely to the terminal I also add a comment here that saying that these uh
+58:18 string functions are just nice to have and if I run out of flash base I should consider removing
+58:25 them and then as second function that does the same thing but for the other enum so let's see if this builds
+58:36 now yes I need to add some additional defines and for
+58:43 Range close I thought it made sense to put this at 100 mm so 10
+58:50 cm so if the enemy is closer than that it means I'm going to say that it's
+58:56 close to the robot and mid set as 200
+59:02 and then for
+59:10 s300 uh oh yeah this must of course be 16 bit
+59:18 integers now it buils so let's finally create a test function for these two same as usual set
+59:25 up the test initialize tracing and this time initialize
+59:31 enemy and then in a y Loop retrieve
+59:38 enemy the values using the string function enemy P string enemy
+59:46 add and enemy range string enemy wrange
+59:53 and then a with something like this should do it and and then I also need to include
+60:01 enemy so I can see if this builds yes and then we can fash
+60:16 it so now I don't have my hand over the
+60:21 sensor so it doesn't detect anything but if I hold my hand over it
+60:27 I get front mid and then if I move it further away I
+60:33 get front four and if I move it closer it get front
+60:39 close so this part of the code also works good this means I can format the
+60:45 code run CPP shck add it and
+60:53 commit 23 and then push this as
+61:01 well again I forgot to
+61:09 build yeah and the final patch also pass CI so let's rebase and merge
+61:23 this okay so that was all for the code in this video and now I think I finally
+61:31 finished up all of the code that I wanted to write using the uh development
+61:37 board so because right now um just to sum up uh what I've implemented so far
+61:44 is in here in the driver's layer I've implemented the code necessary for
+61:50 initializing the microcontroller I have uh written the driver for the IOP pins
+61:55 or the I configuration I've also implemented a u driver and the software
+62:02 layers on top here to handle tracing and formatting
+62:07 strings and in this video I implemented the i s c driver and added the driver
+62:12 for the Wrench Sensor as well as implemented the small software exraction
+62:18 called enemy and then I've also implemented a driver for ADC uh along with the small
+62:27 abstraction layer for the line sensors called Q
+62:33 1113 and then similarly a small abstraction layer inside for the
+62:39 application code here to provide a nicer interface to these sensors and I've also implemented a
+62:46 driver for the I remote uh which is so that I can use a IR mode to control the
+62:52 robot and this is also used for the when uh for the start signal or it's going to
+62:58 be used for the start signal later on uh and then I've also implemented a pvm based driver using the timer peripheral
+63:06 to um provide the pvm signal to the motors and uh yeah and this is used by
+63:13 the motor driver to control the DC motors and I've also implemented a
+63:19 interface on top here to provide a nicer interface for the rest of the application code to the motors
+63:28 and I've also implemented a small LED driver to Blink an LED uh so what I have
+63:35 left next is this big application layer basically so what I'm going to do next I
+63:40 think is in the next video I will do the bring up of this sum robot uh because
+63:47 overall during these last couple of videos I have written the code in a way as to prepare for running it on this sum
+63:54 robot so ideally I should just be able to change the target I'm building for and Flash it onto this robot and it's
+64:01 going to work but I've probably missed a lot of things so that's something I will
+64:06 go into in the next video where I'm also going to talk a bit about board bring up in general I think
+64:13 and once I have this robot working with the existing code then it's time for me to start writing the application code or
+64:21 the overall algorithm that this robot is going to be using to yeah detect the
+64:27 enemy and push it out of the ring and also avoid driving out of the platform and for this I'm going to do
+64:34 some simulations and stuff but this was everything for this video so thanks for
+64:39 watching and see you in the next one

@@ -1,0 +1,289 @@
+00:00 in this video series I program a robot
+00:02 from scratch in C and while the end goal
+00:05 is obviously to have my code run on this
+00:07 robot initially I'm using this
+00:09 development board which has the same
+00:11 microcontroller on it and I'm doing this
+00:14 to make the videos more isolated but
+00:17 also to show you that you can write a
+00:18 lot of code before moving on to the
+00:20 actual Hardware which can be useful in a
+00:22 real project cycle but because of this I
+00:24 end up with having to support two
+00:26 Targets the development board and the
+00:29 robot and in the previous video I added
+00:31 pre-processor directives to distinguish
+00:33 between the two at compile time this
+00:35 resulted in me having to manually edit
+00:37 the file every time I want to switch
+00:39 between the two Targets this is annoying
+00:41 and ugly so in this video I'm going to
+00:43 improve on this in two ways first I'm
+00:46 going to improve it at compile time I'm
+00:48 going to make it possible to pass the
+00:50 target as an argument to my build system
+00:52 make or in other words I'm going to make
+00:55 it so that I can write make and suo to
+00:58 Target actual robot and make laun pad to
+01:01 Target the development board and as a
+01:03 bonus this will let me add both build
+01:05 targets to my C
+01:07 system secondly I'm going to implement a
+01:10 way to distinguish between the two
+01:11 Targets at runtime this will serve as a
+01:14 sanity check to prevent me from
+01:16 accidentally running code on the wrong
+01:18 target and the way I'm going to do this
+01:21 is similar to how you would go about
+01:23 detecting different board revisions at
+01:25 runtime which is often necessary in a
+01:27 real project ccle when there are
+01:28 multiple Hardware revisions in use at
+01:31 the same
+01:33 time as usual I begin with a new local
+01:36 git Branch this time named feature
+01:38 Hardware
+01:40 versioning then I open the header file
+01:42 i.h which is the file I currently have
+01:44 to hand edit every time I want to change
+01:46 targets so at the moment I have to write
+01:49 Define Launchpad to build for the
+01:50 development board and Define Eno to
+01:53 build the code for the robot and since
+01:56 I'm going to replace this with an
+01:57 argument pass to make uh I remove this
+02:00 which as expected makes the compilation
+02:02 fail for now so I then jump over to
+02:05 modify the make file in the make file I
+02:07 first add a variable to hold a Define
+02:09 this variable takes the value from an
+02:12 argument named HW which I'm going to
+02:15 pass to make on the command line I
+02:17 prefix this with Dash capital D since
+02:20 that's how you add defines as a flag to
+02:23 the Linker and compiler in the GCC tool
+02:26 chain I then add this variable as part
+02:28 of the compiler and Linker flags and
+02:31 confirm that it works by running make
+02:33 Launchpad and make
+02:38 enu next I edit the target variable to
+02:41 name the final executable according to
+02:44 the Target I'm building I mean instead
+02:45 of always ending up with the same name
+02:47 and sumu I introduced a new variable for
+02:50 this named Target name and I set this at
+02:52 the top of the make file by checking the
+02:54 arguments pass to
+02:57 make I write this in a way as to make
+02:59 the argument M ment uh
+03:03 requirement and report an error when
+03:05 it's
+03:09 missing I also remov the binder variable
+03:12 here since I'm not using it anymore I
+03:14 then test it on the command line by
+03:16 executing make W equals Launchpad and
+03:20 see that it creates an executable named
+03:22 Launchpad and similarly for the robot I
+03:25 run make W equals enmu and check that
+03:29 that also creates an executable named
+03:31 and Sumo and then that I also get an
+03:32 error if I don't Supply the argument at
+03:34 all so it works as expected one small
+03:37 problem however is that I have a couple
+03:39 of rules that shouldn't require the HW
+03:41 argument for example clean I don't want
+03:43 to get an error when writing may clean
+03:45 without argument since the clean route
+03:47 doesn't really depend on any particular
+03:49 Target it should remove the build
+03:50 directory regardless the best way I
+03:52 could think of to get around is was to
+03:54 add an extra shake at the top to exclude
+03:57 the clean rule
+04:02 I also do the same for the CP shck and
+04:05 format
+04:11 rules with all of this fixed I could
+04:13 then also add the two build targets as
+04:15 two separate steps in my CI workflow
+04:17 which ensures that every commit compiles
+04:19 for both targets before they can be
+04:22 merged then I commit the changes
+04:38 push the branch to
+04:40 [Music]
+04:42 GitHub and open a pull
+04:47 request all checks passed but I didn't
+04:49 merch it at this time because I wanted
+04:51 to use the same Branch throughout this
+04:54 video so what I had now was a way to
+04:56 easily switch between the two Targets at
+04:58 compile time this was definitely L an
+05:00 improvement from before but it doesn't
+05:02 actually prevent me from accidentally
+05:04 flashing the wrong software to the wrong
+05:06 Hardware which is something I could
+05:08 easily end up doing by mistake since my
+05:11 computer and debugger don't know which
+05:12 Target I am flashing to the
+05:14 microcontroller appears the same
+05:16 regardless if I'm flashing to the
+05:17 development board or the robot while
+05:19 this is unlikely to cause any serious
+05:21 issues in this case more than wasting my
+05:23 time it's bad practice to run software
+05:26 on the wrong Hardware since there is
+05:28 always a risk that it might damage the
+05:29 hardware so for good practice I decided
+05:31 to add an extra check to prevent this
+05:33 from happening and I can do this check
+05:35 by adding a piece of code that detects
+05:37 the hardware type at startup and that
+05:39 hangs if it detects a mismatch but a
+05:42 problem with this is that it requires me
+05:43 to have a way to programmatically detect
+05:45 which Hardware the code is currently
+05:47 running on and this is a problem because
+05:49 the microcontroller on the robot and the
+05:51 development board are practically the
+05:53 same uh the only difference as far as I
+05:55 know is the PIN count 24 versus 16
+05:59 configurable IO pin initially I still
+06:01 thought that I could maybe use this uh
+06:03 pin difference to distinguish between
+06:05 them by comparing the values in the port
+06:07 three registers but it turns out that
+06:09 there is no internal difference between
+06:11 these registers I read the same value on
+06:13 both targets at startup so I couldn't
+06:16 use that as a way to distinguish them as
+06:18 such I saw no other way but to introduce
+06:21 a difference Myself by patching my PCB
+06:25 and looking closer at the PCB the
+06:27 simplest change that I could come up
+06:29 with was to add a pullup resisted to one
+06:31 of my unused pins M pin 3.4 seemed like
+06:34 the best choice as a side note soldering
+06:37 pullup and pull down resistors to gpios
+06:39 is a common technique for distinguishing
+06:42 between different hardware and Border
+06:43 Visions since the combination of
+06:45 resistors form a binary number for
+06:47 example with one gpio or resistor you
+06:49 can represent two versions with two
+06:52 gpios four versions and with three gpio
+06:54 eight versions and so on in my case I
+06:57 get away with only sacrificing a single
+06:59 gpio since I only need to distinguish
+07:01 between two different versions so having
+07:03 this figure out I went ahead and
+07:05 soldered an external pullup resistor
+07:07 onto my PCB first I unscrew the top
+07:10 plate for my robot uh I'm using a large
+07:13 SL we pullup resistor here one rated at
+07:16 100K ohms to minimize current
+07:18 consumption I solder it between the 3.3
+07:21 voltage and pin 3.4 and at this moment I
+07:24 thank myself that I had made these lines
+07:26 easily accessible on my PCB I note
+07:29 another proo you can take if you don't
+07:31 have a lot of gpios to spare is to use a
+07:33 single EDC pin and to solder a resistor
+07:36 Network giving a distinct voltage
+07:38 because then you can map this voltage to
+07:40 a corresponding version number in your
+07:42 code I'm not doing that here but I just
+07:44 wanted to mention it as a tip and I will
+07:45 leave a couple of links in the
+07:47 description for more details about this
+07:49 not the nicest soldering perhaps I would
+07:51 have preferred soldering it on the rear
+07:53 side of my PCV but the tiny Molex
+07:55 connectors makes the PCV a nightmare to
+07:57 unmount so I took the easy way out this
+08:00 time with the pull down soldered I could
+08:03 get back to implementing the code to
+08:04 detect it to do this I defined an enum
+08:07 inside I.T along with a function called
+08:10 detect Hardware type and inside this
+08:12 function I configure the pin as input
+08:14 using the raw register finds given by TI
+08:17 I would have preferred using my own IU
+08:20 functions that I created in my last
+08:22 video uh but Port 3 is not part of the
+08:24 enams when building for the Launchpad so
+08:27 it wouldn't compile if I did I then read
+08:29 the input level
+08:30 and if it's high I know there is an
+08:32 external pull-up resistor which means
+08:34 it's the robot and if not I know it's
+08:37 the Launchpad as always I also like to
+08:39 add some clarifying
+08:41 comments I then call this function at
+08:43 top of I init before the pins are
+08:45 initialized uh I compare the return
+08:47 value and if there is a mismatch I hang
+08:49 in an endless y Loop something which I'm
+08:51 going to replace with an assert in my
+08:53 next video to test this function I
+08:55 decided to run the test blink LD
+08:56 function that I added in a previous
+08:58 video and to run it on on both targets
+09:01 so I uncommitted this test function
+09:03 inside
+09:07 main.c I began by testing it on the
+09:10 robot uh I use the same debugger for
+09:12 both targets the one included on the
+09:14 development board because I have no
+09:16 Standalone debugger for MSP 430 so this
+09:19 is the way I have to do it and for the
+09:20 robot I have to connect the debugger on
+09:22 the development board via three jumper
+09:25 wires so to verify that it works I first
+09:28 build and Flash the correct soft W to
+09:30 the robot and see that the LED blinks as
+09:32 it should because then the test LED
+09:34 blink function should be
+09:36 running then I build and Flash the
+09:38 incorrect software and verify that the
+09:40 LED stopped blinking since then the code
+09:42 should be stuck inside the endless y
+09:44 Loop then I do the same for the
+09:48 Launchpad first the right software
+09:50 seeing the LED
+09:56 blink and then the wrong software seeing
+09:59 the LED not
+10:03 one annoying thing I noticed while doing
+10:05 this is that I have to clean the build
+10:07 folder between switching the build
+10:09 Target because otherwise make doesn't
+10:12 rebuild the new Target since I don't
+10:14 modify any file I just change the
+10:17 argument to get around this I modify the
+10:19 build de variable inside my make file to
+10:22 also create a subdirectory based on the
+10:24 target name which in turn gives me two
+10:26 separate directories one for each Target
+10:28 under the Builder
+10:30 directory after that I was satisfied so
+10:33 I formatted cppp checked and committed
+10:35 my
+10:36 [Music]
+10:40 code I pushed it to the same pull
+10:42 request on
+10:45 GitHub and see I
+10:48 passed lastly I wanted to fix some typos
+10:51 that I introduced in my previous video
+11:01 most importantly to enable the resistor
+11:04 on one of the
+11:06 pins I then committed and push this as
+11:14 well uh it passed and finally I merged
+11:16 the pull
+11:18 Quest that's it for today Hardware
+11:20 versioning is another one of those
+11:22 topics that becomes more relevant as you
+11:24 work on actual Ed assistance projects uh
+11:27 which usually spans many border visions
+11:29 on a toy project like this it's more
+11:32 nice to have uh but regardless I think
+11:34 it's an important enough of topic to be
+11:36 included in this video
+11:38 series uh anyway uh see you next time

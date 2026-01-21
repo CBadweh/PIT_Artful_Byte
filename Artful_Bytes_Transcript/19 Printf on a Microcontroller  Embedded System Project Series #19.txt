@@ -1,0 +1,305 @@
+00:00 in this video I'm going to implement printf on this microcontroller so that I can print formatted strings to a
+00:06 terminal or well I'm not actually going to implement printf myself but instead I'm going to include an external open
+00:13 source project into my project and I'm going to have this printf implementation called your driver that I implemented in
+00:21 the last video so you should view the last video as the part 1 and this video as part 2 and just to remind you the
+00:28 reason I'm doing this is because when you're developing in a better system it's useful to have a way to send data
+00:35 or log data log traces from your in this case my controller or your embedded
+00:40 system in general to your computer determine all of your computer so that
+00:45 you have another view into what goes on inside your embedded system which is
+00:51 especially useful during development and normally when you write a c or C plus
+00:56 plus program on a normal desktop computer logging traces to the chart terminal is Trivial because the only
+01:04 thing you need to do is include a single header and then you can call printfs and the operating system is there to do the
+01:10 heavy lifting to make sure that your strings show up inside the terminal when you run your program the same cannot be
+01:16 said for a microcontroller project because on most marshmallowers there is not going to be an operating system
+01:22 there to do the heavy lifting which is also the case in this video series because
+01:28 on this project I'm just writing all code bare metal so there is no operating system there to help me out and this
+01:34 means that it's up to me as a developer to decide what's going to happen when I call printf on this my controller but
+01:41 normally what you will want to happen is that the call to printf leads to some underlying call to a lower level driver
+01:48 that sends the individual characters of the strings over some communication interface that's connected to a host
+01:56 computer that can display the characters on Terminal
+02:01 and as I said in this case that lower level driver is going to be a u-word
+02:06 driver the one that I wrote in the last video and there are a couple of reasons why I'm going to use an external
+02:12 implementation of printf first of all it makes it really easy to decide what
+02:17 happens under the printf call because the implementation I will be
+02:24 using is just going to have me Implement an additional underlying function that's
+02:29 going to call the UI driver that I implemented in the last video secondly
+02:35 the standard implementation of printf is usually really large it takes up a lot
+02:41 of flash space because it handles all of these different formatting options and I actually showed you in an earlier video
+02:47 how much space it actually takes up and on this smart controller for example I only have 16 kilobytes of read-only
+02:54 memory or flash memory and this means that I need to be careful about how I write my code and what the external
+02:60 dependencies that I include astronaut run out of space before I'm actually done with my application code
+03:07 thirdly I could of course Implement my own implementation of printf but that
+03:13 would be a bit tedious and I see no good reason to do it when they're also good
+03:18 external implementations and open source implementations available already so I'm going with an external
+03:25 implementation to also save me some development time and the printf implementation that I will be using in
+03:32 this project is the following and I've already showed this project in an earlier video
+03:37 so this is a printf implementation that is Tiny fast and aimed at embedded
+03:42 systems and it's also extensively tested and it is easy to use it basically just has two files a header and a C file and
+03:50 the only thing you need to do is to add an additional header file to add some
+03:56 configurations because you can disable support for different formatting options
+04:01 so for example I will be disabling support for float and exponential and some other things
+04:08 and other than that the only thing it requires is for you to implement a function called underscore put Char so
+04:16 this is the function that I will add to my project and this function is going to call the UI driver that I added in the
+04:23 last video and I've actually already included this
+04:28 project as a git sub module in a previous video so
+04:34 it's already available under the external folder so external and printf
+04:39 so it's available under here and I've added it as a git sub module like
+04:45 this [Music] so to add the configuration options for
+04:50 this project I just need a single file and I'm going to add it under this
+04:57 folder the external folder and the name it printfconfig.h
+05:04 and this file is then included by the printf implementation so in the C file
+05:10 it's going to be included here and to make this work I'm also going to have to pass a compiler Define which I will add
+05:16 to the make file and so let's add options inside this file
+05:24 first
+05:31 and I'm going to disable these four and the reason why I'm disabling this is
+05:37 because I'm not using them and by disabling them the pre-type implementation is going to take up less
+05:42 space so it's going to say flash usage
+05:47 and all of these options are described in detail in the readme of this project
+06:10 and then I can jump over to the make file to add the compiler switch
+06:21 and I also need to make sure I add the implementation file from the external project so it's built as part of my
+06:28 project
+06:37 then I can try to build this
+06:44 ah well I shouldn't have Source here we should just be external
+06:49 like that and then as I said this project requires
+06:56 this function to be defined so now I'm going to add this function
+07:06 and I will add it in the uart.c file and it's basically is going to be this
+07:13 function so I can just replace the name here like that
+07:22 and here and I will also remove this function now since I will be using the printf
+07:28 function instead
+07:40 you can also add a comment on top of this
+07:49 in the last video I also forgot to use my Define for an interrupt function so
+07:54 I'm going to replace this here as well in this video just to make it a bit more readable so I
+08:00 have a defined calling drop function so I can write it like this instead
+08:08 so it's this defined right here
+08:13 and to use that I also need to include common slot defines
+08:22 and now since I've been removed the function and rename this function I also need to fix my test file
+08:33 so I'm just going to call pacharia instead
+08:46 and I can use the Run build this test function again to make sure that it actually works
+08:59 and also flash it on my board
+09:05 foreign this
+09:13 and then open my terminal I should see Artful printed
+09:19 and I do so it's still working then I can actually move on to make use
+09:25 of the printf function so I'm going to create another test function in this file and I'm going to call that test
+09:30 Trace and similar to here I'm going to initialize
+09:38 on things then
+09:45 just three which is the year right now
+09:59 I also need to include the printer header
+10:09 I think I need to rework my make file to be able to include it like this
+10:19 um yeah I'm going to remove that and have it like that instead so now we forget this that works
+10:26 and then I can try to flash this as well
+10:33 okay so now this test function makes use of the printf function from the project that I have included the external printf
+10:41 implementation project so now if I open my terminal expect to see Artful bytes and 2023
+10:50 yeah and that works and now it prints really fast since I don't have any PC waiting in between so
+10:56 I'm just going to add up this way here as well
+11:07 okay so the big win uh with being able to call printf is that I can pass
+11:13 integers like this so I can write a string and then I can include an integer
+11:19 number like this so for example if I had a variable I can call printf and print
+11:24 the value of this variable which can be very useful sometimes to understand what's going on inside the program so I
+11:30 can write something like this then and the printf implementation takes care of
+11:35 formatting this number to a string in a specific way what I'm going to do now is
+11:42 to add a wrapper around the printf call to make it a bit nicer which I alluded
+11:48 to in my software architecture diagram
+11:56 so I'm going to add this module now and it is going to be a header and an
+12:01 implementation file pair and I'm going to add them under common
+12:08 because I should be able to call the trace function from my drivers and my
+12:15 application files thank you
+12:29 and I'm going to make the trace called more useful by prefixing every Trace with the file name and the line number
+12:36 and I'm going to do that by using preprocessor directives so this macro is going to take the same parameters as the
+12:42 printf call and then I have to write it like this and then I'm going to have a trace
+12:48 function that first prints the line the file name and the
+12:53 line number and then the formatted string followed by a new line and to get the file name I use the
+12:59 preprocessor underscore underscore file and to get the line number I use the preprocessor directory underscore
+13:05 underscore line and then I can get the arguments by writing it like this
+13:14 and then I'm going to have two functions here one function to initialize the trace functionality so this function is
+13:21 basically just going to call uart init and then the trace function that I'm
+13:26 calling here the function that's going to wrap the printf call
+13:32 and then I'm going to add an additional Define here so that I can easily enable
+13:38 and disable traces in my builds because sometimes it can be useful by the end of
+13:44 the project to Simply remove all of the traces to save space and also for
+13:49 debugging purposes since all of the traces may affect the timing of the code
+13:58 so if I pass disable Trace as I Define the Tracy net and Trace function
+14:05 shouldn't do anything so I'm just going to overwrite them with the macro defined
+14:14 like that and then I can jump over to the trace.c file and first of all include common
+14:22 slash Trace ADH and I'm also going to wrap this inside the disabled Trace as
+14:28 well
+14:37 and similar to all of the other init functions I'm going to have an assert to make sure that I don't call this function multiple times accidentally
+15:02 and a bunch of includes and then as for the wrapping function I have to write it like this
+15:13 and I should never call this function unless I first have initialized and it's actually a bit messy the way you have to
+15:19 wrap the printf function since the second argument is a variable number of values so I had to Google this to
+15:26 understand how to do it and there is a stack Overflow thread that explains how
+15:33 you do it so I basically just copy the way they do it here
+15:49 to be honest I don't fully understand this but I know that it works and then I also have to add trace.c to my make file
+15:56 so that it gets built as part of my project
+16:04 and then I can modify the test function to make use of this function instead of calling printf
+16:10 directly
+16:15 and since I already include the new line inside the macro defined I don't need to
+16:21 add it here so I can write yeah and this should be
+16:26 all uppercase then
+16:32 I include it like this and then if I build this now
+16:39 I get an error and that's probably because I haven't included everything and it include
+16:48 yeah I need to include external printer for Edge
+16:55 yeah and then I can Flash this
+17:04 but it doesn't work of course so let me analyze why it doesn't work oh yeah I
+17:09 should be calling Tracey Knitter instead
+17:19 now it works so as you can see now I not only print the string that I have here
+17:27 but I also print at what line This Trace is called
+17:33 so it's called it's called that in this file test.c at line 164. the downside
+17:40 with adding this prefix here of course is that it's going to take up additional
+17:46 flash space and the Flash policy takes up is going to depend on the file name I
+17:51 could make this better by only including the file name and not the entire path but then I have to mess around a bit in
+17:58 the make file to use the extract the file name and I'm going to avoid that in this project because I don't want to
+18:04 make my make file more complicated than it already is I might do that optimization later on if I end up
+18:11 running out of flashbase but for now I'm just going to leave it like this okay so just to revise what's happening now when
+18:17 I call Trace is that this is going to call the trace
+18:23 function that I have in my trace.c file which in turn is going to call the printf function that is implemented in
+18:29 the external project that I just included and this printout function is going to do a
+18:35 bunch of things it's going to translate values that I pass into Strings and
+18:40 merge it into a single string and then finally it's going to call the put Shard function multiple times once for each
+18:48 character and this puts our character and this function is the one that I have implemented in my uart driver so this is
+18:56 going to fill the uart TX buffer with a
+19:01 character to send over the uart line that's going to go through the uart to USB bridge and then to my desktop
+19:09 computer to show up on my terminal so now I can commit this but before I do I
+19:14 need to modify my make file to make sure that I don't run formatting or CPP Shake
+19:19 on the file from the external project because I want to leave those files
+19:24 unchanged and I thought that this already worked for the CP check but I haven't been able
+19:31 to make this ignore flag work so I'm going to remove this and instead do it another way
+19:44 so I'm going to add the files that I don't want to run through CTP check and formatting to a separate variable and so
+19:50 far this is just going to be the two files from the external printf implementation
+20:01 and then I can use the make a function filter out to filter out these files from the rest
+20:08 of the source files there might be a more elegant way to do this but I couldn't figure out a better
+20:15 way so this is the way I do it
+20:26 and then I can just make use of these variables inside my format and CPP Shake rules at the bottom
+20:42 so if I run CPP Shake and format now it shouldn't touch the
+20:48 files inside the external project so it shouldn't touch
+20:54 these files
+21:01 and then I can also go ahead and run the script that builds all of the tests
+21:07 to ensure that that also works and before I commit I should also create
+21:12 a new local branch and I'm just going to call that feature Trace
+21:20 then I can just quickly run get the diff to see that the differences make sense
+21:34 okay so now it seems that the formatting actually ran on the files inside the external project
+21:51 oh yeah I need to change this as well
+21:58 now if I check out this changes okay so now there are no changes inside
+22:04 the external project and then if I run make format this should still be no changes in that
+22:12 project yeah so now it works
+22:20 and then I can go ahead and add my Sanchez and then commit them
+22:35 and then I can push this new branch
+22:46 and open a pull request and Shake to make sure that it also
+22:51 passes CI it failed
+22:57 I made a mistake I forgot to add the new files
+23:04 so if I commit amend this then push Force to the same pull request
+23:22 and then another thing I need to do to make this work is to make my GitHub
+23:27 action also clone the git sub modules
+23:36 which I can do by writing with sub modules true
+23:50 [Music] so now let's see I passed but I'm not
+23:56 actually going to merge this pull request just yet because there is a second commit that I would like to make
+24:01 in this video and that is to add a printf call or a trace
+24:07 call to my assort function the assort function that I added in a previous video because right now what the sword
+24:13 does is that first of all it triggers a breakpoint if a debugger is attached and then it just blinks the LED and to make
+24:21 the Assad even easier to find and spot I also wanted to send a trace when the
+24:26 sword occurs so that I can also spot it on the terminal when an assort occurs and to minimize the amount of flashbacks
+24:34 used by the trace from Desert and I'm just going to have the trace inside the sword trace the value of the program
+24:42 counter the register that holds the address for the current instruction and then I will be able to use this program
+24:49 counter value to retrieve the file name and the line number using a command line tool called address to line
+24:56 so let's jump over to the current assert implementation so right now the sort implementation is
+25:02 defined as a macro that in turn wraps a function called assort Handler
+25:09 and inside this Sr Handler I first trigger breakpoint and then I configure
+25:15 the io pins to be able to Blink the LED and here is where I'm going to add a
+25:20 call to trace the value of the current program counter and similar to how I did it for the blink LED function letter
+25:27 here I'm going to make this as isolated as possible it just to minimize the codependencies
+25:34 inside the sort Handler so I don't accidentally end up calling functions inside the search Handler that in turn
+25:40 calls a search themselves leading to the sort being called recursively endlessly
+25:45 until a stack Overflow happens so to do that I'm going to add a special uart function that I'm just going to use
+25:53 inside the SRT Handler
+25:59 this is going to take a string and then I'm going to use the SM printf
+26:06 function from the external printf implementation to create a string from an integer
+26:14 so this function first takes the pointer to the string I'm writing to and
+26:20 then the second argument is the maximum number of characters to write to the string
+26:26 and then the formatted string which is going to be a sort followed by the hex value of the program
+26:33 counter then the program counter
+26:42 [Music]
+27:04 and also to make this function as isolated as possible I'm also going to handle the initialization of the UR
+27:10 driver in this assert Handler in case this so what is called before uart init has been called so first I'm just going
+27:17 to configure the transmit pin so that the i o pin is connected to the transmit pin of the UI peripheral
+27:25 and then I'm going to create a special uart init function for this Sr Handler
+27:34 and I'm also going to move this to a separate function to make it more readable
+27:53 I think I will also move the blinking to another function as well
+28:21 and this srtander is also going to have to take the program counter as an argument
+28:31 and to retrieve the program counter I'm going to use inline assembly to read the
+28:38 program counter register and move the value of that register to a local
+28:44 variable so I've created a local variable here
+28:49 called PC and then inline assembly
+28:56 and I'm going to use the move instruction move PC to and we'll have
+29:02 this inside if statement so now after I've called this in live
+29:08 function the value of this variable is going to contain the program counter and
+29:13 then I can just pass this to this function here modify
+29:30 and then I can go on to implement the special uart functions
+29:40 and I should never call this function under normal use this should just be called by the assert Handler so that's
+29:46 why I'm adding this comment here and just to reduce the complexity of the
+29:54 uart trace function when an assort is called I'm not going to be using
+29:59 interrupts and instead I'm just going to rely on polling because when an assert happens I don't really care about performance and it's just going to be
+30:06 simpler and less error-prone to use polling instead but in case you were in
+30:12 it has been called before in case we have called the normal uart init function and setup interrupts and the
+30:18 first thing I'm going to do here is disable the interrupt
+30:25 and then I'm going to have a function that does the configuration
+30:32 and I'm going to create a separate function
+30:38 for this
+30:44 and simply move this here
+31:02 and then as for the trace function I'm going to Loop over the string
+31:08 until the null termination
+31:17 and use the function that I defined in the last video but then
+31:22 removed so I'm just going to bring that back here
+31:33 so first I pull to make sure that the transmit buffer is empty then I feel
+31:39 the transmit buffer with the character I want to send and if this character is a new line I'm
+31:45 also going to send a line fit
+31:55 once again this is the same function as I implemented in the last video but then removed when I replaced it with the
+32:01 interrupt function instead and if what I'm doing here seems confusing you can go watch the previous video where I
+32:07 implement this yoga driver okay so now we can try to build all of this
+32:17 let's build the test assert function um yeah that shouldn't be a comma here
+32:28 and then I'm also missing some includes I need drivers keyword.h
+32:37 as well as internal printf
+32:45 I need to include printf dot edge here since I'm using this function the SN printer function
+32:51 so now we have a build still gives me an issue
+32:56 so why is this not working now yeah I forgot to save the header file
+33:03 that's why it didn't work so now I have a flash around this I should be running the following function
+33:11 the test Assad function and if my implementation work I should
+33:16 expect to see
+33:24 this string and the value of the program counter
+33:30 so let's flash this
+33:40 did not work okay so I made at least two mistakes this shouldn't be C here
+33:47 and instead it should be Line Feed and
+33:54 inside a start Handler I wrote
+33:59 this which is also wrong this should be this instead so let's try to flash this again
+34:09 and now if I reset okay so now I want to start triggers it prints a sort followed
+34:15 by the value of the program counter but of course by just looking at the program counter it's not obvious which
+34:22 assert it was that triggered so I'm also going to add a new make file rule that I
+34:28 can call to get the file name and the file number from this program counter value
+34:36 and there is a tool I'm going to use called address to line which is part of
+34:41 my tool chain
+34:60 so this function takes the final executable as well as the address as
+35:05 argument okay so given this program counter value and this new macro I can simply call
+35:15 the following so the same command as before
+35:21 and then the address to line rule followed by the address variable
+35:31 yeah so this gives me this value here so test C
+35:36 oulon 20. and if I go to this location
+35:45 this is line 20 I can say that this is the sort that triggered so doing it like this adds another step
+35:51 to find out where the sort happens but at the same time it reduces The Flash the space my Sr takes up and makes HSR
+36:00 to take up the same amount of bytes and while I did I should also give some
+36:06 credit to the blog post where I found this technique which is a blog post on the embedded blog called interrupt
+36:13 memfold so this blog post which talks about a search on embedded systems and I'm going to leave a link in the
+36:18 description to this blog post if you're interested okay so with all of this in place I can
+36:25 go ahead and format my code run simply check and then
+36:30 build everything add machines and commit
+36:40 or well I'm also going to document this I think
+37:01 and then I can push it
+37:09 and once again make sure that it passes my CI system
+37:14 and it did so now I can go ahead and merge this pull request
+37:21 this was everything I wanted to show in this video and now I'm done with my
+37:27 Trace implementation and I'm not going to extend it any further of course you can make this more sophisticated if you
+37:33 want to for example one way you could extend this implementation is by adding different log levels so depending on the
+37:39 severity of the error you maybe you have a warning a verbose log or a fatal log
+37:44 which is something you often see in many long implementations but I'm not going to do that here because I want to keep
+37:50 my implementation more simple secondly my implementation is just one way meaning that I'm only sending data from
+37:57 my microcontroller to my host computer you could extend this implementation to also send data the other way around to
+38:04 maybe Implement some sort of console interface to be able to send commands from the host computer to the mic
+38:09 controller which can also be useful during development but once again I'm trying to keep things a bit more simple
+38:15 here so I will not be implementing that in this project but this was all for today so see you in the next video

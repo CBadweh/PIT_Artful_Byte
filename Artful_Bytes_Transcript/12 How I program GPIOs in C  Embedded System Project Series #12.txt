@@ -1,0 +1,845 @@
+00:00 this video is going to be all about IO
+00:02 pins you know those metal things that
+00:05 sticks out of most computer ships
+00:08 but first I want to recap a little if
+00:10 you watch the previous videos you know
+00:12 that what I'm doing here is programming
+00:13 an embedded system or more specifically
+00:15 a small robot from scratch in the
+00:17 programming language see so far I've
+00:20 planned the software design and I've set
+00:21 up a way to build a project with make
+00:23 and I've also created a git repository
+00:25 and a workflow to track my changes as
+00:27 well as the Cs system to protect my code
+00:29 base I had more to say in this first
+00:31 phase of the project than I anticipated
+00:33 but that just goes to show that there is
+00:35 more to programming and a better system
+00:36 than just writing code but in this video
+00:38 I will finally start tapping those keys
+00:40 to make the hardware do what I want
+00:42 which is arguably the most fun part of
+00:44 all of this so getting into it the
+00:46 robotline programming has a small
+00:47 computer inside it a microcontroller and
+00:50 that's what I need to program to control
+00:51 it as with any computer shape this
+00:53 microcontroller has a group of pins to
+00:55 talk to the outside world and in some
+00:57 sense programming this microcontroller
+00:59 is used about making these pins do what
+01:01 we want or in other words these are the
+01:03 eyes ears legs and arms of the mic
+01:05 controller and without them it would be
+01:07 utterly useless
+01:08 how about no arms no arms or legs is
+01:10 basically how you exist right now Kevin
+01:12 you don't do anything exactly what these
+01:14 pins do how many they are differ between
+01:16 microcontrollers and how they are
+01:18 configured and I will get into the
+01:19 details of all of this in this video but
+01:22 the mic controller I'm using the msp430
+01:24 has 24 configurable IO pins and on my
+01:27 robot the job of these pins is to take
+01:29 the input from the sensors and to Output
+01:31 the right signals to the motor drivers
+01:33 driving the motors on a hardware level
+01:35 I've already decided what Ping should do
+01:37 well because that's something I had to
+01:39 set when I designed the PCB and
+01:40 connected the mic controller to the
+01:41 other components on the board
+01:45 the so-called pin assignment can be
+01:47 found in the schematic I made which I
+01:49 will refer to in this video and the main
+01:51 focus here is actually going to be to
+01:53 implement this pin assignment in
+01:55 software
+01:56 but before I get into that let's zoom
+01:59 out for a moment again and take a look
+02:00 at the software architecture I presented
+02:02 in a previous video there are many
+02:03 things I'm going to implement in this
+02:05 video series so I have to be strategic
+02:07 about the order I Implement things in
+02:09 and I have several reasons for I'm
+02:10 starting at this end of the software
+02:12 first of all the code for the iopins is
+02:14 at the bottom of the software stack and
+02:17 generally it makes sense to implement a
+02:18 software stack from the bottom to the
+02:20 top because then you can finish and
+02:22 verify each layer of code before moving
+02:24 on to the next one another reason for
+02:26 starting at the bottom of the stack
+02:27 close that Hardware is that it lets you
+02:29 verify the hardware sooner which is
+02:31 technically not something I need to
+02:33 consider here since I've already
+02:34 verified my Hardware but if this was a
+02:36 really project that would be a more
+02:38 important factor to consider because in
+02:40 a real project cycle you'll want to
+02:41 write the software to verify the
+02:43 hardware as soon as possible so that you
+02:45 can discover any hardware issues and
+02:46 spin a new border Vision thirdly it's a
+02:49 good idea to First implement the things
+02:50 that will help you out during the rest
+02:52 of the development this means you want
+02:54 to set up any debuggage facilities early
+02:56 and one of the those facilities that
+02:58 I've got is blinking an LED which
+02:60 depends on having code to control the
+03:02 IOP connected to my test LED
+03:04 and another search facility is tracing
+03:07 logs to a terminal which is why the next
+03:09 natural step of Drive implemented the
+03:10 code for handling the if pins will be to
+03:12 implement your driver which is needed
+03:14 for the console tracing but more on that
+03:16 in a separate video I think I made my
+03:18 case so let's get started I'm going to
+03:20 implement the eye handling in two files
+03:22 io.h and I.C and fill this with a set of
+03:25 functions in arms tracks and so on for
+03:27 configuring all pins but as always I
+03:30 begin by creating a new local git Branch
+03:32 I then created two files and put them
+03:34 under the drivers directory and remove
+03:36 the placeholder files I added previously
+03:38 and also update the make file to include
+03:39 the two files
+03:41 and then I ran it to make sure that it's
+03:43 still compiled
+03:48 it didn't because I had to clean up
+03:50 main.c as well once I'd done that then
+03:52 it built fine I started by sketching out
+03:54 the interface in the header file before
+03:56 implementing the details in the C file
+03:58 because I like to first get an overview
+03:59 what needs to be implemented
+04:02 the main thing here is the enum
+04:04 identifying each eye pane which is a way
+04:06 for me to name each pin and to have an
+04:08 identifier I can pass as a function
+04:10 argument
+04:11 and I'm just taking the name straight
+04:13 from the schematic here
+04:14 and just a reminder I have a document
+04:16 where I describe some of the questions
+04:18 I'm following when writing C code so I
+04:20 won't explain every little code detail
+04:22 in this video
+04:23 and as I've also mentioned before while
+04:25 writing the drivers I'm going to do
+04:26 everything on the development board for
+04:28 the My Controller the Launchpad and not
+04:30 on the actual PCB or robot and I will
+04:33 then move on to the robot once I have
+04:35 the drivers in place I need to bring
+04:36 everything together and since the my
+04:38 controller is the same that transition
+04:40 should be easy but there is one
+04:42 important difference between the
+04:43 development board and my robot and
+04:45 that's the package of the My Controller
+04:47 the Launchpad only has 16 configurable
+04:49 pins while the PCB has 24 configurable
+04:51 pins
+04:52 I will account for this difference in
+04:54 The Code by having two sets of iopins
+04:55 which I can switch between at compile
+04:57 time using preprocessor directives that
+04:59 is if devs and defines
+05:02 I know this is kind of ugly but it will
+05:04 have to do in this case
+05:09 anyway the PIN for the PCB are the same
+05:12 as the schematic but for the Launchpad I
+05:14 marked most pins on use for now and I
+05:16 will just then assign them on a video to
+05:18 video basis
+05:25 and after the enan was in place I ran
+05:27 make again to make sure that it's still
+05:28 compiled which it did you will also see
+05:30 me write some to-do's here and there
+05:31 throughout this video I do that for code
+05:33 sections I will clean up or enhance
+05:35 later either in this video or in a
+05:37 separate video they are there to remind
+05:38 myself that this part of the code is not
+05:40 done yet
+05:41 so moving on to the pin configuration
+05:43 most pins on a microcontroller can be
+05:46 configured to some degree this makes it
+05:48 possible to adapt my controller for
+05:49 different designs and reduces the number
+05:51 of pins required to do so a pin can
+05:54 typically be configured as general
+05:56 purpose input output gpio acting as
+05:59 either an output or an input or it can
+06:02 be mixed or selected to one of the other
+06:04 peripherals inside the microcontroller
+06:06 for example in this project some paints
+06:08 will be connected to the I squared C
+06:09 uart ADC and timer peripheral
+06:13 in short peripherals are Hardware blocks
+06:16 separate from the CPU specialized to
+06:18 provide certain functions that the CPU
+06:20 can provide or to offload the CPU from
+06:22 doing them I mean some of these
+06:24 functions can be realized through big
+06:26 banging but that consumes a lot of CPU
+06:28 Cycles so it's preferable to use
+06:30 dedicated hover blocks for it instead
+06:32 all paints can't mix to the same set of
+06:34 peripherals and to know which pin can be
+06:37 selected for what you have to look in
+06:38 the datasheet of the particular
+06:40 microcontroller on the msp430
+06:42 specifically all pins can service gpio
+06:45 but each pin can connect a different set
+06:47 of peripherals so while there is some
+06:49 flexibility during the PCB design stage
+06:51 I had to be careful about how I
+06:53 connected the pins to the other
+06:54 components to be sure the pin could
+06:56 actually start the function it needed to
+06:58 further on the individual pins are
+06:60 logically grouped into something called
+07:02 ports
+07:05 on the msp430 each Port contains 8 pins
+07:08 so on the Launchpad package there are
+07:10 two ports while the microcontroller
+07:12 package on the robot has three ports in
+07:14 general Port size is also something that
+07:16 varies between my controllers but is
+07:18 often the same with as the data bus so
+07:20 typical 8-bit 16 bit or 32-bit because
+07:23 this allows you to interact with each
+07:24 port with one operation
+07:26 each Port is in turn represented as a
+07:29 set of Hardware registers and these are
+07:31 the registers you write to to configure
+07:33 the pins these registers are mapped into
+07:35 memory which means from the programming
+07:37 or software point of view there is
+07:39 another memory address you can write to
+07:41 and read from and in turn configuring an
+07:43 iPhone is only a matter of writing the
+07:44 right data to the right memory location
+07:47 at first sight this idea of memory map
+07:49 registers can be a bit difficult to wrap
+07:51 your head around but it's a very
+07:53 fundamental thing to understand when
+07:54 working with microcontrollers and other
+07:56 computer ships for that matter
+07:59 because simply speaking all code on a
+08:02 mic controller comes down to writing a
+08:04 value to a register or reading a value
+08:06 from a register that's how you configure
+08:08 pin that's how you configure peripheral
+08:10 that's how you disable the Watchdog
+08:11 that's how you change the clock rate
+08:12 that's practically how you do anything
+08:14 involving the hardware of the
+08:15 microcontroller
+08:17 and transferring this idea to the code
+08:19 I'm going to write the bottom of my code
+08:21 stack is going to be all register rights
+08:23 and reads and that's the important stuff
+08:25 and very roughly speaking most of the
+08:28 other code is use decoration on top to
+08:30 make my code more manageable and easier
+08:32 to read
+08:33 and the set of registers for the iporch
+08:35 on the msp430 are the following
+08:42 and these are of course described in
+08:43 detail in the datasheet but I will talk
+08:45 about some of them here as well the
+08:47 address for these registers are also
+08:48 given in the datasheet but TI as most
+08:50 vendors do has provided a header file to
+08:52 save us the tedious effort of having to
+08:54 Define these addresses in the code
+08:56 ourselves these defines are used in the
+08:59 classic blink example I showed you in a
+09:01 previous video and I brought this
+09:02 example back here now in the code but as
+09:05 a small test function inside the main
+09:06 file just so that we can see later on
+09:08 when I replace the register defines from
+09:10 TI with my own function
+09:16 so the way the direction of the first
+09:18 pin in the Blinky sample is set now is
+09:21 like this
+09:22 and without the defines from the helper
+09:24 header from TI I would have to look up
+09:26 the address of the register and do
+09:28 something tedious like this instead
+09:30 so it's obvious that the ti header
+09:32 really helps out here but I still think
+09:34 it's a bit crude to use the Define from
+09:36 TI as is and would much rather prefer
+09:38 having an abstraction that lets me write
+09:40 something like this instead and much of
+09:43 this video is going to be about creating
+09:44 this abstraction so my idea is to have
+09:47 several functions to configure each
+09:48 aspect of a pin each function will take
+09:51 the name of the pane as first argument
+09:53 the enum I defined before
+09:56 and we'll take the configuration value
+09:57 as the second argument which I'm also
+09:59 going to Define as enums this will serve
+10:01 as interface and then I will just use or
+10:04 hide the Define from TI's helper header
+10:06 inside the implementation file so I'm
+10:08 still going to use the defines from TI
+10:10 but I'm going to hide them below the
+10:12 interface that I'm going to be
+10:13 interacting with so now I'm going to go
+10:14 through each function register one by
+10:16 one starting with the select register
+10:19 this register determines the overall
+10:21 function of the pin whether it should be
+10:23 moved to the gpio circuitry and act as a
+10:26 gpio input slash output or be connected
+10:28 to one of the internal peripherals or
+10:30 internal Hardware blocks each pin can
+10:32 take four different select values and
+10:34 there is two select registers for each
+10:36 port to represent these four values the
+10:38 first zero zero always select GPI
+10:41 function and the other three selects one
+10:43 of the alternative functions and exactly
+10:45 which peripheral they mapped to will
+10:47 depend on the particular pin I create an
+10:49 alarm to name these values and then a
+10:51 function that takes the name of the pin
+10:52 as first argument and this select the
+10:54 num as the second argument
+10:57 I also created a defined here to Mark
+10:59 variables as unused to avoid compile
+11:01 errors because of unused variables while
+11:03 developing the code
+11:07 note once you have selected the
+11:08 alternative function for a pin that's
+11:10 typically all the pin configuration you
+11:12 have to do and the rest of the
+11:13 configuration is done by writing to the
+11:15 registers for that particular peripheral
+11:17 though there are some exceptions to this
+11:19 for example the timer peripheral
+11:21 requires the pin direction to also be
+11:22 set which I will show you later but
+11:24 overall the rest of the port registers I
+11:26 will go through now are only relevant
+11:28 when the pin is selected for gpio once
+11:30 again details like this are explained in
+11:32 the datasheet the next register the
+11:35 direction register sets the pin as
+11:37 output or input pretty self-explanatory
+11:39 if you're driving an LED you need it to
+11:41 be an output because then the mic
+11:42 controller is driving the LED and if you
+11:45 want to detect whether the pin is high
+11:46 or low for example a button press it
+11:48 needs to be an input in the same fashion
+11:50 I create another enum and function for
+11:52 this
+11:60 then there is a register for enabling
+12:01 and disabling the internal pull up or
+12:03 pull down resistor of a pin this is only
+12:06 applicable when the pin is configured as
+12:07 input that is when someone else is
+12:09 supposed to drive the PIN to understand
+12:11 this concept of a pull up or pull down
+12:13 resistor you can imagine having an
+12:15 unconnected input pin when a pin is not
+12:17 connected to anything you can't really
+12:19 know whether the pin is high or low it's
+12:21 floating and the level may actually vary
+12:23 between high or low depending on the
+12:25 noise this undeterministic Behavior can
+12:27 lead to a higher current consumption and
+12:28 unpredictable software and even when
+12:30 something is connected to the other end
+12:32 it may not always actively Drive the
+12:33 line
+12:34 so the idea is that we put the paint up
+12:36 or down with the resistor to get the PIN
+12:38 to known level when it's not driven
+12:42 and this is typically a large resistor
+12:44 value to limit the current drain the
+12:45 exact same thing can be shared with
+12:47 external resistors but having it
+12:49 internal and configurable inside the mic
+12:51 controller is more flexible and saves
+12:53 board space to configure the resistor
+12:55 for a pin you need to write two not one
+12:57 but two registers one to enable the
+12:59 resistor and another one to select
+13:00 whether it should be pulled up or down
+13:02 the second register actually serves two
+13:04 purposes because when the pin is not an
+13:06 input and instead an output it sets the
+13:08 output level but I reuse the same enorm
+13:10 and function for both these cases but I
+13:12 had commands to clarify this for the
+13:14 resistor case
+13:22 the four register so far have been
+13:24 registers that are written to this next
+13:26 register is a register that is read from
+13:28 the in register or the input register
+13:30 gives the digital input level of the pin
+13:32 when it's configured as gpio input so
+13:35 when we read the value 1 it means the
+13:36 pin is high and when we read the value 0
+13:39 it means the pin is low similarly I
+13:42 Define an enormous function for this but
+13:44 here it now becomes a return value
+13:45 instead of an argument
+13:52 besides these registers they're also
+13:54 interrupt related Port registers but I
+13:56 will cover them in a separate video with
+13:58 this code skeleton in place I prepared a
+14:00 new commit
+14:01 and ran through my usual workflow of
+14:03 formatting the code running static
+14:06 analysis and compiling
+14:08 edit the files
+14:14 and wrote the commit message
+14:18 and then pushed the commit to GitHub
+14:22 I also opened a pull request and looked
+14:24 to see that it passed the CIA system
+14:26 however I didn't merge it at this point
+14:28 because I wanted to continue working on
+14:30 the same Branch throughout this video I
+14:32 could of course have kept all of the
+14:33 changes in these videos to a single
+14:35 commit but as I mentioned before I
+14:37 prefer to shank up my work into smaller
+14:39 commits anyway moving on with the
+14:41 interface done the next thing I had to
+14:43 figure out was how I was going to
+14:44 retrieve the correct register from the
+14:46 function arguments in each function
+14:49 for example to select the test LED pin
+14:51 as gpio I should be able to call IO set
+14:54 select
+14:56 then inside IO set select Disney is to
+14:58 translate to two rights to the P1 select
+15:01 registers since I need to zero the first
+15:03 bit of both registers to select gpio
+15:05 there are some different ways I could go
+15:07 about doing that then naive and most
+15:09 straightforward approach would be to
+15:10 have a big if or switch statement in
+15:12 each function something like this
+15:15 that would work but it's not very nice
+15:17 it's verbose and wastes precious Flash
+15:19 plays because don't forget this is a mic
+15:22 controller and the msp430 only has 16
+15:24 kilobytes of read-only memory so I need
+15:27 to be careful about how I write my code
+15:29 to not run out of flash space I will
+15:30 talk more about how to analyze this
+15:32 memory in a separate video
+15:35 I could do better than if and switch
+15:37 statements by being a little creative
+15:39 the first thing I did was to Define
+15:41 another more generic enum
+15:45 I then assign the values in my other
+15:47 enum to the values in this generic enum
+15:50 this makes it obvious what pin name hpin
+15:53 mapped to and I don't need to care about
+15:55 the order of the secondary num if I
+15:57 decide to organize them in some other
+15:58 way there's no overhead in defining
+16:00 additional enums like this in C because
+16:02 they are essentially is the way to name
+16:04 integers by default you know start
+16:06 counting up from zero and I can use this
+16:08 fact to extract the corresponding port
+16:10 and pin number from each enum value and
+16:13 the way I do that is by looking at the
+16:15 numbers as bits and use bitwise
+16:17 operations
+16:19 because if we have a look at the bit
+16:21 pattern of these inner values there is a
+16:23 clear pattern the three least
+16:25 significant bits translates to the PIN
+16:27 number so to get the pin number I can
+16:29 mask the three least significant bits
+16:30 and then I can get the pin bit by
+16:32 shifting value 1 with the pin number
+16:36 the port number corresponds to the
+16:38 fourth and fifth beat and there are only
+16:40 three ports so only two bits are needed
+16:42 to represent them
+16:46 so to extract the port number I can
+16:48 shift and then mask them note trying to
+16:51 be smart or creative about your code is
+16:53 not always a good thing because it often
+16:55 makes the code less readable which I
+16:57 think is the case here but sometimes you
+16:59 have to trade off code readability for
+17:01 performance or space especially when
+17:03 working on embedded systems with the
+17:05 tighter constraints all in all I create
+17:07 a couple of refines
+17:10 and write a longer comment to explain
+17:11 the approach and then I create the
+17:13 functions to extract the port number and
+17:15 pin bit
+17:17 as you may notice I enlightened these
+17:19 functions because they are short and I
+17:20 want to avoid the function call Overhead
+17:22 each time they are called I actually
+17:23 initially wrote them as defined macros
+17:25 but I found that I actually optimized
+17:27 better as inline functions
+17:29 when it came to the pin I had all I
+17:31 needed now because I only needed the pin
+17:33 bit but when it came to the port
+17:36 register I actually only had the port
+17:38 number and extracting the port number is
+17:40 not enough because what I need is not
+17:42 the port number but the particular Port
+17:45 register once again I could solve this
+17:47 with a big switch or if statement to get
+17:49 the particular register that would be
+17:51 acceptable I guess or at least more
+17:53 acceptable than previously but another
+17:55 way to do it is with a race and array
+17:58 indexing for example there are three
+17:60 Direction registers one for each Port if
+18:02 I put this in order in an array I can
+18:04 use the port number directly as an index
+18:07 value to get the corresponding register
+18:08 note I will store the address of these
+18:10 registers in the array and that's why
+18:12 there is an ampersand before the values
+18:14 because the way TI has defined this is
+18:16 used as regular variables that gets
+18:18 their address assigned during linking so
+18:20 it doesn't make sense and isn't even
+18:22 valid C code to put the variables
+18:24 directly in the array I have to get the
+18:25 address of the variables so I went ahead
+18:27 and defined arrays like this for all
+18:29 register lots of keywords on this arrays
+18:31 in short I make them static because they
+18:34 should only be accessible within this
+18:35 completion unit or this file I make them
+18:37 volatile to prevent the compiler from
+18:40 optimizing away any accesses to these
+18:42 registers and I Mark the values constant
+18:44 since the addresses to these registers
+18:46 should never change and finally I put a
+18:48 big comment on top to explain what I'm
+18:50 doing with all of this in place it was
+18:52 unfairly straightforward to implement
+18:54 the functions first I use set select
+18:56 this is the special case since there are
+18:58 two registers to write two for each
+18:60 select value I switched on the enum and
+19:02 then set the corresponding bits in the
+19:03 registers the other functions are
+19:05 similar but simpler only one register to
+19:07 write 2 in H1 the functions indeed
+19:10 become cleaner when using array indexing
+19:12 like this compared to if I were to use
+19:14 switch if statements to fetch each Port
+19:16 register
+19:21 I hold the port number and paint bit in
+19:23 separate values at the top of each
+19:25 function to save flashbase since I use
+19:27 them several times in every function
+19:31 and then I added some missing includes
+19:33 and fixed some typos to make the code
+19:34 compile
+19:37 finally I also created a struct to hold
+19:39 the entire configuration for an ipane
+19:42 and a function which takes that struct
+19:44 as argument and calls all other
+19:45 functions to let me configure a pin with
+19:47 a single function call
+19:53 at this point the code was fairly
+19:56 untested so to test it I first rewrote
+19:58 the previous test LED function and
+19:60 instead made it use the I functions that
+20:01 I had used to find I actually only need
+20:03 to set the direction here since the
+20:05 other registers have the right default
+20:07 values already but for completion's sake
+20:09 I use IO configure to configure all
+20:11 registers
+20:14 I also replaced the delay that was
+20:16 implemented with a for loop with an
+20:18 intrinsic provided by the compiler
+20:19 called delay Cycles I compile and
+20:21 flashed it and confirmed that it still
+20:23 worked
+20:25 I also created a separate function to
+20:27 handle the initialization of the
+20:28 microcontroller and put it in a separate
+20:30 file called MCU init
+20:33 as always I put a comment on top of each
+20:35 other with a brief explanation
+20:41 I move the stopping of the Watchdog into
+20:43 the MCU init function I will fill MCU in
+20:46 it with more initialization stuff in the
+20:48 future videos and then I call MCU init
+20:50 at top of my test function and I also
+20:52 had to add MCU init file to my make file
+20:56 as well as fixed includes and typos
+20:58 again
+21:01 then I moved on to the two bigger test
+21:03 functions that will test all pins first
+21:06 one function where I configure all
+21:07 pencil output and in a loop turn all of
+21:10 them on and off
+21:12 then I comment out the previous test
+21:13 function the test LED function and get
+21:15 the new test function to compile
+21:20 I flashed it and confirmed that it works
+21:23 by hooking up a logic analyzer and
+21:25 looking at the signals in the software
+21:27 sigrock
+21:31 and then a second test function where I
+21:34 instead configure all pins as inputs
+21:35 except for the first pin which I used to
+21:38 control an LED I configured the pins as
+21:40 input with the pull up resistor so by
+21:42 default all pins are driven High I then
+21:44 Loop over each Pane and wait for each
+21:46 pin to be pulled low and used LED as
+21:49 visual cue that is it turns on when the
+21:52 pane I'm testing is high and turns off
+21:54 when I pull it low once all pins have
+21:56 been tested the LED just keeps on
+21:58 blinking so once again I comment out
+21:60 other functions to confirm that this
+22:01 third test function worked as well
+22:05 to test it I act as the operator and
+22:07 pull each pin down with a strong pull
+22:09 down resistor one by one in increasing
+22:11 order and look at the lid to see that it
+22:13 turns off and on and blinks at the end
+22:17 these test functions obviously don't
+22:19 test everything but I would have to do
+22:21 for now and if there are any remaining
+22:23 bugs I will just have to sort them out
+22:25 later it's not so nice messing up the
+22:27 main.c file we test code like this and
+22:29 to comment out unused code but I'm
+22:31 leaving it as a to-do to improve on this
+22:33 in another video
+22:38 I then formatted CPP checked and
+22:41 committed the new code
+22:49 I pushed it to the sample request that I
+22:51 opened before and yet again I kept the
+22:53 pull request open for the next commit
+22:56 with I functions in place and knowing
+22:59 that they kind of worked next it was
+23:01 time to initialize all the pins
+23:03 since I know how all of these pins
+23:05 should be configured and since most pins
+23:07 will have the same configuration
+23:08 throughout the entire run of the
+23:10 application it makes sense to configure
+23:12 them all in one place at boot and
+23:14 regardless it's good practice to
+23:15 explicitly give all pins a default
+23:17 configuration at both even if some of
+23:19 them are not connected or used I will
+23:21 initialize all pins in a single function
+23:23 called IO init
+23:29 and I decided to store the configuration
+23:31 for all panes in an array using the pin
+23:34 names as indexes and destruct IO config
+23:36 as values so kind of like a map between
+23:38 pin name and ping configuration I can
+23:41 then Loop through this array inside IO
+23:42 init and call iconfigure on each pin
+23:44 simple enough and then it was just a
+23:46 matter of filling this array with the
+23:48 correct configuration for each pin
+23:50 starting with a pin for the test LED
+23:52 this should be a gpio pin configur as
+23:54 output since it will be driving the LED
+23:56 and it should be off by default so I set
+23:59 select to gpio disable the resistor it
+24:02 doesn't apply since it's an output pin
+24:03 set the directions output and output
+24:05 level to low then the order transmit and
+24:08 receive pins for the uart these are
+24:10 straightforward they should be connected
+24:11 to the UR peripheral so the only thing
+24:13 that needs to be set is the select
+24:15 register the rest of the registers don't
+24:17 apply in this case and next there are
+24:19 several pins that are unused these are
+24:21 important to consider because even if
+24:22 pins are unused or unconnected it's good
+24:24 practice to give them an appropriate
+24:26 default configuration the reason for
+24:28 this is mainly that unconfigured pins
+24:30 may be floating and among other things
+24:32 floating paints have unpredictable
+24:34 current consumption as I explained
+24:35 before the recommended configuration for
+24:37 audio spins will vary between
+24:39 microcontrollers but it's usually
+24:41 mentioned in the datasheet for msp430 TI
+24:44 says that the pings should be configured
+24:46 as output or as input with a pull up or
+24:48 pull down resistor I prefer input in
+24:50 this case since that reduces the chance
+24:52 of an accidental short circuit and I use
+24:55 pull down over pull up for no particular
+24:57 reason I don't think it really matters
+24:58 and for now I let the pins on the launch
+25:00 pad be unused and I will sign them as I
+25:02 go along in the future videos and since
+25:04 there are so many unused pins and I'm
+25:06 using the same configuration for each
+25:08 one I decided to put it inside a defined
+25:10 to avoid repeating myself so much
+25:18 and continuing on with the pins on the
+25:20 PCB next is the PIN for the IR receiver
+25:22 this paint needs to detect The Logical
+25:24 input level to Port the signal from the
+25:26 IR receiver and actually later on I will
+25:29 have an interrupt configured to be able
+25:30 to sense these changes quickly but
+25:33 that's for a later video as well as such
+25:35 this needs to be a gpio input pin but I
+25:37 actually don't need to pull up or pull
+25:38 down resistor for this one because there
+25:40 is already a resistor inside the eye
+25:42 receiver so you're selecting gpio and
+25:44 input direction is enough for this pin
+25:46 then order two pins for I squared City
+25:48 one clock line and one data line similar
+25:51 to your art I squared C is handled by
+25:53 peripherals all I need to do is select
+25:55 the correct alternative function which
+25:57 is alternative 3 for I squared C on
+25:59 these pins I think it's possible to
+26:00 enable internal Pull-Ups here as well
+26:02 but I have external pull ups on my board
+26:04 so that's not near that and regardless
+26:06 the internal resist values are probably
+26:08 too large for I squared C next are the
+26:10 control pins connected to the motor
+26:12 drivers these control the direction of
+26:13 the motors they need to be gpio output
+26:16 pins resistors don't apply and I'm
+26:18 setting them as output Low by default
+26:20 basically the same configuration as for
+26:22 the test LED pin then there are two pins
+26:25 for the pvm signals which control the
+26:27 speed of the motors while there are no
+26:28 dedicated horror pvms on msp430 pvm can
+26:32 be realized with the timer peripheral so
+26:34 that's what I'm doing the timer
+26:35 peripheral is alternative function one
+26:37 so I set the select register to that I
+26:40 must also configure the direction output
+26:41 here this is one of those exceptions
+26:43 where you need to configure the gpio
+26:45 aspect of the pin even when an
+26:47 alternative function is selected the
+26:49 resistor and out register are not
+26:51 applicable
+26:53 next is the paint I used to detect when
+26:55 the range measurement is done on the
+26:57 front range sensor when this pin goes
+26:59 low I know that the measurement is down
+27:00 going over the datasheet a second time I
+27:03 actually noticed I made a mistake on my
+27:04 PCB here this pin should actually have
+27:06 an external pull-up resistor which it
+27:08 doesn't have on my PCB it does work fine
+27:10 anyway but used to be safe I changed my
+27:13 code to enable the internal pull-up
+27:14 resistor now in other words a GPI input
+27:16 with internal pull up resistor
+27:20 moving on next is another set of output
+27:23 pins these are for the extracted lines
+27:25 on the Range sensors I control this to
+27:28 set the range sensors in boot mode I
+27:30 configure this the same way as the
+27:31 previous output pins as the API output
+27:33 and Low by default
+27:36 finally I have the ADC pins which
+27:38 connect to the line detectors these are
+27:40 a special case because for these pins
+27:42 you don't even need to select the
+27:43 function their function are completely
+27:45 overridden by the ADC peripheral which I
+27:47 will configure in a later video so for
+27:49 now I just leave them as floating input
+27:51 by default then to configure all pins in
+27:53 one go I Loop over the array and call
+27:56 iconfigure on each value
+27:59 I also added a Define here to get the
+28:02 array size of an array this divides the
+28:04 size of the array with the size of its
+28:05 element
+28:11 then I fixed any compilers and made sure
+28:13 I could compile for both targets the
+28:15 Launchpad and the robot
+28:19 like now I have rushed through all of
+28:21 these pins very quickly but don't worry
+28:23 I will spend more time on them
+28:24 individually in the coming videos
+28:28 it was again time to format CPP shake
+28:31 and commit
+28:33 and then push
+28:36 I quickly went through the commits to
+28:38 say that I hadn't missed anything before
+28:40 finally merging the pull request
+28:44 there you go a long video but at last I
+28:47 got to write a bunch of code I'm pretty
+28:49 satisfied with how this turn out it took
+28:51 some time but I was able to clean up and
+28:53 improve from the previous version of
+28:55 this code this is of course not the only
+28:57 way to go about writing the eye handling
+28:59 for a microcontroller project I mean in
+29:01 this case there was much helper code
+29:02 help libraries and code generation tools
+29:04 that can help you out with all of this
+29:06 so you don't have to write everything
+29:08 from scratch but I still wouldn't be
+29:10 surprised to see many people writing
+29:12 their own audio handling especially for
+29:14 smaller projects where you need to be
+29:15 more conscious about how you write your
+29:17 code overall it's nice to have all of
+29:19 the eye handling in a single place and I
+29:21 think it's worth spending some extra
+29:22 time on this because audio handling is
+29:25 such a fundamental part of a
+29:27 microcontroller project and if you spend
+29:29 some extra time on it you can reuse it
+29:31 across different projects and this
+29:33 brings me on to another point I want to
+29:34 emphasize what I've done here is by no
+29:36 means specific to the particular mic
+29:38 controller I've been using here the
+29:39 msp430 yes the registers are obviously
+29:43 specific to this mic controller but the
+29:44 general approach can be applied to any
+29:46 microcontroller relay and that's kind of
+29:48 the point with the code abstractions I'm
+29:50 writing here to separate the specifics
+29:52 of the hardware from the code that I
+29:54 interact with so that's all for this
+29:56 video see in the next video

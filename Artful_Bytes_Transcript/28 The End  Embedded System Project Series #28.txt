@@ -1,0 +1,195 @@
+00:00 I'm done
+00:02 finally this video marks the end of my
+00:05 video series about programming an embed
+00:07 a system from scratch 28 videos later
+00:11 and I've gone through how to set up a
+00:13 make file Version Control with Git
+00:15 setting up a CI creating a software
+00:17 architecture writing drivers for things
+00:20 such as gpio uart ADC motor control and
+00:24 I squ C how to think about
+00:26 microcontroller memory and interrupts
+00:28 how to do board bring up imp ment a
+00:30 state machine and even simulation in
+00:33 essence how to bring an entire project
+00:36 together in a logical and structured way
+00:39 my goal was to document the entire
+00:41 process to end up with something that
+00:43 can be seen as an educational example
+00:45 for anyone who wants to get into
+00:47 embedded systems development I wanted to
+00:49 do an entire project because some
+00:51 aspects of embedded development is
+00:53 easier to learn and understand in the
+00:56 context of an entire project and there
+00:59 also doesn't exist that much much
+01:00 content like this out there for obvious
+01:02 reasons I realize now because uh it's a
+01:06 gigantic effort to document everything
+01:08 like I've done in this video series and
+01:10 I want to use this uh last video to
+01:13 reflect a little bit about this project
+01:15 first of all and I think I've said it
+01:18 before uh what I've done here should not
+01:20 be looked upon as best practices on how
+01:22 to do things while I've obviously put
+01:25 more rigor into this uh project than
+01:28 your typical hobby project I've still
+01:30 taking shortcuts and some of the things
+01:32 I've done here I wouldn't have gotten
+01:34 away with in a more professional setting
+01:36 for example one of the things I've done
+01:38 in this project is to write all of the
+01:40 code from scratch all of the drivers
+01:42 down to the register level and in modern
+01:44 development that's actually something
+01:46 you would like to avoid because you want
+01:47 to try to reuse existing code whether
+01:50 that comes from a previous project
+01:52 existing libraries or code from vendors
+01:54 and so on because it's timec consuming
+01:56 and kind of stupid to reimplement code
+01:58 if it already exists with that said bare
+02:01 metal programming still has its place
+02:03 even in modern development because every
+02:06 project is unique so you are going to
+02:08 have to maybe not write all of the code
+02:10 from scratch but there are going to be
+02:11 existing code that you have to modify
+02:13 and adapt to your specific application
+02:16 and in that case you often still end up
+02:19 having to work at a low level and in
+02:21 those cases you still need to uh
+02:24 understand uh bare metal programming and
+02:26 how things work at the register level
+02:28 and I also think that from a learning
+02:30 point of view bare metal programming is
+02:33 crucial to understand the fundamentals
+02:35 and it's where you should start before
+02:37 you move on to take advantage of all the
+02:40 existing tools libraries and code
+02:42 operating systems and whatnot that exist
+02:46 these days so in hindsight educational
+02:48 wise I'm quite glad I did everything
+02:51 from scratch in this uh project because
+02:53 it gave me an opportunity to actually
+02:56 show how things work especially some of
+02:59 the important peripherals that you need
+03:01 to understand as an embeded systems
+03:03 engineer and bare metal programming
+03:05 reveals that there is no magic behind
+03:07 anything at the Deep level it's just
+03:10 register rights and then you layer code
+03:12 on top in order to make it uh easier to
+03:15 work with and understand as a human then
+03:18 regarding the project itself there is of
+03:19 course uh other things that I wish I
+03:22 would have done differently as there are
+03:24 with any project that you do one of the
+03:26 things that I'm not satisfied with is uh
+03:28 kind of the end result of this robot and
+03:31 uh how it uh performs and there are
+03:34 mainly two reasons for the bad
+03:36 performance I think one is the
+03:38 mechanical design when I designed this I
+03:40 had a big focus on cramming in as much
+03:43 as possible I believe that having four
+03:45 Motors and four wheels would give me
+03:47 more power and yes it does but it also
+03:51 makes the driving behavior a bit more
+03:53 wobbly and not as stable as it should be
+03:55 and I think I would have justed have a
+03:56 better development experience and
+03:59 behavior if I decided to have two Motors
+04:01 instead of four maybe have two bigger
+04:03 Motors and similarly I think I should
+04:06 have gone with fewer and simpler sensors
+04:09 especially the wrench sensors uh I
+04:11 decided to have three wrench sensors in
+04:13 the front and one on either side and I
+04:15 ended up having to discard the sensors
+04:18 on the side because they didn't like the
+04:20 placement I did of them didn't really
+04:21 work very well I had a lot of false
+04:23 detections and I realized that they are
+04:25 not really that beneficial also they're
+04:27 quite complicated and it took a lot of
+04:29 effort to WR the drivers for them and
+04:31 while they are able to detect the enemy
+04:34 at a close and far distance they are too
+04:37 slow at sampling this distance and this
+04:40 is also true for the line sensors in the
+04:43 bottom here they are not giving me
+04:45 samples fast enough which heavily limits
+04:47 the reaction time of my robot and how
+04:49 fast it can drive because in the end I
+04:51 think that the sum robot that's going to
+04:52 win is the one that react the fastest so
+04:55 the takeaway here is to try to go for a
+04:56 simpler design and then as for the other
+04:58 parts uh I should have picked another
+05:01 microcontroller this microcontroller is
+05:03 good for teaching and learning about
+05:05 embedded systems but it's not very
+05:07 suitable for this project it doesn't
+05:09 have the kind of peripherals that you
+05:11 need for a motorized project like this
+05:13 one of the main things that indicates
+05:15 this is that it doesn't have dedicated
+05:16 pvms and I ended up having to fight for
+05:19 the timer peripheral to get all the
+05:21 functionality that I needed another
+05:23 thing is the flash memory and RAM
+05:25 available on this microcontroller if you
+05:27 saw my previous video I actually ran out
+05:30 out of flash memory in the end and I had
+05:32 to compile out things in order to fit
+05:34 the functionality that I needed and yes
+05:37 for embed assistance development you
+05:38 should of course always think about um
+05:41 how much space your code occupies that's
+05:43 just good practice and picking a smaller
+05:46 micr controller can be a way to force
+05:49 you to learn about this but I also think
+05:51 that if I just would have just went with
+05:54 a mic controller with a double amount of
+05:55 space it would have made my life a bit
+05:57 easier because for a oneoff hobby
+05:59 project like this one there are so many
+06:01 factors that doesn't matter in the
+06:03 choice of a microcontroller normally you
+06:05 have to think about the cost how much
+06:08 power it consumes and a lot of other
+06:10 things uh but in this case if you're
+06:12 just going to buy a single mic
+06:14 controller whether it cost $1 $5 doesn't
+06:16 really matter and with this in mind
+06:18 there would been so many other more
+06:20 powerful micr controllers that I could
+06:22 have picked instead that would have made
+06:24 this project better and easier to
+06:26 develop and lastly I got a bit carried
+06:28 away with the simulation in this project
+06:31 H yes it was a good lesson in C++
+06:34 programming to write my own simulator
+06:37 from scratch but the effort wasn't
+06:39 really comparable to the benefit it gave
+06:42 me in the end I should have just done
+06:44 something simpler uh maybe written up
+06:46 something in python or skipped the
+06:48 simulation Al together and done
+06:50 everything on target even if that would
+06:51 have been more of a hassle with this
+06:54 video series behind me what's next well
+06:57 I want to continue making project
+06:59 related assistance videos while this
+07:01 marks the end of this video series it's
+07:03 the beginning of this YouTube channel
+07:06 and I'm already working on another
+07:07 project and I have some ideas for a
+07:09 video but it's not going to be another
+07:11 video series of this magnitude uh but
+07:14 other than that I don't know and I will
+07:16 have to see how things turn out anyway
+07:19 that's all for now thank you for
+07:20 watching my video series

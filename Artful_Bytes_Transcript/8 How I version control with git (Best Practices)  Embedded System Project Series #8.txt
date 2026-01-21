@@ -1,0 +1,420 @@
+00:00 so it wasn't enough for you to create
+00:02 the best operating system in the world
+00:04 you also had to go and create the best
+00:06 version control system
+00:08 damn it Linus
+00:10 damn it
+00:12 hello and welcome back to Artful bites
+00:14 today's video is going to be about
+00:15 version controlling with Git the goal of
+00:18 this video is to initialize the
+00:20 repository that I will be using
+00:21 throughout this video series as well as
+00:23 making the first commit which is going
+00:25 to be to commit the project structure
+00:27 that I showed you in the last video
+00:28 today git has become the defect standard
+00:30 when it comes to version controlling
+00:32 software projects and if you want to
+00:33 become a programmer you must know git
+00:35 and programming embedded systems is no
+00:37 exception my aim with this video is not
+00:39 for it to be an in-depth tutorial about
+00:41 how to use git because there are so many
+00:42 resources on the internet that teaches
+00:44 you that already but since I'm
+00:46 programming a complete project in this
+00:47 series and that's when version
+00:49 controlling actually becomes relevant
+00:50 and since I'm basically going to be
+00:52 using it in every single video I felt it
+00:54 necessary to at least say a few words
+00:56 about it
+00:57 okay so first of all why do you want to
+00:59 Version Control our software projects
+01:01 well they need to Version Control
+01:03 actually arrives as soon as you work on
+01:05 something digital whether you are
+01:07 writing an article or editing a video or
+01:09 writing code you will want a way to
+01:11 track your changes so that you can go
+01:13 back to an earlier version in case you
+01:14 make a mistake or for some other reason
+01:16 decide that you want to use an earlier
+01:18 version but for code it becomes even
+01:19 more important because as a programmer
+01:21 the changes that you produce or the
+01:23 actual building blocks that makes up the
+01:25 project that you are working on and to
+01:26 work efficiently as a programmer you
+01:28 need a good way to deal with those
+01:30 building blocks especially if you're
+01:31 sharing them with other programmers and
+01:33 that's what a Version Control System
+01:34 such as git helps you with more
+01:36 specifically what git lets you do is to
+01:38 package your changes into something
+01:40 called the commit and the commit is
+01:41 basically a stand ID that uniquely
+01:43 identifies the change that you made as
+01:45 well as a message where you can describe
+01:47 what your change does and it stores and
+01:49 keeps tracks of these versions in an
+01:51 efficient manner by only storing the
+01:52 differences instead of making a copy for
+01:54 each version and it also protects the
+01:56 validity and integrity of your commits
+01:58 so that you don't accidentally overwrite
+02:00 or modify your commits and by tracking
+02:03 your changes as commits you beat up a
+02:05 history of commits that you can reverse
+02:06 in order to restore to an earlier
+02:08 version and that also serves as a
+02:10 documentation over the progress of your
+02:12 project of course the quality of this
+02:13 documentation is going to depend on how
+02:15 well you write your commit messages
+02:16 which I will talk about in a moment also
+02:18 as a side benefit of the distributed
+02:20 nature of Git it also kind of helps you
+02:22 to make sure you back up your project
+02:24 because as soon as you work on your
+02:25 project from multiple computers or push
+02:27 your project to a hosting platform you
+02:29 essentially back up the entire history
+02:31 of your project and this really sense
+02:32 that I mentioned so far are all good
+02:34 reasons for using it but what git truly
+02:36 shines is when you start collaborating
+02:38 with other developers because then you
+02:40 run into a whole new set of problems
+02:41 that you have to deal with and git
+02:42 provides features to make it easier to
+02:44 work on different parts of the code at
+02:46 the same time as well as making code
+02:48 reviews easier and to resolve conflicts
+02:50 when you merge your changes together and
+02:52 given that collaboration is arguably the
+02:54 most important reason for using it it's
+02:56 a bit unfortunate that I'm cell
+02:57 developer working on the project because
+02:59 it means that I will not be able to show
+03:01 you the full benefits of using it in
+03:03 this video series for this project I'm
+03:04 mainly just going to be using it for
+03:06 committing the changes that I'm making
+03:07 each video to make the progress easier
+03:09 to follow but even with this simple
+03:10 usage I still think there is a lot to be
+03:12 gained from dividing your work into
+03:14 separate commits because it makes for a
+03:16 more organized workflow and dividing
+03:18 your project into well-defined
+03:19 incremental chunks also helps you Foster
+03:22 that good Agent mindset that has been
+03:24 adopted by so many companies and
+03:25 projects today it also makes progress
+03:28 more visible and it's always more fun
+03:30 and motivating when you can see the
+03:31 progress that you make
+03:33 basically I'm going to create a single
+03:35 repository that I'm going to store on
+03:36 GitHub for this project and I'm going to
+03:38 divide the development of this project
+03:39 into several modules of the modules I
+03:42 described in the software architecture
+03:44 video so each video is going to cover
+03:46 one module or one feature so for example
+03:48 one video for uart one video for I
+03:51 squared C and one video for gpio and so
+03:54 on and since these features are kind of
+03:56 large I'm probably going to end up
+03:57 making several commits per video because
+03:59 I prefer to do many small commits over
+04:02 few and big ones smaller commitsues
+04:04 makes for a better workflow and it
+04:05 better aligns with the AGL mindset that
+04:07 I mentioned before further on I'm going
+04:09 to run git essays from the command line
+04:11 on my Linux machine there are some
+04:12 applications these days that provide
+04:14 graphical user interface for git and git
+04:17 also integrates pretty nicely with many
+04:18 editors and IDs but I find that just
+04:21 using git essays from the command line
+04:23 works for most use cases and especially
+04:25 for the simple use cases that I'm going
+04:27 to use it for in this video series git
+04:29 is a very elegant and well designed tool
+04:31 which is something that you appreciate
+04:32 when you use it from the command line I
+04:34 do however have a few plugins for my
+04:35 editor veeam used to make it play a bit
+04:37 more nicely with Git
+04:39 and to make sure I end up with a good
+04:41 history of commits there are certain
+04:42 rules I'm going to follow for each
+04:43 commit first of all each commit should
+04:46 only contain one change and this goes
+04:48 kind of hand in hand with what I said
+04:49 before that I should commit small and
+04:51 often by this I don't mean a single line
+04:53 of code but each commit should only be
+04:55 about a single change or a feature or
+04:58 bug that's a good rule of thumb it
+04:59 should be easy to summarize the change
+05:01 into one short sentence it's just a lot
+05:03 easier to deal with well-defined changes
+05:05 as well as review smaller commits
+05:07 secondly each commit should build and
+05:08 possibly pass an aesthetic analysis and
+05:11 what I mean by this is that after a
+05:12 medical mate I should be able to run
+05:14 milk without getting any compiler errors
+05:17 and I'm actually going to enforce this
+05:18 by setting up a small CI system using
+05:20 GitHub actions but I haven't actually
+05:22 set this up yet so I will talk more
+05:23 about continuous integration and all of
+05:26 that in my next video when I've set
+05:27 everything up thirdly I should write
+05:29 good commit messages each commit should
+05:31 shortly explain what the commit does but
+05:33 more importantly it should explain why
+05:35 it does it and why this change is needed
+05:37 this third rule I think is especially
+05:39 important event and I'd ever want to
+05:40 spend some extra time elaborating on it
+05:42 in this video because while git is a
+05:44 tool for tracking your changes it's also
+05:46 in a sense a communication tool that you
+05:48 use to communicate your changes with
+05:49 other developers including your future
+05:51 self and the quality of that
+05:53 communication comes down to the quality
+05:54 of your commit messages and while it may
+05:57 seem like a serious effort to write a
+05:59 good commit message there is nothing
+06:00 worse than coming into a code base and
+06:02 being met with a vague history of
+06:04 commits where each commit doesn't
+06:06 actually explain what the commit does so
+06:07 while it may take some effort it quickly
+06:09 dividends when you come back and try to
+06:11 understand why you did something a
+06:13 certain way and I think the best way to
+06:14 ensure that you write good commit
+06:15 messages is to come up with the
+06:17 convention and then to stick to that
+06:19 convention and one such convention that
+06:21 I will be using throughout this project
+06:22 is a conversion called conventional
+06:24 commit and following this convention my
+06:26 commit message will look as follow at
+06:28 the top is the subject line and this
+06:30 line shouldn't be longer than 50
+06:31 characters and it's divided into three
+06:33 parts the first part is the type and
+06:35 this describes what type of change it is
+06:36 so whether it's a feature or a bug or it
+06:39 relates to the build system and so on
+06:41 and the second part is the scope and the
+06:43 scope describes what module of the code
+06:45 base to change so for this project I
+06:47 might write I squared C State machine U
+06:50 work and so on and the third part is the
+06:52 description and this should be a short
+06:53 sentence describing what the commit does
+06:56 and this description should describe the
+06:57 solution and the fix and not the problem
+06:60 or the bug and after the subject line
+07:02 comes a blank line followed by the body
+07:04 and the body is where you write a more
+07:06 digital description of your commit and
+07:07 you should think of this body as a way
+07:09 to motivate to a potential viewer even
+07:11 if it's just yourself why this change is
+07:13 actually needed well you should describe
+07:15 shortly what the commit does you should
+07:16 mostly focus on why this change is
+07:18 needed and why you have to make this
+07:20 commit after the body comes a blank line
+07:22 followed by an optional footer and the
+07:24 footer is mainly for including any
+07:25 relevant metadata and this could for
+07:27 example be if you are using an issue
+07:29 tracker such as either you may have an
+07:31 issue number for the work you've done in
+07:32 this commit and then it may be a good
+07:34 idea to add the issue number to the
+07:36 commit so you can easily link it up with
+07:38 the issue in your issue Drive here for
+07:40 this project for this video series I
+07:41 think I'm actually just going to include
+07:43 the video name in the footer so that
+07:45 it's easy to see what video the commit
+07:47 relates to finally you should write in
+07:49 the imperative form so if the verb in my
+07:51 commit message is change I should write
+07:53 change and not change or changing you
+07:56 may feel inclination to write in the
+07:57 past tense but you should think of your
+07:59 commits as something that is to be
+08:00 applied and something that is to be
+08:02 committed it's not a big deal but it's
+08:04 actually shorted writing the imperative
+08:05 form and I think it's just a good idea
+08:07 to stick to one way of writing
+08:09 so following these rules let's now make
+08:11 the first commit of this project which
+08:12 is going to be of the project structure
+08:14 that I showed you in the last video so
+08:16 this structure right here before I
+08:18 initialize here I can just quickly
+08:20 mention the git ignore file again this
+08:22 file contains the files or directories
+08:24 that I don't want git to pick up so for
+08:27 this project so far I've just added the
+08:29 build directory because the build
+08:30 directory is going to contain the files
+08:32 that gets generated during the build or
+08:34 when around make and since the files in
+08:36 the build directory is going to get
+08:37 generated and modified each time I build
+08:39 the project this doesn't make sense to
+08:40 include them as part of git and to make
+08:42 sure I follow the rule that I set up
+08:43 before that each commit should be let's
+08:45 just run mate now to make sure that the
+08:47 project actually builds
+08:48 and it does and now I can run git init
+08:51 to initialize the Repository
+08:55 and then I'm going to configure the
+08:58 username
+08:60 as well as the user email
+09:03 and as you can see I use the local flag
+09:05 here and that's just because I prefer to
+09:07 have a specific configuration pair
+09:09 repository instead of relying on a
+09:11 global git configuration and now I can
+09:13 add all of the files for the first
+09:14 commit so I'm just going to use the DOT
+09:15 sign here because that's going to pick
+09:17 up all of the files in the current
+09:18 directory and now I can run status to
+09:20 see that it has picked that up and as
+09:22 you can see it has now added all of the
+09:23 files in the directory of course right
+09:25 now it is mostly a placeholder files so
+09:28 let's now commit these files and
+09:30 following the rules laid out by
+09:32 conventional commits we should first
+09:33 start with the subject line starting
+09:35 with a type and since this is not really
+09:37 a feature fix I think the most
+09:39 appropriate type for this kind of commit
+09:41 is build and since it doesn't relate to
+09:43 any specific scope I'm just going to
+09:45 leave the scope out and then I will just
+09:46 add a short description to describe what
+09:48 the commit does so this commit sets the
+09:50 project structure and
+09:53 add initial files and then leave a blank
+09:56 line between the subject line and the
+09:58 body fill the project directory with all
+10:02 the required directories
+10:06 to immediately clarify the project
+10:09 structure to be used throughout the
+10:11 project series and I can also mention
+10:14 here that I had some place totally files
+10:17 because otherwise git won't pick up the
+10:19 directories and then for the footer as I
+10:21 said I'm just going to include a video
+10:23 name here and that's going to be how
+10:25 I Version Control with Git
+10:28 best practices
+10:31 and then I can save this
+10:34 and now I have committed the first
+10:36 commit for this project and I cannot run
+10:38 git log to see that it's actually there
+10:40 I'm already set up a repository on
+10:42 GitHub tsunami is going to add a GitHub
+10:44 remote so that I can push my project to
+10:45 that Repository
+10:50 yeah and I've also already set up my
+10:53 sshk key and so on so this will just
+10:56 work without me entering any password
+10:58 and as you can see now the project is
+10:60 available on GitHub and here nicely
+11:02 showing the images from my readme so
+11:04 let's now add us
+11:08 so let's now do a second commit where I
+11:10 add external project that I will be
+11:12 relying on in this project which is the
+11:15 strip down printf implementation and
+11:17 since this project is available as a
+11:18 guitar plus story on GitHub I like to
+11:20 include projects like this as is as a
+11:22 git sub module so that I know where it
+11:24 came from and which particular commit
+11:26 I'm using of it and I'm going to add
+11:28 this project under external so let's
+11:30 start by removing the placeholder file I
+11:32 have here and then to add a git
+11:34 submodule you're right kit sub module
+11:38 add and then I'm just going to write the
+11:40 address for the GitHub repository I want
+11:43 to add as a sub module
+11:45 and then the path to where I want to put
+11:48 it so that's going to be under external
+11:50 and printf so now it actually cloned
+11:53 that report story to under external
+11:56 printf and it has also added a file
+11:58 under my repository dot dot git modules
+12:01 so we can read into that as well
+12:05 and we can also fix status and let's
+12:07 just make sure that I also add the
+12:08 deleted place of the file just like that
+12:12 and now I can commit again and following
+12:14 the same conventions again starting with
+12:16 the type for this um would say it's a
+12:19 feature and the scope is maybe external
+12:21 and what the commit does is it adds
+12:25 a strip
+12:26 down
+12:28 printf implementation and here in the
+12:31 body I should explain why I'm adding
+12:32 this external project so that's because
+12:34 the printf implementation
+12:36 part of the standard library is too
+12:41 large for a small
+12:44 like a controller so use an external
+12:49 down
+12:50 implementation
+12:52 and edit unchanged as its submodule for
+12:56 better tracking and then for the footer
+12:59 I'm going to add the video name again
+12:60 and save it now I can push it again
+13:06 and check the log so now I have two
+13:08 commits in the log as expected so these
+13:10 were the two commits that I wanted to
+13:12 make in this video overall I will put
+13:13 some extra effort into using git in this
+13:15 project series more than you would
+13:17 typically do for a personal side project
+13:19 because when it's only you working on a
+13:21 project it's quite easy to get lazy with
+13:23 Git but for this product series I
+13:25 actually want to set a good example
+13:26 because git is such an integral part of
+13:28 software development these days I think
+13:30 it's important to have some good
+13:31 practices in place when you are using it
+13:32 only two commit messages so far but you
+13:35 will have the chance to see how I use
+13:36 git and write commit messages many times
+13:39 throughout this video series and
+13:40 hopefully I end up with a history of
+13:41 commits that clearly aligns with the
+13:43 rest of the video series that was all
+13:45 for now see you next time

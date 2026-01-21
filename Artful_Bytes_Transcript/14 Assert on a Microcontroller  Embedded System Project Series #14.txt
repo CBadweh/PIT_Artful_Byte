@@ -1,0 +1,532 @@
+00:00 in this video I'm going to implement an
+00:02 assort Handler on this microcontroller
+00:05 and if you've heard about assertions
+00:06 before you probably know the Master's
+00:08 single line statements that about your
+00:10 program when a certain condition is not
+00:13 true or fulfilled and aborting or
+00:15 crashing a program on a regular computer
+00:18 with an operating system such as Windows
+00:20 or Linux is a reasonable thing to do
+00:23 because the operating system is there to
+00:25 clean up of you so that you can continue
+00:27 using the computer or processor on a
+00:31 microcontroller things work a bit
+00:32 differently there is only one program
+00:34 and it's running there and there is no
+00:37 operating system so there is no nice way
+00:39 of crashing or aborting the program
+00:42 even so if implemented right assertions
+00:45 can still be very useful on a
+00:46 microcontroller especially during
+00:48 development to catch down programming
+00:50 mistakes
+00:52 and it's also therefore something that's
+00:54 nice to get implemented early in a
+00:56 project and also why I'm talking about
+00:58 it at this point of the video series so
+01:00 my plan for this video is primarily to
+01:03 create a useful assert implementation to
+01:05 allow me to Simply spray the search
+01:07 across my microcontroller code this will
+01:09 be a search that triggers at runtime
+01:11 while the code is executing there is
+01:14 also another type of A Sort called
+01:15 Static assert that triggers at compile
+01:17 time which I will also talk about later
+01:20 on in this video there are different
+01:21 ways of implementing an assert function
+01:24 on a microcontroller and it's really up
+01:26 to you as a developer to implement
+01:28 something that's appropriate and useful
+01:30 for your particular project in this
+01:32 project however I will Implement an
+01:33 assert function that does the following
+01:35 first of all as a safety measure it's
+01:37 going to disable and stop the motors
+01:39 because I don't want the robot to keep
+01:41 on driving in a faulty state but since I
+01:44 don't have a multi-driver in place yet
+01:45 this is something I will Implement in a
+01:47 future video and I will just leave this
+01:49 as a to-do for now then I'm going to
+01:51 print where there are question happened
+01:53 and this is also something I will
+01:55 Implement in a future video because
+01:56 right now I don't have the trace
+01:58 functionality in place either and
+01:60 thirdly it's going to trigger a
+02:01 breakpoint if a debugger is attached and
+02:03 this is something that I will be
+02:04 implementing in this video and at last
+02:06 I'm going to have the third function go
+02:08 into an endless while loop where it's
+02:10 going to Blink the test LED on my board
+02:12 and I will have it stay here until I
+02:14 manually reset the microcontroller and
+02:17 this is the second thing that I'm going
+02:18 to be implementing in this video overall
+02:20 the goal with my implementation is to
+02:22 make this hardness easy to detect and
+02:24 localize as possible so let's get into
+02:26 the code now I begin by creating a new
+02:29 local git branch
+02:31 for the SRT implementation I then create
+02:33 a set of files called assert handler.c
+02:36 and the search handler.h and put them in
+02:38 my command directory and then I add the
+02:40 C file to my make file
+02:45 and I create the function called assort
+02:47 Handler which is the function that's
+02:49 going to contain my assorted
+02:50 implementation
+02:53 and I wrap it in a Define macro named
+02:56 assert or uppercase I name things like
+02:59 this to differentiate them from the
+03:00 assorted implementation in the standard
+03:02 Library and by the way it's common
+03:05 practice to wrap the search Handler in a
+03:07 macro like this since it makes it easy
+03:08 to add a compile time switch to switch
+03:11 the assertions off which is sometimes
+03:13 done when the product goes out to
+03:15 production or the customer but turning
+03:17 off a search is an opinion as a topic
+03:19 that I'm not getting into here wrapping
+03:21 it in a macro like this also makes it
+03:23 possible to utilize preprocessor
+03:26 directives to get the file name and line
+03:28 number of where the assert happened
+03:30 which I will use later on when I add a
+03:32 print or Trace in my sort Handler then I
+03:35 add a small test function to test the
+03:37 sort inside my main file
+03:42 and make sure that things compile
+03:46 once again in this video I'm just
+03:48 implementing the breakpoint and the LED
+03:50 blinking and I will add the tracing and
+03:51 stopping of the motors in future videos
+03:54 and I'm first going to implement the
+03:56 breakpoint
+03:57 and the way breakpoints normally work
+03:59 with a debugger is that you mark a line
+04:01 of code in your IDE and once the
+04:04 execution reaches this point the
+04:06 debugger holds execution what I'm going
+04:08 to do here is similar but the difference
+04:10 is that instead of manually marking out
+04:12 the breakpoint I will add a line of code
+04:14 that triggers it programmatically a
+04:16 so-called software breakpoint or in
+04:18 other words a special instruction that
+04:20 when the debugger sees it holds the
+04:22 execution this is really useful because
+04:25 if an assertion happens when I have the
+04:26 debugger attached it will trigger a
+04:28 breakpoint and I can immediately inspect
+04:30 the call stack to know where it happened
+04:32 as well as inspect any registers and so
+04:34 on exactly which instruction you need to
+04:36 use to do this will depend on the
+04:38 particular microcontroller I couldn't
+04:40 find any good documentation for my
+04:41 microcontroller the msp430 but searching
+04:44 the forums I found that the instruction
+04:46 that triggers the breakpoint is the one
+04:48 with OP code 4343 meaning I can get the
+04:51 breakpoint to trigger by writing a line
+04:53 of code that translates to this
+04:55 instruction this is easy with the ti
+04:57 compiler that because it has an
+04:58 intrinsic for it that is a built-in
+05:01 function and I can demonstrate this by
+05:03 opening up the IDE and create a small
+05:06 project using the ti compiler
+05:09 so I'm just going to use the blink the
+05:10 LED basic example project and selecting
+05:13 my particular microcontroller
+05:21 so if I call this intrinsic underscore
+05:24 underscore op code with OP code4343
+05:27 compile and run it it should trigger the
+05:30 breakpoint automatically
+05:33 I had some issues with the connection
+05:34 here for some reason I had to reconnect
+05:36 my Launchpad to get it to work
+05:43 so as usual when you're on the debugger
+05:45 it first holds the execution at the
+05:47 beginning but then if I resume it holds
+05:50 the execution of the my breakpoint
+05:52 instruction so it's working as expected
+05:54 then I can also open the disassembly
+05:57 view to see which assembly instruction
+05:58 this op code translates to so it
+06:01 translates to clear B register 3 and
+06:04 this is actually something that I'm
+06:05 going to need to know and now that I'm
+06:07 going to do the same thing with other
+06:09 compiler the compiler that I'm using the
+06:11 GCC compiler so if I create the same
+06:14 Blinky project again but using the GCC
+06:17 compiler instead and then try to use the
+06:19 same intrinsic underscore underscore op
+06:21 code
+06:23 it doesn't compile because the GC
+06:25 compiler doesn't support the same in
+06:28 train 6 or built-in functions as the ti
+06:31 compiler so I have to do things a
+06:33 different way I have to use another
+06:34 function or intrinsic to achieve the
+06:36 same thing it was not immediately
+06:38 obvious at first how I was going to do
+06:40 that but then I realized that I could
+06:42 use slingtrinsic that the GCC compiler
+06:45 has for executing assembly instructions
+06:47 and simply use the assembly instruction
+06:48 from the disassembly view that I just
+06:51 showed now if I compile this and run it
+06:57 a triggers a breakpoint in the same
+06:59 fashion as the tier compiler and looking
+07:01 at the disassembly view it corresponds
+07:04 to the same op code 4343 as expected so
+07:08 with a way to trigger the breakpoint
+07:10 programmatically I can then go ahead and
+07:12 import my own project into the IDE which
+07:14 I can do by creating an empty project
+07:20 and then drag my source folder into the
+07:23 workspace
+07:25 I also have to add the source folder as
+07:27 part of the include directories so that
+07:29 CC Studio can find the files
+07:33 and also add the Define to build for the
+07:36 LaunchPad
+07:37 then I just double check that it also
+07:39 compiles
+07:42 after that I open the implementation
+07:44 file for the SRT Handler
+07:48 and add the line of code for triggering
+07:50 a software breakpoint the line of code
+07:52 that I just demonstrated and I put it
+07:54 inside a Define named breakpoint for
+07:57 clarity and I add an explaining command
+07:59 on top
+08:01 so now if I test this by first compiling
+08:03 and running it without the breakpoint by
+08:06 commenting the breakpoint art the test
+08:08 assert function in main.c should run but
+08:11 it should end up in the while loop at
+08:13 the end of the sartunder which I can say
+08:15 by manually pausing the execution
+08:20 and then if I uncomment the breakpoint
+08:26 and also make sure that the code
+08:28 compiles I forgot the semicolon there
+08:31 and then run it
+08:33 I should end up triggering the
+08:35 breakpoint
+08:37 and I do good
+08:41 with a breakpoint sorted out I came out
+08:43 of the ID and get back to the command
+08:45 line and my normal editor
+08:47 but before I continue here I just want
+08:50 to update the make file here to point
+08:51 another version of this studio because I
+08:54 downloaded a new version while making
+08:56 this video and then I use compile and
+08:58 Flash from the command line to verify
+09:00 that everything still works
+09:07 then I can go on to implement the next
+09:09 part of the assert Handler blinking the
+09:12 LED
+09:13 currently I can blink nle by toggling a
+09:15 gpio using my I functions which I've
+09:18 showed before
+09:20 but I thought it would be nicer to
+09:21 actually have a dedicated LED driver
+09:23 instead
+09:24 so I create two files for this led.c and
+09:27 led.h and put them under the drivers
+09:30 directory and add LED dot C to my make
+09:33 file
+09:35 inside this driver I had two functions
+09:37 LED init and led set
+09:41 and one enum to represent the available
+09:43 LEDs I only have one the test LED so
+09:47 perhaps it's a bit Overkill to have a
+09:49 separate driver like this but anyway
+09:51 then I have another enum to represent
+09:53 the state of the LED whether it's on or
+09:55 off
+09:56 and as always a little comment at top of
+09:59 the header
+10:01 then I jump over to the implementation
+10:03 file to sketch out the implementation
+10:05 for these functions I am going to use
+10:08 the I functions here but in LED init I'm
+10:10 not going to initialize or configure the
+10:12 ipane because that should already be
+10:14 configured when I initialize all of the
+10:17 io Paints in IO init but what I'm going
+10:19 to do instead is to have an assertion
+10:21 here that verifies that it actually has
+10:23 the correct configuration and I'm going
+10:25 to use that as a sanity check to ensure
+10:27 that IO init has been called before I
+10:29 call LED in it
+10:31 and then I'm going to have another sort
+10:33 to verify that I don't accidentally call
+10:36 LED in it multiple times because that
+10:38 should never happen
+10:40 and in LED set I'm also going to assort
+10:42 to ensure that led init has been called
+10:45 before I set the LED and I marked
+10:47 arguments as unused for now you so that
+10:49 I can get the code to mobile before I
+10:51 move on
+10:55 what I like about the search is that
+10:56 they not only serve as sanity checks for
+10:59 myself but they also saw a kind of
+11:01 service documentation by making my
+11:04 assumptions explicit I mean one can
+11:06 assume that led in it must be called
+11:08 before LED set but with an assert there
+11:10 is absolutely no doubt about it so
+11:12 getting on with the implementation first
+11:14 I add a variable to keep track of
+11:16 whether LED init has been called or not
+11:18 then I check this variable inside the
+11:20 assertions
+11:22 as always I of course Miss adding the
+11:24 required includes so my completion fails
+11:29 then to check if the io pin connected to
+11:31 the LED has the correct configuration I
+11:34 need to add two new i o functions one
+11:36 eye function to get the current
+11:38 configuration by reading the I registers
+11:41 and another function that takes two
+11:43 configurations and Compares them
+11:56 so to get the current configuration for
+11:58 a certain pane I just need to access the
+12:00 right bit in the right register I access
+12:03 the registers in this OS and if you want
+12:05 to know more about how all of this I O
+12:07 code works you should check out my
+12:09 previous video where I explain how I
+12:10 program gpios and then assign them to
+12:13 the i o configurations track that I pass
+12:15 as a pointer argument to this function
+12:18 while doing this I noticed one issue
+12:20 here when I cast the pin bit value to
+12:22 the enum value for the direction
+12:24 register it got the wrong enough value
+12:26 because when it's input Direction the
+12:28 pin value is zero and when it's output
+12:30 Direction the pin bit value is one so I
+12:33 have to reverse the order here in the
+12:35 enum for the casting to be right
+12:44 then I compile or no I don't I fix a
+12:47 typo and then I compile
+12:51 and then in the function where I compare
+12:53 the configurations I compare each value
+12:55 of the structs individually and return
+12:57 true if they are all equal otherwise
+12:59 false
+13:04 and then back inside the LED driver I
+13:06 first create a stat extract that
+13:08 contains the configuration I expect LED
+13:10 pin to have
+13:12 I then retrieve and compare it to the
+13:14 current configuration
+13:16 and assert that the result is true
+13:20 then I build the code once again
+13:22 or it didn't rebuild here because I
+13:24 forgot to save the file
+13:33 and finally to set the LED on or off in
+13:36 LED set I just call IO set out
+13:44 I test the LED driver by replacing the
+13:46 code inside my access function in main.c
+14:01 I compile it flash it and look to see
+14:04 that the LED blinks
+14:06 then I also replaced the code in my
+14:08 other test function to also use the new
+14:10 LED functions
+14:24 and compiling and making sure that that
+14:26 works as well
+14:29 to demonstrate that assertions I just
+14:31 added inside the LED driver actually
+14:33 work I came back into the IDE
+14:39 and run the test function that links the
+14:41 LED again
+14:42 for example if I call LED init twice it
+14:45 should trigger the first assertion in
+14:47 LED init
+14:49 which I can verify by navigating up in
+14:52 the call stack
+14:56 then I can try to not call are you init
+14:59 before calling LED init which should
+15:01 trigger the next assertion where I
+15:03 compare the i o configurations so if I
+15:05 comment this out here compile and run
+15:10 this assertion triggers instead
+15:14 and if I don't call LED in it at all I
+15:17 should trigger yet another assertion but
+15:18 now inside LED set instead
+15:26 which I do so all the search seems to be
+15:28 working
+15:29 and finally if I run the code normally
+15:31 no assertions trigger
+15:37 okay so then my initial plan was to also
+15:40 use this new LED driver inside my assert
+15:42 function but then I realized that I
+15:45 couldn't do that because then I would
+15:46 call functions that already have a
+15:48 search inside them and if the condition
+15:50 in the sort is false I would end up
+15:52 calling the sort function recursively
+15:55 until I get a stack Overflow to get
+15:57 around this I could of course assure
+15:59 that I don't run into an assert inside
+16:01 my assert or that I don't use a search
+16:03 in my LED functions but to me it seemed
+16:06 like a better idea to just reduce the
+16:08 code dependencies in my assort Handler
+16:10 as such I decided to just write to the I
+16:13 registers directly instead to make a
+16:15 sort Handler as isolated and Standalone
+16:18 as possible
+16:26 in addition I write to the eye registers
+16:28 for both the LED on the launch pad and
+16:30 robot
+16:32 because I want Sr to work properly even
+16:34 if I build for the wrong target by
+16:36 mistake
+16:38 compile fixing code and compile again
+16:43 then IBC Loop blinking the LED with some
+16:45 delay in between and as I said before I
+16:48 want to be stuck in desert indefinitely
+16:50 until I manually reset the mic
+16:52 controller to see that this works I call
+16:54 LED in it twice to trigger an assert and
+16:57 then look to see that led blinks after I
+16:59 flash the code
+17:00 blinking the LED like this when as an
+17:02 assert occurs is mostly going to be
+17:04 useful as a visual feedback when I don't
+17:06 have the debugger attached or Trace logs
+17:08 to a terminal so kind of like a last
+17:09 resort while at it I also want to take
+17:11 the opportunity to wrap the delay Cycles
+17:14 intrinsic that I use for busy waiting
+17:16 inside the new Define called busy with
+17:18 Ms which takes milliseconds as argument
+17:21 instead of Cycles because it's annoying
+17:24 and less readable to think in terms of
+17:25 Cycles
+17:27 by default msp430 runs at 1 megahertz so
+17:32 1 million cycles per second I divide by
+17:34 1000 to get milliseconds
+17:39 I'm going to increase this clock red to
+17:42 16 megahertz in later video
+17:45 I then go ahead and replace all
+17:47 occurrences of the delay Cycles with my
+17:50 new busy weight defined
+17:51 and yes this design definitely makes the
+17:54 code easier to read
+17:55 I then compile and Flash the LED blink
+17:58 example again just to say that my new
+18:00 OBC defined micro also works
+18:06 after all of this code changes it was
+18:08 then time for the usual drill format and
+18:11 static analyze the code
+18:14 and be lit for both targets
+18:21 add the files to git
+18:27 and create a new commit
+18:34 it turned into a pretty long commit
+18:36 message here which indicates that I
+18:38 should probably have divided this into
+18:39 several commits instead
+18:43 then I push my local Brands to GitHub
+18:48 open up a request
+18:50 and see that the CI pass
+18:55 I don't March it at this point because I
+18:57 also want to use the same pull request
+18:59 for my next commit
+19:01 was all I wanted to implement in my
+19:03 runtime as art Handler in this video but
+19:05 before I go I also want to quickly Show
+19:07 an example of a static assert as well in
+19:10 contrast to the start Handler I just
+19:11 implemented a static assert trigger set
+19:13 compile time and it's not something I
+19:15 need to implement a custom Handler for I
+19:18 can just use the standard declaration
+19:19 static SRS can be used in places where
+19:22 you already know at compile time whether
+19:24 something should be true or false this
+19:26 can for example be if you want to check
+19:28 the size of a certain data type there
+19:30 are generally going to be a few use
+19:31 cases for static Sr compared to runtime
+19:34 asserts but they should always be
+19:35 preferred over runtime massage because
+19:37 earlier you can catch the mistake the
+19:39 better and compile time comes before
+19:41 runtime one use case for a static srj
+19:44 that I can think of in my code right now
+19:46 is to check the size of the enum I use
+19:48 for naming my i o pins ideally the size
+19:51 of this enum should be one byte to say
+19:53 flashbase because all of the inner
+19:55 values can be represented in a single
+19:57 byte since they are fewer than 256 and I
+20:00 can verify that it only it takes up one
+20:02 byte by using a static assert so inside
+20:05 io.h I include assert.h
+20:10 and then add a static assert somewhere
+20:12 in the code it doesn't matter where I
+20:14 add it as long as the file I'm adding it
+20:16 to is part of the compilation
+20:19 currently this enum doesn't actually
+20:22 take up one byte it takes up two bytes
+20:24 because by default enums or compilers
+20:26 two bytes with this compiler and
+20:28 microcontroller and that's why the
+20:30 static assertion also fails I must add a
+20:32 compile time flag Dash F short Dash enum
+20:36 to make the compiler make the end of
+20:38 values as small as possible
+20:46 so after adding this compile time flag
+20:48 and compiling again I don't get the
+20:50 compiler anymore
+20:56 then I build my code for both targets
+20:58 format it and run static analysis
+21:04 I add my changes to git
+21:08 create a new commit
+21:16 and push it to GitHub to the same pull
+21:19 request
+21:20 I quickly go through my essentials in
+21:22 GitHub to see if I missed anything I
+21:24 hadn't so after the CI pass I marched
+21:27 the pull request
+21:32 okay so while editing this video I
+21:35 realized I forgot to replace the to
+21:37 those I previously added in the audio
+21:39 code so I'm just going to add this in
+21:41 here now so that it's part of this video
+21:42 so create a new Branch since I already
+21:45 merged the previous one and going to I.C
+21:48 and these three places to Deals here for
+21:50 the hardware type detection and use a
+21:52 search instead
+21:59 and then I compiled for both targets add
+22:03 the files to git or will I have the
+22:05 format and run static analysis as well
+22:08 and create a small commit
+22:14 and push the new Branch to GitHub
+22:17 create a pull request and wait for a CI
+22:20 to pass
+22:21 and then merge the pull request so that
+22:24 was everything I want to say about a
+22:25 search in this video but I will keep on
+22:28 adding a search in my code wherever it's
+22:30 appropriate as I add more code
+22:31 throughout this video series but that
+22:34 was all for today so see you next time

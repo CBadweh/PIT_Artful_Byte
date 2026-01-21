@@ -1,0 +1,518 @@
+00:00 [Music] in this video I'm going to make this mic controller talk to my desktop computer
+00:06 and what it says is going to show up on this display here and the way I'm going
+00:11 to do that is by connecting two of the pins from my microcontroller to a separate USB to uart card and that's
+00:20 going to be connected to the USB port on my computer more specifically I'm going to write a
+00:25 UI driver and my end goal is to be able to write a single line of code to print a string to the terminal and printing
+00:34 strings or logs to a terminal is another one of those things that are nice to get set up early in an embedded project
+00:41 because similar to having asserts and being able
+00:46 to Blink an LED it's another one of those debug facilities that are nice to have during development I'm going to
+00:52 divide the implementation into two videos so in this video I'm going to focus on the lower parts so in this
+00:59 video I'm going to implement the uart driver that is the code that's going to write to the registers related to the
+01:05 uart peripheral and this driver will be able to write a single character to the
+01:10 terminal and then in the next video I'm going to implement the printf function that's going to be able to print
+01:17 formatted strings to the terminal further on in this video I'm going to divide the your driver implementation
+01:24 into two stages so first of all I'm going to implement a simple driver that's going to rely on polling so it's
+01:32 simply going to write a byte to a register and then pull a register to wait until the byte has been written and
+01:39 then in the second stage I'm going to make this more efficient by making it interrupt driven and Implement a simple
+01:46 ring buffer as usual in this video series I will be doing the implementation using this development
+01:54 board or the microcontroller on this development board which is the same microcontroller as I have on this robot
+01:59 which is the project that I'm programming in this video series but as I've said before I'm doing these first couple of videos
+02:06 on the launch pad to make the videos more isolated and then in a later video I will move on to program on the actual
+02:13 robot but even so what I'm doing here or the general approach that I'm trying to
+02:19 demonstrate here is really going to apply to any microcontroller so my aim is for you to find this video useful
+02:24 even if you're not programming this particular microcontroller before I tell you about
+02:30 the before I tell you about the before we jump straight into the implementation I would like to first
+02:37 talk a bit about what u-word is first of all uart is technically not uh protocol
+02:42 similar to I squared CD and SPI it's actually a device and uart stands for Universal
+02:50 asynchronous receiver
+02:56 transceiver and it's a hardware device that's going to
+03:02 in this case be integrated into the microcontroller and it's a device that takes parallel data as input and outputs
+03:09 serial data bit by bit and so in practice the CPU is typically going to
+03:15 write a byte of data to register and then your device is going to shift out the bits the individual bits of the byte
+03:24 serially one by one out on the transmission line and the u-word is
+03:29 quite simple it only has two lines so one line for receiving data and one
+03:37 line for sending data so transmit and receive and uart is universal because it
+03:42 can be configured to implement several different serial protocols and it's asynchronous because it doesn't
+03:49 have a dedicated clock line so that means that for two your devices to be
+03:55 able to communicate with each other they need to have the same serial protocol
+04:01 configured and they must also roughly be configured to have the same clock speed
+04:08 or clock rate also called the board rate it doesn't have to be exactly the same
+04:14 it has to be within five or ten percent for it to work so there is some leeway and apart from this for two devices to
+04:21 be able to communicate with the charger they must also support the same electrical standard
+04:27 and this standard is going to be implemented by a separate Hardware ship or Hardware circuit usually called a
+04:35 line driver so that's going to be sitting basically in front of the your
+04:41 device and this line driver has to implement the same standard on both ends
+04:49 for this to work because this standard determines the electrical interface so the line driver takes the logic input
+04:56 and output from the uart and translate that to electrical voltages on the output there are different standards
+05:03 that these line drivers can implement but the most common one and the one that's on inside my microcontroller is
+05:10 the RS two three two standard so it's just important to make sure that when you
+05:16 connect to your devices with each other that they support the same RS standard
+05:21 it's really not something you're going to notice as a programmer because that's also going to be integrated into the
+05:29 microcontroller but it's good to be aware of so for clarity I can just add it in here
+05:35 inside my microcontroller like that these days when you want to
+05:41 send strings of data from your microcontroller to display on your computer uart has become The Defector standard
+05:49 way to do that but technically you could also do this with the i squared C and
+05:55 SPI but there are several reasons why we're doing this using uart instead of
+06:01 other communication interfaces the first reason is historical simply speaking
+06:06 uart has been around for a long time so it has just not really become the standard way to do this first mover
+06:12 Advantage so to speak a second reason is design intention uart was originally
+06:17 designed for connecting teletype writers to the early computers
+06:23 so it was actually designed to transfer characters serially to a terminal which is in contrast to communication
+06:29 interfaces like SPI and I squared C which were originally designed to
+06:35 connect different ICS a third reason is availability uart is
+06:40 simple to implement in hardware and as such it's available in most microcontrollers and even if it's not
+06:46 it's easy to implement in software through big banging overall I shortly wanted to mention this year because I
+06:51 think sometimes it can be good to reflect on why we do things a certain way and not just only take it for
+06:56 granted another thing I should mention before I get into the code is that a problem with modern computers when it
+07:02 comes to uart is that we can no longer connect our Ur devices directly to our
+07:08 computer because our modern computers no longer have dedicated RS 2 3 2 ports com ports
+07:16 because the these have been phased out in favor of USB ports and for this
+07:21 reason to connect this mic controller to my computer I need to have a separate
+07:27 ship a converter shape or a so-called USB to uart bridge that translates the
+07:34 traffic from the uart to USB and this uh shape is going to have
+07:43 Associated or corresponding driver on or in this case on Linux that's going to
+07:50 show up as a Serial device that I can talk to in this case it's not strictly necessary
+07:57 for me to have this separate chip since on this development board it actually have a separate USB to your chip on it
+08:05 but since it's limited in terms of How
+08:10 High board rate it can use it only goes up to 9600 because it has been pre-configured
+08:17 that way by the TI and I don't think there is a nice way to change it and for
+08:22 this reason I'm going I'm used I'm going with this separate board instead also on the actual robot I don't have a
+08:29 dedicated ship like this on the board but anyway this ship is quite simple I
+08:34 just need to connect the TX RX and ground and then the USB on the other end
+08:41 so now I'm going to implement the first stage of the implementation in this video which means that I'm going to
+08:48 create the polling based solution that essentially configures the uart peripheral and writes to the transmit
+08:54 buffer to send out a single character to the terminal and your peripheral on my mic controller as with any other mic
+09:01 controller is documented in the datasheet so when I'm configuring a peripheral
+09:06 like this I will refer to the data sheet to understand which registers and so on that I need to write to if you're trying
+09:12 to set up you work on a different microcontroller you would have to refer to another data sheet obviously okay so
+09:17 in the data sheet of the msp430 there is an overview of the uart module so there
+09:24 is like a bunch of registers and blocks here but what I'm mostly interested in is going to be the transmit part of this
+09:30 module because I'm not going to configure your peripheral to receive any bytes I'm just going to send bytes out
+09:36 to the terminal so I'm not going to accept any data from the from the terminal and as such uh what I'm going
+09:43 to need to configure is going to be well first of all I need to select the input clock source that I want to use and in
+09:50 this case I will be using the subsystem clock which I set to 16 megahertz in the
+09:57 last video and then I also need to configure this block here the bubble rate generator to generate the desired
+10:03 board right from the input clock rate so I need to set the pre-scale layer as well as the modulator here to get the
+10:09 correct board rate from the input clock and I'm going for a board rate of 115
+10:15 200 which is a fairly common baud rate for uart communication and it's going to
+10:20 be more than enough for the use case here which is to send the strings to a terminal and once I've configured the
+10:26 board right and selected the input the clock Source that's pretty much all I have to do because I'm going to go for
+10:33 the default configuration of the uart module and this means that for every byte I'm sending there's going to be
+10:40 like always when you send and a bite with uart there is going to be a start bit and then as for the data there's
+10:46 going to be eight databits by default so a single byte so let's just use an example number and then there is I'm not
+10:53 going to have any parrot a bit and just a single stopping and what these bits do first of all the start bit as the name
+10:58 suggests marks the start of the message and the database contains the data and apparently bit can be used to make the
+11:05 communication more reliable because when you're communicating over an electrical line there is always going to be some
+11:12 sources of Errors so there is always the risk of getting a bit error and the parity bit can be used to detect that
+11:18 and finally the stop bit is used to Mark the end of the message and you can configure to have several stop bits and
+11:24 similar to the parity bit several stop bits can also help with making the communication more reliable but overall
+11:31 I found that this configuration works for my use case and I haven't noticed any transmission errors and it wouldn't
+11:37 be the end of the world for me to have a few transmission errors because sending prices to a terminal is not really a
+11:43 critical function so one start bit eight database no parity bit and one stop bit is the default configuration of the uart
+11:50 peripheral on my microcontroller okay so let's now jump into the ID and set up a new project I will Implement everything
+11:57 inside the ID from an empty project and make sure that it works there before I move it to the rest of my project code
+12:04 because I think it will be easier for you to understand what I'm doing here if you're not distracted by the rest of the
+12:10 project code of this robot so I'm just going to create a new project using the GCC compiler
+12:18 and I'm just going to call it the uart driver
+12:23 okay so before I write the uart driver I first must do a couple of things right
+12:28 after the microcontroller builds up which I already do in my main project
+12:34 so first of all I need to I will put this in a separate function called
+12:39 MCU init I have the similar function inside my main project and here I must
+12:46 make sure that I first of all configure the clock rate of the microcontroller
+12:51 because by default as I mentioned in the last video it's running at one megahertz and I want to run it at 16 megahertz so
+12:58 I have to write the two registers here to make sure that the clock source that I will input into the uart peripheral
+13:03 runs at 16 megahertz and I'm also going to move the stopping of the Watchdog into this function and then I will call
+13:09 this a top of my and I also need to configure the two IO pins that are allocated for the uart peripheral the
+13:15 transmit and receive pin where actually I don't need to set the received pins
+13:21 since I'm just going to be transmitting but I will configure the receipt pin anyway and I need to explicitly set this
+13:26 for uart because the audio pins as I've explained before can be used for multiple functions and you have to
+13:33 explicitly write to a register to mix them to the right peripheral and in this case it's enough for me to use right to
+13:38 the select register of Port 1 and then I should call this from my MCU init function and then I can create a
+13:44 separate file to hold the UA driver that I'm going to implement so I'm going to
+13:49 have a header called uart.h and a header and an implementation file
+13:56 called ur.c
+14:04 and then I'm just going to edit this file a bit according to my styling
+14:10 let's remove the underscore change the comment style it doesn't really matter but I have my preferences earlier I'm
+14:18 first of all going to have a function to initialize the peripheral so this function will be the one setting up the
+14:23 peripheral and then I'm going to have a function to send a single character and I'm going to
+14:30 call that uart put Char and I'm also going to fix that with polling because
+14:36 as I said before I'm going to implement this driver in two stages in the first or the first stage I'm going to solve
+14:43 things by pulling and then in the next stage I will improve on this by using interrupts instead and this function is
+14:49 going to just take a character so car c like that and I can make sure that
+14:57 I include this in my main file so that's going to include you are not a
+15:03 and then we can go ahead and Implement these functions starting with you are init this should
+15:10 also include your dot h
+15:16 the first thing I'm going to do in this function is to have an assert which I'm not going to implement now but I will
+15:22 Implement that or I will add that when I move this to the to my actual project so this is going to make sure that this
+15:30 function has not already been called and then what you need to do when you initialize the uart is explained inside the datasheet so these are the steps and
+15:38 what they're saying here is that first you should set the uart module in reset and then once you have set in reset it
+15:45 will stay in reset because it should be in reset while you configure it and then you initialize or configure the
+15:51 registers that you need to set to configure the peripheral as you want it
+15:57 to be configured and here they recommend that you also configure the ports at this stage uh
+16:03 I don't think that's necessary but maybe it's good practice to do it but I'm not going to do that and then once you're
+16:09 done with the configuration you clear this bit to leave the reset the condition and then you are preferably is
+16:14 ready to operate so I'm just going to follow what I said so I begin by putting the module into reset and I also like to
+16:22 add a clarifying comment on why I do this just in general I think it's nice just put some comments next to the
+16:29 register rights to make it more clear when you're reading the code so you don't always have to refer to the data
+16:35 sheet and you can just read the code to understand what's going on and here I'm going to
+16:40 configure it and then I need to clear reset to leave the reset condition like
+16:45 that and then I have to write this register to set the parity bit and the number of stop bits and the length of
+16:53 the database but as I said before I'm going to use the default configuration so I don't actually need to write till
+16:58 this register but I'm going to write zero to it just to make this more clear and similarly for this right I leave a
+17:05 comment on top used to explain what I'm doing to make it more clear so and the next thing I'm going to do is select the
+17:12 clock source and I'm going to select the subsystem clock as the clock source
+17:17 which thanks to this configuration is going to clock at 16 megahertz like this
+17:23 and once again to know what I need to set these registers to I just refer to the datasheet and then one thing that is
+17:29 a bit more complicated on this peripheral is how you configure the bow address because the peripheral can take
+17:35 different clock sources and different like clock frequencies as input and also generate different board rates and this
+17:42 means that you have to do some calculations to get the appropriate data you need to write to the corresponding
+17:47 registers reduce the guide for the microcontroller s actually has a table with some common values to make this a
+17:53 bit easier so down
+17:59 here is a table of values so it gives the values you need to write to the corresponding registers
+18:06 uh but for clarity I'm actually going to not just pick the values from this table
+18:11 and instead calculate the value which may be a bit cryptic the first time you read a datasheet like this but it's
+18:18 actually not that difficult and by the way always when you are going to configure a new peripheral for a
+18:25 microcontroller you're not familiar with you should read through the data sheet the entire chapter explaining the
+18:32 peripheral because it can be so easy to overlook an important step so that's
+18:37 just a recommendation General read the data sheet okay so for the board right
+18:43 there are two different board rate modes you can use one is called low frequency
+18:49 and one is called over sampling and the difference between these two as far as I understand is that in the oversampling
+18:55 mode you sample more often which means that you should reduce the probability of errors
+19:02 but in my case I found it to work fine with the low frequency mode so that's what I'm going for but if you were to
+19:08 use the oversampling mode you would have to do the calculation a bit differently or at least use different values but
+19:14 it's going to be similar overall okay so when we set the board rate mode the first thing we need to do is to
+19:20 calculate this number n which is the divisor and that's the division between
+19:26 the input clock so in my case 16 megahertz over the board rate which is
+19:32 going to be 115 000 in my case so in my code I'm going
+19:38 to do these calculations in defines so first I defined the clock rate of the
+19:45 subsystem clock just so that I have a number for it here and then I just have
+19:50 another Define here since in the data sheet the input clock to the your peripheral is called BR clock so this
+19:58 just makes that a bit more clear and then I have a Define for my desired board rate which is this much and as I
+20:04 said before this is a common border to use for uart and then to calculate the number n or the divisor I just divide
+20:11 the clock rate with the board right and I also cast this to float so that it's a
+20:16 fractional number because the next thing I have to do is to extract the fractional part and the integer part so
+20:23 first I have to extract the integer part which is just going to be a matter of casting this to an integer like that and
+20:30 used for good practice I can send it to check that this division where that the result of this division actually fits
+20:36 inside the 16-bit integer and I can do that by adding a static assert like that so this is the max value for a 16-bit
+20:43 integer since this will translate to 16 once if you think in binary another
+20:49 thing dimension in the data sheet is that the maximum board rate can't be larger than one third of the source
+20:57 clock frequency so I can also add another static assert to ensure that it
+21:02 isn't I already know that it's not and I'm not going to change these values but I think it's always nice to add a static
+21:08 assert whenever you can and it also kind of serves as documentation in this case so okay so I've extracted into the port
+21:14 of this division here and now I'm going to extract the fact fractional part of it and that's quite easy I can use
+21:19 subtract the divisor with the integer that I just extracted because for
+21:25 example let's say the division ended up being 135.77 that would make the integer in
+21:32 135 and so the device will be this and then to get the fractional Port I can
+21:38 just subtract the divisor with the integer and get 0.77 and the next thing
+21:44 I need to do is calculate the value I need to put inside this register which
+21:50 controls the modulator which is this Port this one is going to control this
+21:57 part so the fractional part controls the modulator and the integer Port controls
+22:03 the prescaler so basically setting the pre-scaler gives you a broad rate approximately
+22:09 similar to the board rate you desire button modulator makes it even more
+22:14 exact so if the clock rate is not evenly divisible by the board red you need the
+22:20 board later to ensure that you get a moderate that's closer to the border
+22:26 that you desire and the way you calculate the modulator number is by taking the fraction apart the part that
+22:32 I used calculated and multiply that with it and then you have to round that down
+22:37 but I can just cast it to an integer that would do the same in this case so
+22:43 multiply the the fractional part that I just extracted with it and then casting
+22:49 it to an integer and then I add another static assert here to ensure that this value is below 8 since I know that this
+22:56 value should fit within a three bit number so it can't be larger than seven and by the way for the integer part this
+23:04 since the registers that you write to on the msp430 maybe not all of the registers but at least the registers
+23:10 related to the uh peripheral all of them are eight bits and this means that this is going to be divided across two
+23:16 registers so I need to divide this into a high byte and a low byte which I can do by masking the lower part to get the
+23:23 low byte and then shifting to get the higher byte so then I set the prescaler
+23:29 to the integer part of the divisor by writing to these two registers so the first one takes the low byte and the
+23:34 second one takes the high byte so that sets the prescaler and next I need to set the modulation and then I have to
+23:41 write to this register and if we take a look at the data sheet at the values this register will take this register is
+23:46 divided into three sections so this section or the four most significant
+23:52 bits sets the first modulation stage and this is actually only used when you are using enabling over sampling which I
+23:59 haven't enabled since I'm using the low frequency mode so I can ignore these bits and the over sampling mode is
+24:05 enabled by setting the list significant bit in these registers which I'm going to set to zero so the only thing I need
+24:11 to set here is this part so these bits these three bits which I've already
+24:16 calculated okay so back inside the IDE I added a comment on top of here you still make this more clear so the first four
+24:22 bits is going to be this one and that's going to be zero so I'm just going to add a new Define up here that sets
+24:30 this to zero and I'm going to do the same for the last bit and then since this is the
+24:39 foremost significant bits I'm going to shift this four steps and then this one
+24:45 I only have to shift one bit is a plus here it doesn't really matter and then finally
+24:52 I could just remove this actually since they are zero but I will leave them here for clarity and this is everything I
+24:59 need to do to configure the uart to a board rate of
+25:04 so quite simple actually once you understand how you calculate the appropriate values to set the decide
+25:10 word and then let's try to compile this to see if it works well there are a bunch
+25:15 of includes that I'm missing
+25:27 that one okay so now it compiles I'm also going to add a comment on top here
+25:34 that just explains what I'm doing so calculating the divisor yeah this are
+25:39 used to configure the sideboard right and whoever is interested in more information can have a look inside the
+25:45 user guide and then I can move on to implement the function that's going to send a single character over the
+25:51 transmit line and sending a single byte or single character with this peripheral
+25:57 it's really simple you just write a single register and it will start the transmission automatically so I write to
+26:03 this register here and before I do so I need to check if there is any ongoing
+26:10 transmission which I can do by pulling a register so I'm pulling the interrupt fly here even if I'm not using
+26:16 interrupts right now since the interrupt flag is set when the transmit buffer is
+26:21 empty and ready for a new transmission and to make it more clear what I'm doing I can just add a comment on top as well
+26:27 and then one special thing that I'm going to do here or a special character that I will be handling is the Line Feed
+26:34 character because some terminals to for them to properly show a new line they
+26:41 expect a line fit after a carriage return so for that reason every time I
+26:47 see a carriage return I'm going to add a line fill it as well so first of all I must wait for the previous transmission
+26:54 to finish so if you check here is return I just call this function again
+26:59 but passing a line feed instead and then a comment to explain why I'm
+27:05 doing this like that and then I'm going to call this function from within my
+27:11 main function I will call this inside an endless while loop and let's just use the character a and I can print yeah
+27:19 maybe I do a couple of and then I can add carriage return and then do not print too fast I can delay some Cycles
+27:27 here let's see if this build yeah it did oh yeah this should be a single
+27:35 because this is character and notice okay so and then I have connected my
+27:41 viewer peripheral or the pins that your peripheral is connected to with two
+27:46 jumper wires to my USB to uart bridge card and then
+27:54 connected it to this USB port on my desktop computer
+27:60 and then as a terminal program in Linux I use the terminal program called
+28:05 pic.com not for any particular reason really there are a bunch of different terminal emulator programs that you can
+28:12 use as long as you can pass the board rate you're using as well as any additional configuration for your
+28:18 peripheral it's going to work and when I plug this USB to serial Bridge into my
+28:24 computer it shows up as a device so under Dev slash TTY usb0 and I can
+28:34 select the Border it with the option Dash B so since I'm using this board right I'm setting this moderate I don't
+28:42 need to do any additional configuration to match the number of parity bits or stop bits because pic.com is also using
+28:49 the same configuration as I set up for my UI peripheral by default so this will use work as is
+28:57 so then if I compile and Flash this to my microcontroller we should see some characters pop up in my terminal
+29:06 we don't okay so I ran into an issue here it did it didn't work because I
+29:12 hadn't actually called the keyword init function so I hadn't initialized
+29:17 peripheral which I obviously have to do so now if I run this
+29:23 yeah now it's working now my microcontroller the UI perform my microcontroller is talking to my desktop
+29:29 computer and it's writing more thoughtful over and over again so that works of course pulling like this is not going
+29:37 to be a very efficient way to go about it because for each character if I print a bunch of character in row so if I call
+29:43 this if I for example want to print an entire string I would have to call this function for every character and for
+29:50 each character it's going to have to wait for the current character to be sent
+29:56 and this means I'm going to be wasting CPU Cycles waiting for the transmission to finish and while I could actually be
+30:03 doing something else something useful and that's why I'm going to improve on this in the next stage by replacing the
+30:11 pulling here with interrupts and the way that's going to work is that I'm going to have a ring
+30:17 buffer so let's just say for example sake that this is an array of size 8 so
+30:23 a ring buffer of size 8 1 2 3 8. and when I want to send a new character
+30:30 I'm going to add the character to this ring buffer so let's just say that I
+30:36 want to send the word Artful again so for the first character I'm going to
+30:42 add this to the ring buffer and if there is no ongoing transmission
+30:47 then the u-word will be in idle so then I'm going to check is there any transmission going on and if it's not
+30:54 I'm going to start TX by writing this character to the transmit buffer just as
+31:00 I did in the polling example so that's going to well in this case it's going to write the character a and that's going
+31:07 to start the transmission and once I've done that I'm going to return from the function that prints a character so
+31:15 let's say I still have a function called put jar and it takes character
+31:20 C so instead of writing a I can write C here instead so I add the character so
+31:26 the first thing I do I add the character to the ring buffer and then I check if there isn't any any ongoing transmission
+31:32 and if there is not I will start the transmission by adding this character to the transmit buffer and then I can
+31:39 return from this function and the CPU can go on and continue doing uh whatever
+31:44 it's supposed to be doing so this means that the CPU will be executing and you
+31:50 worked will also be executing the peripheral will be executing separate from the URL we will be executing
+31:56 separate from the CPU and then maybe the CPU does some execution like it's going
+32:01 to take a little while or it's not going to take a long while for the viewer to transmit a single character but your board rate is much slower than the CPU
+32:09 clock rate and this means that the CPU will have time to execute a few instructions before the uart has sent out the byte so maybe the CPUs execute
+32:16 some instructions and then before you are finished it's going to try to put a new character so maybe this time it's
+32:24 going to put R and this is especially going to be the case if we have a function that prints an entire string
+32:30 because then we're just going to have several calls to put Char off to each other and this is also going to add the
+32:37 character to the ring buffer and it's going to do the same check here if no ongoing TX is going to start the
+32:43 transmission but since there is an ongoing transmission right now uh we are not going to go into this if condition
+32:50 here so we're just going to return and if the CPU is fast enough it may execute
+32:56 the next uart picture so that's going to be T and then it's going to do the same thing as here it's
+33:02 going to add a character to the ring buffer but it's not going to start transmission because there is already transmission ongoing
+33:09 so then we have our t Okay so let's say that after the CPU has added the three
+33:15 First characters to the ring buffer we get to interrupt and as I explained in the last video where I talk about how
+33:21 interrupts work when we get an interrupt there is going to be a function that's going to be called a function that we
+33:27 have defined and a function that I'm going to Define later on in this video so it's going to call the interrupt
+33:33 function and when we get into interrupt function we know that the oldest byte that we added to the ring buffer
+33:40 is the one that the uart has transmitted and this means that what I'm going to do
+33:45 inside the interrupt function the first thing I do inside intra function is going to be to remove first from ring
+33:53 buff so that's going to remove this character and then if the ring buffer still has characters in it if it's not
+33:60 empty I will take the next character from The Ring buffer and put it inside TX buffer to
+34:08 start the next transition so take so now since I've removed like
+34:15 since I removed the first element from The Ring buffer taking the first element is going to give me another element here
+34:20 so that's I removed the first element here and then I take the next element so
+34:25 that's going to be R so I feel the transmit buffer with r and that's going to start a new transmission and then
+34:33 before I leave the interrupt function I also have to clear the TX interrupt
+34:38 and then we leave the interrupt function and the u-word continues transmitting the next byte and the CPU continues
+34:44 doing whatever it is doing so the CPU might be adding additional characters here Bam Bam Bam and the word will
+34:51 eventually trigger the next interrupt and remove this character trigger the next tank interrupt we remove this character and so on so and let's just
+34:59 assume that this ring buffer is of size 8 so if the CPU continues writing
+35:04 characters to the terminal it's going to fill up the ring buffer so maybe b y and
+35:10 since this is a ring buffer or since I'm going to implement this serving buffer when we reach last position inside the
+35:16 underlying array it's going to wrap around and start filling in characters from the start of the array so b y
+35:23 t e s so it's going to go around like a ring and that's why it's called the ring
+35:29 buffer and the big Advantage with this approach compared to last approach is that there is no pulling or blocking and
+35:36 most of the time the CPU is going to be able to do something useful because it can just fill up the ring buffer and
+35:42 continue doing whatever it's doing and then the u-word can execute in parallel
+35:47 and transmitting the byte of course the CPU is going to be interrupted when the
+35:52 transmission finished but this is a short interest function so that's not going to take a long time so overall
+35:58 with this approach we are going to be blocking less and wasting less CPU Cycles so let's now implement this
+36:04 encode to implement this I'm going to start with the ring buffer implementation and I will create two new
+36:10 files for that
+36:17 a header file and implementation file
+36:22 and when implementing a ring buffer you can get pretty sophisticated if you want but I'm going to try to keep things as
+36:28 simple as I possibly can here so first I would have a struct that defines the ring buffer data structure
+36:36 and the first element in this track is going to be the pointer to the underlying buffer and then I will have a
+36:44 integer that holds the size of this buffer and I'm making this variable 8-bit integer so the buffer
+36:53 can't be bigger than 256 bytes which is fine here and then I'm going to have a
+36:60 integer to hold the head and an interior to hold the tail so the head is going to
+37:06 point to the newest or is going to hold the index to the newest element and tail is going to hold the index to the oldest
+37:12 element inside the buffer it's not super nice to define the entire struct inside the header like this because the code
+37:20 that's going to be using the ring buffer well in this case the UR code will have
+37:25 access or to this entire stract so it will know that inside this rack there is
+37:31 a head and a tail which kind of breaks the coding principle of that outside
+37:37 should only know what it needs about the inside and then I'm going to have a couple of functions that operate on this
+37:43 ring buffer so first I'm going to have a function that adds an element to the ring buffer so in all of this function I
+37:50 will be passing the ring buffer struct or a pointer to the ring buffer struct as the first argument and then I have a
+37:58 function that can retrieve an element from The Ring buffer
+38:03 and then I have a function that's gets the element from The Ring buffer but it doesn't remove the element from The Ring
+38:09 buffer so it's only peaking at the value and the search since I'm not going to
+38:15 change during buffering this function I'm going to pass that as a constant or I'm going to pass it as a pointer to a
+38:21 constant ring buffer and then I will have two functions that go into check if the ring
+38:29 buffer is full or empty then we can jump over to the implementation file and
+38:34 implement the functions so this function is going to insert an element into the ring buffer and the way
+38:40 I'm going to do that is by add or setting the element that the head is
+38:46 currently pointing to and then I need to increment ahead so it points to the next slot in the underlying buffer and then I
+38:52 must also check if the head is now larger than the underlying ring buffer because then it has to wrap around and
+38:59 point to the first index instead alternatively I could do it like this instead so head equals
+39:06 RB head plus one and then but as I mentioned before doing modular on my my
+39:11 controller is a bit expensive so in this case I prefer doing it with an if
+39:17 conditioner instead so I'm also going to add a comment about that avoid expensive modular operation and then as for the
+39:24 next function I'm first going to get the element from the list so that's going to
+39:29 be what the tail is pointing to and similarly I need to then increment the
+39:35 tail and then similarly I have to check if the tail is larger than the size of
+39:41 the internal buffer or well if it's equal to the size of the internal buffer and I'm also going to add the same
+39:46 comment on top and oh and I have to return the data errors and the peak function is going to be simple it's the
+39:52 one liner returning the element that the tail is pointing to these are also going to be one-liners to check if the ring
+39:57 buffer is empty I just need to check whether the tail and the head are equal because at the beginning both the tail
+40:04 and the head are going to be zero and then when you fill the buffer or the ring buffer you you increment the head
+40:10 and once you start extracting elements from the list again you start increase using detail and the ring buffer is
+40:16 empty when the tail becomes equal to the head because then you'll have extracted
+40:22 all the elements from the list so I can simply just check if the head is equal to the tail in this function or the full
+40:29 list is actually not going to be a one-liner because here I need to also wrap around
+40:34 so if the index after the head is the same as the tail that means the ring buffer is full so this is pretty much it
+40:40 for the implementation of the Ring buffer and then I can include this inside my yogurt file and I can Define
+40:47 this ring buffer statically by writing it like this so first I'm going to have
+40:52 a separate Define to name the size of the Ring buffer that your driver is
+40:58 going to use so I'm going to make this buffer 16 in size I think that's more
+41:04 than enough and it's probably bigger than it has to be and then I can Define the underlying
+41:11 buffer and I'm making this static since it should only be accessible within this completion unit so this statically
+41:17 allocates the buffer this buffer but since the elements in this buffer can change is going to be allocated on in
+41:23 the RAM and then I allocate the ring buffers track and I'm calling that TX buffer so the buffer is going to point
+41:29 to the internal buffer above and size I can use the size of operation here I could also use use U1 buffer side it
+41:36 doesn't really matter like this I don't need explicitly set the head and tail here because there will be zero
+41:42 initialized so let's see if I can compile this now I can't get an error oh yeah I need to
+41:49 add some includes
+41:55 yeah so now it compiles and then I can go ahead with writing the code that's necessary for enabling uh or
+42:03 for making use of interrupts in this UI driver so
+42:08 after I released the module for operation I need to enable the transmit interrupt and I also need to clear the
+42:17 interrupt before I enable it here because after boot the interrupt flag
+42:22 will be set since the interest flag is set every time the TX buffer becomes
+42:27 empty and that boot it's empty so the interest flag will be set so if I don't clear it here it will trigger an
+42:34 interrupt even though I haven't actually sent a bite yet and I'm going to create a separate function for this and then I
+42:40 also need to enable drafts globally this to work
+42:45 there and then I can go ahead and Implement that function as well
+42:51 it's going to be the static function and I'm also going to inline this function since this is going to be a one-liner
+42:57 kind of want to avoid the function called overhead and this is how you clear the transmit
+43:02 interrupt by clearing this bit inside this register then I can go ahead and implement the interrupt function the
+43:09 function that will trigger each time we have transmitted a byte the function that's going to trigger each time a byte
+43:15 has been transmitted so when the transmit buffer is empty and by the way the transmit buffer on for this
+43:22 peripheral on my mic controller is only one by there are other Mac controllers that will have you worked with a larger
+43:28 fifo buffer so maybe 8 to 16 bytes and that's going to allow you to write several bytes to this Fifer buffer and
+43:35 only get an interrupt when all of those characters have been sent which is going to reduce the number of interrupts you need to hand because in this case I will
+43:42 need to handle and interrupt for each character but that's just the way I have to do it since my transmit buffer can only take a single byte so the first
+43:48 thing I'm going to do in this function is to send it to check that ring buffer is not empty because for this
+43:55 implementation each time I'm going to send a new character I'm going to add it to the ring buffer and then I'm going to
+44:02 remove it from The Ring buffer once it has been transmitted so I'm going to remove it inside the interpread function so if I ever get to inside interaction
+44:10 and there is no element inside the ring buffer that means that I have got an unexpected interrupt so I should assert
+44:17 here well I will leave it to do for starting here because I'm not sure I want to use the current assert
+44:22 implementation that I have inside an interrupt function so for now I'll just do a while loop so it's easy to spot and
+44:28 then I'm going to call the ring buffer get function to remove the element that was just sent from The Ring buffer
+44:34 buffer and I don't need to assign the return value to a variable since I'm not interested in the value I just want to
+44:40 remove it from The Ring buffer then then I need to clearly interrupt because on the msp430 interrupts are not clear
+44:46 automatically you have to explicitly add them inside the code because if I don't clear this here this interrupt function
+44:52 is going to keep on triggering even though it hasn't sent any new bytes and then at last I'm going to check if there
+44:57 are any remaining elements in the ring buffer and if there are I'm going to start a new transmission and note I'm
+45:04 clearing the interrupt before I do this because I want the interrupts to be cleared when the new transmission starts
+45:11 but otherwise theoretically if I clear the interrupt here it's possible that the transmission I start here that I
+45:16 clear the interrupt or when this transmission finished that's likely not going to be the case because this is going to execute much faster than the
+45:23 uart will be able to send out the byte but it seems or it feels more correct to clear the interrupt here okay and then I
+45:29 can Implement a function that's going to start the transmission and here I'm also going to make sure
+45:34 that the ring buffer is not empty and if it's not it's there there is an element in the list that we should send so then
+45:39 I'm going to do similar to what I did in this function I'm just going to write to
+45:45 this buffer the character to this buffer so here I'm going to use the peak function and I'm using the peak function
+45:50 here because I just want to get the element when I start the transmission and put that inside the transmission
+45:55 buffer and then once the transmission is done I get to interrupt and here's where I remove the element from The Ring
+46:01 buffer so what you can see from this is that if I have a bunch of characters inside the ring buffer the interrupt is
+46:08 going to keep on driving the transmission until all of the characters have been sent and then I need to
+46:14 implement a function that I put the character we want to send into the ring buffer so I will have a function here
+46:20 called uart put your interrupt so here I'm going to add the character that was
+46:27 passed to the ring buffer and I also need to check if there is any ongoing transmission because if there is no
+46:33 ongoing transmission then I have to start it here in this function and if there is an ongoing transmission that
+46:38 means that I don't need to start it here because the interrupt will keep on driving it until the ring buffer is empty and then it's enough to use the
+46:45 add element to the ring buffer and to know if it's ongoing I can just check whether the buffer is empty or not so if
+46:52 it's not empty it means the transmission is ongoing and then if it's not ongoing I need to start it and then it's called
+46:59 your TX start and then to make this safe or so so that I can safely access the TX
+47:06 buffer here because there is always a rift that I will get interrupted somewhere in between these lines of code
+47:11 here I'm going to disable the interrupt before and after so that interrupt can't occur while I'm executing this portion
+47:18 of the code and then same as before I'm going to handle the carriage return
+47:25 and I also need to Define this these functions
+47:30 I will move to use this function here as well be enable the X interrupt
+47:37 and I can call that here and also disabling the interrupts
+47:50 and then one last thing I'm going to do in this function is to make sure that at
+47:55 the top I block here if the ring buffer is full because if
+48:01 it's full here it means that we have put so many characters in The Ring buffer and the interrupt driven transmission
+48:06 has not been able to send out the bytes as fast as we have been able to add new
+48:12 bytes to the ring buffer so in that case I'm still going to be pulling and but
+48:17 I'll actually try this function and really stressed it running this micro at 16 megahertz and calling this function
+48:23 over and over again on Long strings and I have never reached a point where the
+48:29 ring buffer is full but it feels better to have this while loop here anyway so if there ever is a case where the wing
+48:34 buffer fills up I'm not going to end up overwriting all values I'm just going to
+48:39 pull here for a bit instead and then I need to make sure that I declare the function inside my header I can check to
+48:45 see if it builds it did good
+48:50 can we place this with the interrupt function instead and we can open picker comb
+48:58 and run this well I have to connect my launch pad
+49:03 again
+49:13 so I had some issues here but now it seems to be working
+49:22 yeah so the interrupt driven function also works I can also add this temporary print function here that takes a pointer
+49:30 to an entire string and I'm just going to Loop over the
+49:36 string until I reach the null termination and then I can just call The Butcher interrupt and increment here I
+49:43 need to do it like this so for this to work safe it's important that the string I pass here is actually not terminated
+49:50 but this is a test function so this is fine for now then instead of doing this
+49:56 I can step right like this
+50:05 oops now if I compile around this we should
+50:12 see Artful bytes over and over again yeah and we do
+50:19 good and then in the next video my plan is to make this print function work more like
+50:26 the standard Library printer function where you can pass also pass integers
+50:32 and so on as part of the string so this year
+50:37 and then something like that which I can't do with this function now but that's for the next video I'm also going
+50:44 to add a few more comments to my ring buffer implementation here since the way it's implemented right now I don't have
+50:50 any checks inside this function to see like for example when I call get I have no sanity check or a search to check if
+50:58 the ring buffer is empty so I'm just going to have a comment here that says
+51:03 that caller must call is empty first so I could of course have
+51:09 a surge inside this function but that's going to add additional code that needs to be executed each time these are
+51:15 called and I would like to avoid that in this case another thing I can mention is that I could possibly put this inside
+51:20 like a defined macro so that the only thing I need to write is something like ring buffer and then the name of the
+51:27 buffer and like the size but I think since I'm not going to have that many ring buffers in this code it's just
+51:34 going to be nice to write it explicitly like this because micros can sometimes make the code harder to understand then
+51:40 so now that the interrupt variant solution works I'm just going to move this code over to my main project
+51:51 okay so now I mode off my code to my main project so move the two uart files
+51:56 as well as the ring buffer code and I added a test function to test.c that
+52:03 basically does what I did in the IDE so it prints this string and one waits for 100 milliseconds I did notice an issue
+52:10 in my code here that prevented this from working inside MCU init I set this
+52:17 electric clock rate like this and that doesn't actually work so I made an error in the last video and like and I don't
+52:23 fully understand why it still worked in the last video when I modified my base
+52:28 weight macro but for some reason it did but I will add a comment under that video to point out this so after I
+52:34 changed it to like this then it works and I also added a new assort here A Sort interrupt
+52:41 which is an assert that can be called inside an assert function which I do in the transmit assert for the uart I
+52:48 haven't actually decided what I'm going to do in this interrupt yet so for now I'm just having an analyze while loop
+52:55 here other than that there's not much to say I obviously added the new files to
+53:01 my make file as well ring buffer and the uart and I don't need to configure the i o pins like I did in the IDE since
+53:08 that's already done inside iot here is where I set those yeah so then I can go
+53:15 ahead and Commit This code first I'm just going to fetch the main and then
+53:20 I'm going to stash this and get check out Main
+53:26 and then stash pulp and create a new Branch so
+53:32 this is going to be a feature a uart driver
+53:38 then I can format my code CVP check
+53:46 or I build all of the tests functions
+53:54 yeah that works then I can add all of the existence files and also add the new files
+54:09 and then commit
+54:21 there we go and we can push this change to a GitHub
+54:30 open a pull request
+54:37 and while the CIA is running looking as quickly look through the code to see if there is any mistakes
+54:50 ah it's annoying that formatting does this puts the semicolon
+54:55 on a new line I should use braces here instead but I'm not going to fix that now
+55:00 and this to do I'm going to handle in the next video yeah so overall I think this looks good
+55:06 yeah and the checks passed so now I can merge the pull request
+55:14 so that was all for today see you in the next video

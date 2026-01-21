@@ -1,0 +1,495 @@
+00:00 it's time to get things moving on my robot I have four brush these motors
+00:06 which rotates the wheels and in turn makes the robot move brush these motors are easy to control the speed and torque
+00:13 is proportional to the applied voltage so you vary the speed and to work by varying the voltage but the motors can't
+00:20 be directly connected to the pins on a microcontroller because they draw quite a bit of current more than a gpio pin
+00:25 can supply so you need a multi-driver on my robot I have two motor drivers one
+00:31 for the motors on the left and another for the ones on the right I get away with only having two motor drivers since
+00:37 I do skid steering meaning the motors on either side always drive in the same direction with the same speed these mode
+00:44 drivers essentially take four inputs one that connects to the power supply a battery in this case and three that
+00:51 connects to the mic controller two of which control the drive direction whether the motors are rotating in
+00:57 clockwise Direction counterclockwise or are stopped the these are used digital low and high and then the Third One
+01:04 controls the speed via pulls with modulation pvm pulse width modulation is
+01:09 a method which involves toggling a pin on and off at a certain ratio so called duty cycle to effectively vary the
+01:16 average voltage for example if we have a signal at 7.4 volts when active and we
+01:21 have a duty cycle of 70 percent the signal will be active 70 percent of the time yielding an average voltage of 5.2
+01:29 volts so by varying the duty cycle between cr100 we can vary the output
+01:35 voltage between 0 and 7.4 in this case pvm is commonly used for controlling
+01:41 brush these motors but it's also used for the things such as controlling the light intensity of an LED as for this
+01:47 video I'm going to write code to control the mode drivers I have from my microcontroller and I'm going to
+01:52 separate the code into three abstraction layers at the bottom I'm going to implement a pvm driver which is going to
+01:58 use the timing peripheral of my microcontroller to emulate Hardware pvm since my microcontroller doesn't have
+02:04 any dedicated peripheral for pvm and above that I'm going to have a layer for the motor driver which is going to
+02:10 depend on the pvm driver but it's also going to control the other pins of the multi-driver and thirdly I'm going to
+02:16 have a layer on top to simplify the drive interface for the application code similar to my other videos I'm using the
+02:23 development board for demonstration and for this video I've created a simple multi-driver circuit including one motor
+02:30 driver and a DC motor this circuit won't obviously Test the full functionality
+02:35 since my actual robot has two mode drivers and four Motors but it will provide some reassurance until I move on
+02:42 to the actual robot which I'm going to do later on in this video series okay so I'm going to start by implementing the
+02:47 code for the pvm driver which is going to be this part of the software architecture and in this video I'm not
+02:55 going to create a new project from scratch in the IDE and instead I'm going to add the code directly to the rest of
+03:01 the project code and this means that if you haven't watched my previous videos there will be some unfamiliar code but I
+03:07 think you will be able to understand what I'm doing here anyway and if there is anything that's unclear you can just watch the previous videos or read the
+03:14 code on GitHub and the reason I'm doing this is because it's getting a bit too much implementing things from scratch
+03:20 separate from the rest of the project code and then move the code into my project afterwards so for the pvm driver
+03:26 I'm going to have two files under the drivers directory one header file and one implementation file the way I
+03:33 usually structure my drivers so I'm just going to create new two new files
+03:41 and I'm also going to add the implementation file to the to my make file
+03:51 and I'm starting with the header file the interface is going to be pretty simple I'm just going to have two
+03:57 function here one function to initialize the driver and another function to set
+04:02 the DFT cycle which is going to take two arguments the first stop is going to be the channel
+04:10 and then the second one is going to be the DFT cycle in percent so from zero to
+04:16 100 and then I have to also Define the E num for this
+04:23 and in my driver I'm just going to have two pvm channels because I'm going to have one pvm to each motor driver and I
+04:30 have two motor drivers connected to Footwear Motors
+04:35 and then I can add a comment on top as well [Music] and jumping over to the implementation
+04:42 file I can start by including the header is created
+04:48 and then also used to create the bodies for the two functions
+04:58 and as I usually do I'm going to make sure that I don't call this initialization function multiple times
+05:05 so I'm going to have a Bool keep track of that and then assert in
+05:12 case it's already initialized
+05:19 and I also need to include history Inked here
+05:26 and then as I said I'm since my mic controller doesn't have any dedicated
+05:31 peripheral for pulse width modulation I'm going to achieve the same behavior
+05:37 by using the timer peripheral and my microcontroller has two type referrals
+05:42 and since I've already used one of them for the i o remote functionality which I implemented in the last video I'm going
+05:48 to use the second timer for implementing the pvm driver so in the IR mode driver
+05:55 I use timer A1 so in pvm I'm going to use timer a0 and the way I'm going to
+06:02 set this up is that the timing peripheral has something called a capture and compare registers or
+06:09 channels and these can be configured to trigger an output given certain
+06:15 conditions and in my case I'm going to use one of these channels to set the base period or the base frequency which
+06:22 means that the counter is going to count up from zero up to some value and then start over again and keep on doing that
+06:29 and then I'm going to use the two other capture and compare registers to provide the Duty Cycles or the two pvm channels
+06:36 by configuring them to have a sub-period of the days period And by varying the sub period I can basically vary the duty
+06:44 cycle so for example if the base period or the base counter counts up from cro to 100 then I can configure the second
+06:51 capture and compare registers to count from 0 to 50 and to set its output to
+06:58 high during this 0 to 50 period and then to set its output to low during the rest
+07:04 of the base period and this means that in this case I achieve a duty cycle of 50 the way you configure this is
+07:10 obviously explained in detail in the user guide or datasheet of this smart controller so I'm not going to like go
+07:17 into details of the datasheet but I think you will understand what I'm doing here when I get to the code and I've
+07:23 written a long comment here on top of the implementation file to explain playing exactly what I'm doing so as I
+07:28 said I'm sacrificing the first capture and compare Channel or register for setting the base period and then I'm
+07:35 using the two other channels to provide the pvm output and then I set the duty
+07:40 cycle by setting the value this capture and compare registers should count to so
+07:45 for example if I have this account value in the first caption compare registers to provide the base period and then I
+07:52 have some lower value or count value in one of the other capture and compare
+07:57 registers and then the output is going to look something like this so it's going to be high during this time and
+08:03 then it's going to be low during the rest of the time and I'm going to configure the timer to do this as the
+08:08 frequency of 20 000 which means that it's going to count up from cro to this
+08:14 base counter base period 20 000 times per second and I've chosen this value
+08:20 for two reasons mainly first of all to get stable decimal to behavior you need
+08:25 to have a pvm output that runs at a given frequency and usually that's going to be somewhere around a thousand to
+08:32 twenty thousand Hertz because if you use a frequency lower than that that means
+08:38 that you're going to switch the voltage input to the motors on and off slower than a thousand times per second then
+08:45 the average voltage is not going to appear as an average voltage anymore and the motor is basically going to see the
+08:52 voltage increase and fall and it's going to speed up and slow down and that's why you need a certain switching frequency
+08:59 and varying this frequency can also affect the noise you hear from the motor and the second reason I'm setting it to
+09:05 a 20 000 in particular is because it's going to make the code a bit cleaner
+09:10 because setting it to 20 000 is going to give me a base period of 100 ticks meaning that the first capturing compare
+09:17 register or the base counter register is going to count from 0 to 100 and that means that I can use the value of the
+09:23 duty cycle which is a value between 0 and directly without doing any kind of
+09:28 conversion enough with explanation let's configure this time a peripheral now first the frequency of the timer or how
+09:36 fast the timer is going to count is going to be derived from the main clock or the speed the mic controller is
+09:43 running at I'm about fun and this frequency is
+09:49 going to be derived from the main clock or the main subsystem clock in a previous video I have configured my
+09:56 microcontroller to run at 16 megahertz so that's what this timer count
+10:02 frequency is going to be derived from and I've already defined that inside the
+10:08 files here well I have actually defined it inside you what I think
+10:14 yeah so let's move that to the common defines instead
+10:21 or well I can do it like this instead Cycles
+10:30 that's a bit more clear and then going back to pvm driver I will have this
+10:36 available as long as I include commonly files
+10:42 but similar to what I did in the last video for the io remote I'm going to configure the timer with an input
+10:48 divider which is going to divide this input clocked by 8 3
+10:56 and I'm going to go back to IR remote and I think I'm going to move yes I'm
+11:02 going to move these two to Common defines
+11:13 and I'm going to remain this to input divider 3.
+11:19 and then inside I remote I have to use it okay
+11:26 yes and I'm going back to pvm driver again and next the base frequency which is
+11:34 going to be 20 000 as is explained which is going to make the period takes be
+11:40 pvm timer frequency Hertz divided by pvm
+11:45 period frequency hurt and while I did I can also add a static assertion here just to make sure that the calculated
+11:51 period ticks is actually 100
+12:03 and then I can do the corresponding configuration for timer 0a
+12:10 first set the clock source which is going to be a subsystem main clock and I select
+12:17 that by setting ta select 2 and then the input divider three and then I'm also
+12:22 going to set mc0 which means that the time is by default going to be stop because by default there should be no
+12:28 pvm output you can also add a comment here to clarify all of this after that I
+12:34 can set the period by setting the count value of the first capture and compare
+12:39 register and I'm actually going to create a second Define for this which is
+12:44 going to be the pvm period takes minus one and this is because the timer starts
+12:50 counting from zero and not from one
+12:56 and then I should assert that the io pins are configured as expected here I
+13:03 don't need to configure them here because I already configured all of the i o configuration when the mic
+13:08 controller is booted up which I do in the IU driver so this driver right here and here at
+13:16 least for the NC mode the actual robot I already assigned the Ping that are connected to the motor drivers so in the
+13:22 case of the actual robot the control pins of the motor driver is going to be connected to pin four and five of Port 2
+13:29 and also pane 7 as well as pin 7 of Port 3 and the pvm is going to be on Port 3
+13:36 pin 5 and pin 6 and this exactly matches up with the schematic as for the launch
+13:42 pad I haven't actually assigned the value here yet for the control pins it doesn't really matter which ones I
+13:48 assign since this can just be any gpio output but for the pvm output I need to
+13:55 make sure that I select the pin that can actually mix to the timer peripheral that I'm using and as I also said before
+14:01 for the launch pad I'm just going to connect a single motor driver because there is no pin on the launch pad that
+14:07 can be mixed to the second capture and compare register of the timer peripheral which means that I can't get the second
+14:13 PBM output on the Launchpad so for the Launchpad I'm going to assign pin 6 of Port 1 to serve as the pvm input for the
+14:21 left motor driver and then I also need to jump into my implementation file and
+14:27 make sure that this is configured so I can remove that from here and then I can
+14:33 move this one up
+14:40 to here I'll just remove it from here
+14:46 and with this change the audio output or the pin 6 support 1 should be configured
+14:52 appropriately for providing a pvm output or an output from the capture and compare register of the timing
+14:58 peripheral so going back to pvm I can then assert here to make sure that it's actually configured as I expected so
+15:05 this is the configuration I expected to have and I can compare it by retrieving the current configuration
+15:14 and then call the compare function and with the configuration I expected to have and then when it's the actual robot
+15:22 I can also do the same for the second pvm Channel and one thing I noticed when
+15:28 I wrote this code before when preparing for this video is that I made a mistake inside the get current config function
+15:35 so I'm going to fix that bug in this video and the problem is that I try to cast some of these values directly to an
+15:42 integer value because I just assume that the evaluation of this was either zero one but it's not so I have to check
+15:49 whether it's cro or some other positive value and then set it to one or zero
+15:54 explicitly and also do the same for these three
+16:03 now it should work I just remove this command now and this is it for the initialization of the pvm driver so now
+16:10 we can move on to implementing the function for setting the duty cycle of
+16:16 each pvm channel for these two channels I'm going to create a separate track to hold the associated configuration
+16:23 registers so this reducer is the one that's used
+16:30 to set the like the counting mode of the or the mode of the caption comparator and this value is used to set the count
+16:37 value of the capture and compare register so the duty cycle basically and
+16:43 then I'm going to have an array of the pvm channel so it is going to be an array with two elements
+16:50 and I'm using the same technique here as I used in the io driver where I take the
+16:56 pointer to the register variable so similar to what I did here
+17:06 and then inside this function which is should be called set duty cycle I can
+17:12 first of all assert that the duty cycle is actually equal or smaller than 100 since an 8 between chair can go above
+17:19 100 to make sure that I catch it if I make a mistake here and setting the duty
+17:25 cycle of your channel is going to be very easy now since I've set up a base counter of 100 ticks I can set the CCO
+17:32 register of the corresponding capture compare register to the duty cycle percent value directly and I also have
+17:39 to de-reference the value here but to make this a bit more efficient I'm also going to make sure that I disable either
+17:46 Channel when I set a duty cycle of cro and I'm also going to keep track of
+17:51 where the both of the channels are disabled because then I should also disable the timing peripheral yes so that it doesn't keep on running and
+17:57 Ticking unnecessarily when it doesn't have to and that's going to save some power consumption it's going to be
+18:03 negligible but why not
+18:09 so if the data cycle is larger than zero then it means I have to enable the channel and otherwise I should disable
+18:16 the channel so then I'm going to have it a second function to enable and disable Channel
+18:22 and I'm going to add a third variable to this configuration here to keep track of whether the channel is enabled or not
+18:29 and by default it's going to be disabled
+18:35 and to enable and disable a Channel or capture compare register I must write to
+18:41 the control register so if it's enable I set out mode 7 and if it's disabled I
+18:47 said alt mode 0 and outmode the cro basically means that this caption
+18:52 comparator is turned off and out mode 7 is what makes the capturing comparison
+18:59 behave in a way where it sets the output to High when the counting value is
+19:06 between 0 and the duty cycle and set it to zero at the rest of the time and there are several other out modes you
+19:12 can set to make the caption compare register output they behave in different ways and they are all explained inside
+19:19 the data sheet and then I will have a function to enable and disable entire timer peripheral
+19:25 so if any channel is enabled I should enable the timer preferral and if all channels are disabled I should disable
+19:32 the timer prefront so here I can just Loop over all of the
+19:39 channels and if I find a channel that's enabled that means that all channels are not
+19:45 disabled and if I don't find it that means they are all disabled and then to enable and disable the timer
+19:52 preferral I can write to this register and I begin by clearing the sound mode the bits
+19:59 similar to what I did in the IR remote when I configured the time peripheral and then I clear the count value and
+20:05 then depending on if it's enabled or disabled I set either MC1 or mc0 and mc0
+20:12 means stop MC1 means counter the value and capture
+20:18 and compare register zero which is where I've set the base count the value of 100 and then I can also use that another
+20:24 variable here to keep track of whether pvm is enabled or not so that I don't write to this register
+20:30 unnecessarily
+20:37 like that and another thing that I'm going to do is I'm going to scale down
+20:43 the duty cycle because if I run at a duty cycle of 100 with my robot I have
+20:49 batteries that when they are fully short they're going to be at around 8 volts and my Motors are only rated at 6 volts
+20:56 so if I run at a duty cycle of 100 it means that I'm going to input a high
+21:02 voltage then my Motors are rated for for this reason I'm going to scale down the
+21:07 duty cycle by 25 because then 8 volts the maximum of my
+21:14 batteries are is going to become 6 volts
+21:19 so I multiply by 3 first and then I divide by 4. and even though I'm using division here
+21:26 it's going to be a cheap operation since it's dividing by four which means that
+21:33 the compiler can turn this into a shift operation and I'm also going just to make sure that this never outputs zeros
+21:40 because when the new second percent is one in this case this is going to become cro because then
+21:46 this here becomes three and if I divide by four that's going to flow it down to zero and I don't want that since when I
+21:54 give a dude cycle of zero that should turn off the pvm channel so that's why I'm going to check if it's
+22:01 one in this case and if it is I'm just going to turn the
+22:07 data cycle percent and otherwise I'm doing this calculation here like that and
+22:14 this is where I'm going to scale it
+22:21 that's wrong and since I only have one channel available on the launch pad I'm
+22:27 just going to return from this function when I'm trying to set the pvm output for the right motor driver
+22:37 and that's pretty much it for the entire pvm driver so now to test it I can write a small test function inside test.c
+22:46 called test pvm
+22:53 and include pvm
+23:04 and then initialize the pvm driver and then I'm just going to cycle over a
+23:09 couple of Duty site and measure the output with an oscilloscope 25 one and
+23:15 zero then I can also have width a bit in between after I've set a deity cycle so
+23:21 let's set that to 3000 milliseconds then I want to do this indefinitely
+23:39 and then set the pvm output of the two channels and it's only the left channel
+23:45 is going to have an effect when I test it on the launch pad and then just wait okay so let's see if
+23:52 this compiles now it's probably not going to compile
+24:00 oh yeah should we launch pad does not
+24:06 so let's just go through this errors so why is that not found let's scroll up
+24:16 wait time has to be can't be an 8-bit insure I have to be 16
+24:22 bit enter at least I'll should be a suppressed unused
+24:28 this should be enum here so now if I compile again
+24:37 oh yeah this should be set
+24:44 oops
+24:56 it's a bunch of errors here
+25:06 um yes this must be
+25:19 I should probably compile try to compile a bit more often so I don't have to fix so many errors at once
+25:26 anyway
+25:46 now it builds I noticed one more mistake here this should be timer a 0 enough timer a one
+25:53 in iPhone better terminal I should see what the duty cycle is set to at any
+25:59 given time and then I can verify that it actually works by for example a
+26:04 multimeter to check the output voltage and I'm also going to show the output on
+26:09 the oscilloscope to see more precisely what's going on but let's just first use
+26:15 the multimeter so I'm just going to hook that up first so now it's changing the voltage output
+26:21 depending on the duty cycle and now since this is from the one of the i o outputs that's going to be when it's
+26:27 fully turned on that's at the 3.3 volts so the output voltage is going to be a
+26:33 value proportional to that depending on the duty cycle and since I scale it down by 25 attitude
+26:41 cycle of 100 it's not going to be at 3.3 but it's going to be at 2 point
+26:47 something instead so we can see this if now so it's at 2.4 when it's at the Jeep
+26:53 cycle of 100 and that's a deep cycle of 75 a new cycle of 50.
+26:59 25 1
+27:05 and now it's turned off and I can also actually see it on the LED here since that's going to
+27:12 change its intensity when the due to cycle changes that's not so easy to see on this camera but yeah now it's
+27:19 turned off and now it's turned on again so as I said before pvm is not only
+27:26 something you can use for controlling the speed of this motor you can also use it to vary the intensity of an LED for
+27:32 example so here you can see my measurement with the oscilloscope it's not super clear but as the duty cycle
+27:39 decreases so does the pulse width and you can also see the base frequency
+27:45 in the top left corner that it's 20 000 Hertz so now that I verified that pvm
+27:50 works or where live at least verified that one of the channel works and then I just have to verify the next one when I
+27:56 move on to or move the code to this actual robot
+28:01 so since that's done now I'm going to commit this before I move on to the next
+28:08 part of this video which is going to be to implement the software layer for the motor driver so first I'm going to
+28:15 create a new branch and I'm going to call this fit motor
+28:21 driver and then I can just add or well first I
+28:27 should format everything
+28:32 from CPT Shake and also Builder thing now I can add all of the
+28:39 changes
+28:45 and write the commit
+28:56 then I can push this
+29:06 and create the pull request but I'm not going to merge it yet because I'm going to keep all of the commits I'm making in
+29:12 this video to the same pull request okay so let's now implement this part of the code the
+29:18 tb6612 FNG driver the driver for the motor driver that's going to depend on
+29:24 the pvm driver I just wrote and then also set the control pins that controls
+29:31 the direction of the motor so this is going to be a rather simple implementation since like the bulk of implementation is
+29:38 inside the pvm driver so as similar to before I'm going to create two files inside the driver folder
+29:47 and then starting with the header file I can Define the interface first of all and this is going to first of all have a
+29:52 function for initializing the driver and then second function to set the mode and
+29:59 it's going to be another enum one value for each motor driver that I have and
+30:04 then another a known for the mode and for where this what I refer to as
+30:11 clockwise inside the datasheet and reverse is counterclockwise so basically whether the motor spins in clockwise
+30:18 direction or counterclockwise Direction and then I'm going to have a third function to set pvm like that and I must
+30:25 not forget to also add this new implementation file to my make file
+30:32 and then I can head over to the implementation file and include things
+30:39 should also have a comment on top as well as an include for the int and this is a driver for motor
+30:47 driver tb6612 FNG now let's just
+30:53 do like this now to see that things compile
+31:04 yeah and then I can start with the initialization function
+31:09 and as usual I will have a Boolean to check whether this has been called before and then I'm going to call pvm
+31:17 init and I'm also going to start
+31:23 on the io configuration similar to how we did it in the pvm driver I double checked that I have the
+31:30 audio configuration that I expect that it has been set inside my IO driver and I expect the configuration to be gpio
+31:37 output low in the beginning and now pull up or pull on resistor and similar to
+31:43 before I can retrieve the current configuration for the different pins and assert on the comparison and do the same
+31:49 for all the four control pins I'm just going to check the control pins of the right motor driver when I've compiled
+31:56 for the actual robot and right now this assert is actually going to trigger since I haven't configured the pins on
+32:04 the launch pad yet so I have to go into my audio driver and make sure that I assign some pins
+32:11 for the control pins of the left motor driver and it doesn't really matter which one I pick here but I've decided
+32:17 to go for pin 1 and 2 on Port 2.
+32:26 then inside the implementation file I can
+32:33 move this [Music]
+32:40 well again I can make sure that this compiles oh yeah I have to remove that one
+32:47 and let's compile and see which one it is and this one
+32:59 this needs a return type is include
+33:17 now it compiles so then I'm going to create a struct to hold the control pins for each motor driver
+33:24 used to make the code a bit more structured
+33:31 and for the launch pad I'm actually going to set the second motor driver to the same
+33:38 control pins as the first motor driver is to avoid the compilation error I don't really like spreading around if
+33:46 defs like this because it makes the code less readable but you do what you gotta
+33:52 do
+33:58 and then I can implement the function to set the mood
+34:03 and here this is a matter of setting the IOP at the control pins to high or low according to the data set of the motor
+34:09 driver to set the mode stop you set the both control pins to low for four this
+34:14 set control pane 1 to high and Ctrl pin 2 to low and then for reverse you do the opposite
+34:21 so control pin one to low and control pin 2 to high and then setting the pvm dude Cycles you
+34:28 see I can just call pvm set GT cycle
+34:34 and cast TB to the pvm enum
+34:39 and is past the duty cycle as is and used to need Peak I can add a stack we can start
+34:45 here to make sure that this you know matches up with the PBM enum so this
+34:51 cast I'm doing here is a save maybe not the nicest way to go about it
+35:04 and let's compile
+35:11 and that's actually all there is to this implementation for the motor driver so
+35:18 then I can head over to my test file and add a test function
+35:26 and also include the driver I just made
+35:34 and then I'm just going to Loop over some different modes and Duty Cycles to test this and then I have four different
+35:41 Duty Cycles and an endless by Loop and here I can
+35:46 Loop over the different modes and Duty Cycles
+35:58 than the Deep Cycles [Music] and then I can also make sure I test
+36:05 stopping them or maybe
+36:12 one second so let's see if this compiles now
+36:19 does not oh yeah
+36:28 and now we can test this by connecting my motor driver circuit my DC motor and the
+36:37 motor driver just give me a moment so now it's running at the duty cycle of
+36:44 100 and you can see the motor spinning
+36:49 now it's spinning the other direction and now it's stopped
+36:55 now it's drawing forward reversed slower you'd cycle
+37:03 stopped
+37:09 yeah so it seems to be working well I should actually move this up here
+37:15 so that it stops in between as well because now it was hard to see okay so now it stops between each mode
+37:22 and duty cycle change
+37:28 yeah everything works so then I can go ahead and commit this change as well
+37:39 so now I get the CPP checked error missing include not sure why it's
+37:46 complaining let's just add
+37:51 the check config get some more information
+37:57 oh yeah this should be like this instead
+38:03 then I can go back to change that back and run simply check
+38:08 again it works everything and add my changes
+38:21 then commit
+38:30 and then I can push to multi-driver or to the same pull request again
+38:42 hmm okay so I actually got the ca error on the previous commit so let's see what
+38:47 that's about
+39:01 I forgot to save the uart file previously so let's fix that
+39:06 and I'm gonna replace
+39:22 then I can push again hopefully it will pass this time and
+39:29 yeah it passed okay so now we can move on to the final software port
+39:36 this video and that's going to be to implement this drive interface here
+39:41 which is part of the application layer and I'm just going to implement this to
+39:46 provide a simpler interface for the application code because it's facing directly with the smooth driver well
+39:53 that's going to work it's just going to make the application code more complicated than it has to be because
+39:59 the application code is not going to need the flexibility that this mod driver currently provides so once again
+40:06 let's create two new files but this time under the app folder or actually I don't
+40:12 need to create those files because I've already created them in a previous video so I'm just going to jump into them
+40:20 and beginning with the header file I Can Begin by adding a comment on top
+40:25 and then I'm going to keep this Drive Unit function but I'm going to cut two
+40:30 additional functions one two stop everything Drive stop and another one to set the
+40:38 drive speed and drive direction and these are going to be a discrete set of directions and a discrete set of speeds
+40:45 so beginning with the direction I'm going to have one that's just going to be driving forward or driving in reverse
+40:52 and then I'm going to have one that is rotate left and rotate
+40:58 right and drive the arc turn so it should be able to drive in a kind of
+41:04 like an arc turn so one Octon that's going to be a very short Arc turn which means that the motors on the left is
+41:11 going to drive slower much slower than the motors on the right and then another Arc tone that's not going to be quite as
+41:17 sharp and finally a very wide Arc turn so that's it for the different drive directions then I'm going to have four
+41:24 different speeds one where it's driving slowly and then
+41:30 one that's going to be somewhere in the middle and then one that's going to be faster
+41:35 and then the last one full speed and that's it for the
+41:41 interface moving on to the implementation file and then this is going to depend on the
+41:48 multi-driver and initializing this is going to be very simple because it's just going to initialize the motor
+41:54 driver that and then for the drive stop
+42:01 that's just going to set the stop mode for both motor drivers like that and also set the pvm or reduce the cycle to
+42:08 zero and then setting the speed and direction is going to be a bit more complicated
+42:14 because first of all I need to map the different speeds the slow fast and Max speeds to distinct the Duty Cycles and
+42:21 I'm going to have a big array with structs to do that so first of all a struct definition to that defines the
+42:29 speed of each side
+42:40 and then an array Drive speeds and I'm going to call this primary
+42:47 speeds and I will explain why in a second and this is just basically going to be a map from drive direction to
+42:53 drive speeds
+42:59 okay so if I pass the forward Direction and I set the speed to slow then I'm
+43:04 going to set both sides to run at the duty cycle of 25 and similar if it's Max
+43:10 I'm going to set both sides to run at the duty cycle of 100 and these are values that I've used tuned before and
+43:18 that I felt made sense but I might tune this more later on but the basic idea
+43:24 here is just that I mapped the direction along with the speed to distinct Duty Cycles or distinct speeds and to avoid
+43:31 having to do the same for all of the like opposing directions so instead so
+43:37 to avoid having to also include Drive the reverse here since that's just going
+43:43 to have the same speed but the opposite to the speeds of the forward Direction I'm only going to define the primary
+43:50 directions here and then have a function that converts from primary direction to the other direction you will see what I
+43:57 mean in a moment so let's use the Define these arrays for all of the drive speeds
+44:02 and directions and then I'm going to define or create a macro to get
+44:10 the primary direction for each direction that is going to be matter of subtracting the modulo the direction
+44:26 I can actually change this to modulo 2. so a cheaper way to do modulus 2 is by
+44:32 just ending the value with one because since the model operation involves division on the launch pad that's going
+44:40 to be a bit expensive so I avoid that by defining a macro like this instead so
+44:47 with this macro now if I pass for example Drive Direction reverse here that's going to give me drive direction
+44:53 forward and I can actually create a assert here just to make sure that this
+44:58 actually works and then I also added a comment here to explain what I'm doing inside the code okay so then I can start
+45:04 implementing this drive set function and the first thing I'm going to do is the primary Direction
+45:10 and then I'm going to get the speeds
+45:22 or the speed values if a primary Direction has not been passed so for
+45:27 example if Drive the reverse has been passed I need to actually reverse the
+45:33 speeds here primary Direction well let's just rename this direction
+45:40 instead and also do it up here
+45:46 then I'm going to have a function to inverse it and I'm going to pass pointers
+45:52 these and if speedrite is equal to
+45:60 speed right it means that we are driving in the reverse Direction because if we
+46:05 are turning the right and left speed is going to differ and in this case I should just change the sign of the speed
+46:12 value otherwise the speed left and right differ and that means that you should
+46:18 just swap the two values it's going to create a temporary variable to hold the write
+46:25 speed value and then I can
+46:30 set speed right to speed left and speed
+46:37 left comments what
+46:42 like that and as I said it's checked I can add an assert here to ensure that
+46:47 none of the speed values are zero because there is no case where the speeds RC over here because if I want to
+46:53 set the speed to cro I should recall a link Drive stop instead and then I can
+47:00 get the corresponding mode for each of the motor drivers by
+47:08 checking the value of the speed it's above zero it means that you'll be driving in this forward Direction
+47:15 and if it's below it should drive in the opposite direction counterclockwise Direction
+47:22 and I'll do the same for the other multi driver and then I need to set the pvm
+47:27 duty cycle and here I need to take the absolute of the speed value to get the corresponding
+47:34 duty cycle since the speed value might be below zero when I want the motors to drive in Reverse so I'm just going to
+47:41 add a defined for that
+47:60 so that's it for the drive code let's see if it compiles obviously it does not
+48:28 and now that it compiles let's create a test function to test this
+48:45 I'm also going to initialize the IR remote here because I want to this test to take input from the IR remote to
+48:53 control the speed and the direction of the motors
+49:04 so image Loop I'm going to wait a thousand milliseconds
+49:10 or one second before I check if I receive a command from the IR remote and
+49:15 then I can check if I've received the command so if I press button zero I'm going to
+49:23 stop the motors and if one are going to set speed to drive speed slow
+49:33 X and if up I'm going to set Direction Drive
+49:39 therefore and lift down drive there reverse and if left
+49:46 right there left
+49:51 and if right right rotate right and then for the rest of days I'm just going to
+49:57 do nothing and then finally I can set the drive direction and the speed
+50:03 something like this should work let's see if it compiles
+50:20 before I flash this now I'm going to decrease this to 100 instead to make this a bit more responsive
+50:26 and then I flash this I should be able to use my remote control to control the
+50:32 direction and the speed of the motor so I can for example press one
+50:40 and two three
+50:45 four and then I can change the direction by pressing down
+50:55 decrease the speed again now if I rotate right
+51:03 it changes the direction
+51:09 again and I can stop it with zero
+51:14 and then it seems that it's working uh of course
+51:21 I haven't tested all of the code now since I only have one multi-driver so once again I will have to confirm that
+51:27 everything works when I move on to the robot in a later video in this video series but for now I'm going to commit
+51:34 this code or first format t-check and also
+51:43 build and now adding the Sanchez committing
+51:57 and making sure that this commit also passes CI it does and then there is one final thing I want to do in this video
+52:04 while I'm fiddling with the motors and that is to implement the last thing in
+52:10 my inside my SRT implementation and that is to stop the motors when an assert happens because uh usually when an
+52:18 assert happens or basically at a definite definition of an Assad is that something unexpected has happened and in
+52:25 that case if something unexpected happens while the motors are running I want to stop the motors to make sure
+52:31 that the robot doesn't just drive away and driving the wall and damages itself so this is more of a safety precaution
+52:38 when an assert happens so let's jump into the file where the certain implementation is and I already have a
+52:44 to-do here from before so I'm just going to implement a function called a search stop Motors and it's going to be a very
+52:51 simple function and I'm not going to call the drive interface here because
+52:57 I've explained and before I want to make my assert implementation as Standalone as possible and not depend on any other
+53:03 code that potentially could have an assert inside it and does trigger a recursive assertion so I'm going to
+53:10 write to the i o pins directly here and going to write to both the pins on the
+53:16 launch pad and the symbolt simulate what I'm doing when i'm blinking the LED and
+53:22 to make this code a bit nicer I'm going to define a macro for setting a PIN to
+53:28 Output low so these are all of the pings associated with the motor drivers and I'm just setting all of them to Output
+53:35 low so that the motor drivers are completely turned off when an assert happens and then I can Define this macro
+53:40 as well okay so this is just setting the
+53:47 corresponding registers replacing the hashes here with the port number and the pin number and I can also use this
+53:53 function inside the assert pink LED as well so let's move this
+53:60 above everything and call it here as well
+54:11 so let's compile and see how it works does not
+54:26 and the reason I'm wrapping this defined micro in a Dubai like this uh I have
+54:31 explained that in the coding guidelines and that's to make the the statements macros behave more like functions so
+54:38 that I can be followed with a semicolon without confusion
+54:43 that's pretty much standard practice when writing C code or at least good practice so let's try this now to see
+54:50 that it works you can create a another test function
+55:10 and then let's use trigger in a circle and if everything works now I should or
+55:16 let's sleep here as well before I do the assertion so maybe drive forward to three seconds
+55:24 and then once this assert triggers it should stop the motors and uh we have
+55:29 trigger a breakpoint as well as trace the assert and blink the LED so by now
+55:34 it should be very easy to spot when an assert has happened
+55:40 so let's build this flash it
+55:51 yeah so now an assert has triggered and I can see the LED blinking here as well so let's now commit this as well
+56:03 this also means that I'm done with the assert implementation and pushing this as well
+56:09 to the same pull request it did not pass CI so let's see why it
+56:17 didn't oh yeah I forgot to format the code damn it
+56:31 now it pass so let's rebellious and merge
+56:39 that's it for the code in this video it was nice to finally get something moving after all of these videos once again I
+56:46 haven't tested all of this code now since I've only tested it with one motor driver and I will make sure to verify it
+56:53 later on in this video series when I move on to the actual robot which I'm going to be doing soon but there are at
+56:59 least two more videos I have to make before I do that and that's going to be to write a driver for the sensors the
+57:04 line detectors and the range sensors and another thing I can mention here is that right now I'm
+57:11 changing the direction and the speed of the motor is quite abruptly so for
+57:16 example if the motors are driving at full speed and I change the direction it's going to drive in the opposite
+57:23 direction with full speed and that works and in this case the motors are quite
+57:29 weak so that it doesn't really matter I think but could consider adding some code that ramps down the speed instead
+57:36 of changing it to abruptly to maybe reduce the stress on the motors as well as on the motor drivers but I don't
+57:43 think I'm going to do that for this project but it's something you can consider if you are working with motors
+57:48 yourself but that's it for this video thanks for watching and see you in the next one

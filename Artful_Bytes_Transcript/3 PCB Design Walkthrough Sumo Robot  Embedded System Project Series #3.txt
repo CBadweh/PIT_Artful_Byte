@@ -1,0 +1,353 @@
+00:01 hello and welcome back to artful bytes
+00:03 into another video in a series of videos
+00:05 where i'm programming an embedded system
+00:07 from scratch
+00:08 or more specifically this summer robot
+00:11 i've already done two videos where i
+00:12 introduced my robot and talk about the
+00:14 parts it's made up of so if you want to
+00:16 know more go check them out in the last
+00:18 video i went over the parts i picked out
+00:20 for this project and in this video i
+00:21 want to zoom in on the pcb design i made
+00:24 to connect all the parts i know i've
+00:25 said that this video is primarily going
+00:27 to be about programming but as i also
+00:29 said in the previous video when doing
+00:31 embedded systems programming it's
+00:33 essential that we understand the
+00:34 hardware and that's why i'm spending
+00:36 some time on it before we actually get
+00:37 to the programming i want to go through
+00:39 this pretty briefly so this video is not
+00:41 going to be a step-by-step tutorial on
+00:43 how to design a pcb like this my
+00:45 intention is just to give you an
+00:46 overview before i dive into the
+00:48 specifics in the coming programming
+00:50 videos so let's now jump over to my desk
+00:52 and get started
+00:54 first of all if you're not familiar with
+00:56 pcbs press b stands for printed circuit
+00:58 board and it's what all electronics
+01:01 devices use these days to connect their
+01:03 components because it makes possible to
+01:05 connect many small components in a space
+01:07 efficient and reliable way
+01:09 and makes mass manufacturing and mass
+01:12 production possible so when working on
+01:13 about systems you will inevitably come
+01:15 in contact with pcbs even if you're
+01:17 primarily focusing on the software and
+01:19 writing the code for a computer ship on
+01:21 a pcb you will still need to know how to
+01:23 parse schematics and do basic hardware
+01:25 analyzing and perhaps patching so it's
+01:27 important to have a good understanding
+01:29 of them manufacturing a pcb was once a
+01:31 costly or messy endeavor mostly
+01:33 accessible to companies with money but
+01:36 in the recent decade it has become
+01:38 accessible to hobbyists as well with the
+01:40 advent of manufacturers like usc pcb and
+01:42 pcb way it has now become possible to
+01:44 have small batches of boards made for a
+01:47 few tens of dollars and even have the
+01:49 components assembled for you the pcb i
+01:52 designed for this sumobot is a pretty
+01:53 simple board it's a small five by six
+01:55 centimeter two lay board with one layer
+01:58 for the signals and the other foreground
+02:00 there are no high frequency signals and
+02:02 overall it has few components i designed
+02:05 it in key cad which is a popular open
+02:07 source program for designing pcbs if
+02:09 you're interested i put my keycard files
+02:11 including the schematic and pcb layout
+02:13 in a github repository you find the link
+02:15 in the description
+02:17 i had it manufactured at tlc pcb twice
+02:19 because
+02:20 the first time around i've made some
+02:22 silly mistakes so i had to do a second
+02:24 revision of the board and so the board i
+02:27 have on my robot now is the second
+02:29 revision having five of these boards
+02:31 manufactured including some of the
+02:33 components assembled set me back around
+02:35 50
+02:36 adding it up with the components i
+02:37 soldered myself i would say that the
+02:39 board cost me around 60 to 70 dollars so
+02:42 pretty accessible for a hobbyist indeed
+02:44 one thing i want to clarify before i go
+02:46 over the schematic is that i didn't go
+02:48 from choosing the port the motors the
+02:49 sensors and so on straight to designing
+02:52 the pcb i first prototyped everything
+02:54 using a solderless board and breakout
+02:57 boards along with the evaluation board
+02:59 for my microcontroller and i actually
+03:01 did quite a lot of programming before i
+03:02 went ahead and designed the pcb and in
+03:05 the coming videos i will be writing most
+03:06 of the drivers using the prototype
+03:08 boards and the evaluation board for
+03:10 microcontroller before i move over to
+03:12 the pcb okay so what i'm showing here is
+03:14 the schematic of my pcb and it's a
+03:16 drawing that shows the components and
+03:18 how they are connected together when
+03:19 doing embedded systems programming it's
+03:21 the schematic and not the pcb layout you
+03:23 will be interested in most of the time
+03:25 because you will want to know which pin
+03:27 is connected to which pin if you want to
+03:29 program a better system reading a
+03:31 schematic is an important skill and i
+03:33 think the best way to learn it is to
+03:35 actually design a pcb yourself because
+03:37 then all these surrounding passive
+03:39 components the bypass caps and so on
+03:41 would make more sense or i at least
+03:43 found it easier to pour schematics after
+03:45 i had designed my own pcb anyway so
+03:48 getting into it let's start at the power
+03:50 and of things in the top left corner
+03:52 there is a bunch of components that need
+03:53 power and i only have one power source
+03:56 the two single cell lipo batteries which
+03:58 gives me a voltage of 7.4 okay so these
+04:01 two batteries hook into two battery
+04:04 connectors
+04:05 yeah it's these connectors right here
+04:08 and then i have a simple power switch to
+04:10 easily switch the power on and off
+04:13 which is this switch here and after the
+04:16 switch i have a mosfet for reverse
+04:18 polarity protection which prevents me
+04:20 from frying up the board in case i
+04:22 connect the battery in the wrong
+04:23 direction
+04:26 and it's this mosfet right here
+04:30 almost all of the components i connect
+04:32 expect 3.3 voltage on their input except
+04:35 for the motors which have their voltage
+04:37 handled by the motor drivers that vary
+04:39 the voltage to control the speed of the
+04:41 motors and this means that i can't
+04:44 connect the power source my batteries
+04:46 directly to most of the components this
+04:48 means i have to regulate down the 7.4
+04:51 volt from the batteries down to 3.3
+04:53 volts and to do this i have two
+04:55 regulator circuits
+04:58 one switching back regulator that takes
+04:60 the 7.4 volt down to 5 volt
+05:03 and
+05:04 then a linear regulator circuit that
+05:07 takes the 5 volt down to 3.3 volt
+05:12 this is the switching regulator circuit
+05:14 and this is the liner regulator
+05:19 the reason i did it like this is because
+05:21 i initially thought that i needed 5 volt
+05:23 for the line sensors and it wasn't until
+05:25 after the first revision that i realized
+05:27 they could also be powered with 3.3 volt
+05:30 but to avoid risking making a mistake in
+05:33 the second revision i kept it like this
+05:34 and this means i'm actually not using
+05:36 the 5 volt from the switching regulator
+05:38 for anything besides putting it into the
+05:41 line a regulator to get the 3.3 volt but
+05:43 i believe that having two regulators
+05:45 like this also gives me some extra
+05:46 protection against the noise from the
+05:48 motors of course dropping 5 volt down to
+05:50 3.3 volt with a line regulator it's not
+05:52 optimal it's a bit wasteful and produces
+05:55 some extra heat but since the current
+05:56 through the regulator is pretty small i
+05:58 still get by without putting on a
+05:59 heatsink as for the switching regulator
+06:02 circuit there is quite a lot of
+06:03 surrounding components here but i've
+06:05 used mostly follow the example diagram
+06:07 in the data sheet of the switching
+06:09 regulator but i put the fuse here for
+06:11 some extra protection as well as an led
+06:14 for visual aid during bring up similarly
+06:17 the line irregulator has surrounding
+06:19 components for stability here i also put
+06:22 the
+06:23 fuse for protection as well as
+06:26 an led for visual aid
+06:28 starting from scratch again i think i
+06:30 would have replaced these two regulators
+06:32 with a single switching regulator yes
+06:34 the liner regulator provides a more
+06:36 stable voltage output but i think i
+06:38 could have gotten away with that because
+06:40 i don't have any super sensitive high
+06:42 precision adc or anything like that and
+06:44 that's pretty much it for the power the
+06:46 3.3 volt then goes to several components
+06:50 perhaps most importantly the
+06:51 microcontroller the msp430 28-pin
+06:55 version okay so i have the 3.3 volt
+06:57 coming in here on the input along with
+06:59 two bypass caps to reduce the noise and
+07:01 pull up resistor on the reset line
+07:03 because it's actually blows unless i
+07:05 pull it up the microcontroller will
+07:07 reset indefinitely i also have a small
+07:09 switch here so that i can reset the
+07:11 microphone physically without having to
+07:13 power switch the entire board okay so
+07:16 looking at the actual pcb
+07:18 then my controller is placed here and
+07:20 the switch here
+07:25 and the rest is just all the connected
+07:27 pins that i've ordered carefully to make
+07:29 sure that they support the function that
+07:31 i need them to for example the i squared
+07:33 c lines the data line and clock line are
+07:36 connected to port 1 on pin 6 and 7
+07:39 because that's the line that has the i
+07:41 squared c peripheral and since only port
+07:44 1 and port 2 are interruptable on the 28
+07:46 pin version of the msp430 i have made
+07:49 sure to put the pins that requires
+07:51 interrupts on port 1 and port 2. it's
+07:54 mainly these two the interrupt line from
+07:56 one of the range sensors as well as the
+07:58 pin from the i receiver and the pins
+07:60 from the line sensors must be connected
+08:02 to
+08:03 the port one because it's only the pins
+08:04 on port one that can be moved to the adc
+08:07 peripheral and the pvm signals for the
+08:09 motor drivers are connected here because
+08:11 i use timer a 0 to produce the pvm
+08:14 signals and so on and so on maybe it's
+08:16 also worth mentioning the ur pins which
+08:18 i use to
+08:19 send log traces to my host computer but
+08:22 more on that later in the programming
+08:24 videos on the left here are the
+08:26 connectors for the range sensors which
+08:27 all have five pins connected to them 3.3
+08:30 volt ground i squared c lines and a pin
+08:33 to reset them so quite a lot of pins for
+08:36 these they actually have one additional
+08:38 pin the interrupt pin but i've only
+08:40 connected interrupting to one of them
+08:42 because when i'm using several of them
+08:44 in parallel it's enough for me to know
+08:46 when one of them finished with the
+08:47 measurement because then the other ones
+08:49 will have finished already or will
+08:50 finish soon after and this saves me a
+08:52 couple of pins and the connectors for
+08:54 the range sensors are
+08:56 here here here and here and here
+09:03 and then we have the connectors for the
+09:05 line detectors
+09:06 which only have three pins power ground
+09:08 and the one that is connected to the adc
+09:10 channel i've also put the led on h1
+09:12 which makes it possible for me to
+09:15 physically see when the line is detected
+09:18 these connectors are here here
+09:21 here and here
+09:23 and the leds are here here
+09:26 here and here in general i find it
+09:28 helpful to put leds everywhere i can
+09:31 because they're really useful especially
+09:33 during bring up the connectors i'm using
+09:35 for the sensors here are called molex
+09:37 and yes they are very small which is
+09:40 nice but they're also quite fragile so
+09:41 it's not the connector you will want to
+09:43 plug in and plug out a lot and here is
+09:45 the three pin i receiver which has
+09:48 ground power and the pin that's
+09:50 connected to the interrupt line here
+09:52 i've also added an led here to
+09:53 physically see when the eye receiver is
+09:55 receiving a signal
+09:57 i also put the capacitor and resistor
+09:59 here for some filtering as recommended
+10:02 in the data sheets
+10:04 and on the pcb the
+10:07 i receiver is located here
+10:11 we talked to like three unused pins on
+10:13 my microcontroller
+10:15 this pin
+10:16 this pin
+10:17 and this pin
+10:19 and i've drawn those outer header pins
+10:21 to be able to use them just in case and
+10:23 the one i call test led i've connected
+10:25 to an led because it's often useful for
+10:27 debugging purposes to be able to blink
+10:29 an led and unused pins are located
+10:34 here
+10:35 to program the microcontroller on my
+10:36 board i actually use the evaluation
+10:38 board for the microcontroller because it
+10:39 has some electronics on it that allows
+10:41 you to program the microphone via usb so
+10:44 to avoid having to put those electronics
+10:46 on my own board i simply disconnect
+10:47 these bridges here to avoid them being
+10:49 connected to the evaluation
+10:50 microcontroller and then put my own
+10:53 jumper wires and connect them to my own
+10:55 board yes this is a bit of a hassle and
+10:58 it would have been easier to just have a
+10:59 dedicated usb port that i could plug
+11:01 into but it was an easy and quick way to
+11:03 do it and works well enough so the pins
+11:06 i connect to program and my controller
+11:08 are these two here and finally i have
+11:10 the two remote drivers
+11:12 one for the left side and one for the
+11:14 right side
+11:15 and as i already showed i have two pvm
+11:17 signal one for each motor driver and the
+11:19 motor drivers can actually take two
+11:21 separate pvm signals to control each
+11:23 motor separately
+11:25 but i only use one pvm signal for each
+11:28 multi-driver because both of the motors
+11:30 on either side should always drive with
+11:32 the same speed and in the same direction
+11:34 because i use tank drive so it drives
+11:35 similar to how tank drives but without
+11:38 the tracks of course and the same goes
+11:39 for the pins that controls the direction
+11:42 of the motors
+11:43 these pins are also merged together just
+11:45 like the pvm signals and overall by
+11:47 doing this i saved some pins on my
+11:49 microcontroller and similar to the other
+11:51 ics i followed the example circuits in
+11:54 the datasheet and put some bypass caps
+11:56 on some of the pins here okay that's it
+11:58 for now i will come back to the
+11:59 schematic in the coming video as we
+12:01 write the drivers for the individual
+12:03 components i also want to note that i am
+12:05 a beginner at order design so you
+12:07 shouldn't look at this board as an
+12:08 example on how to do it yes it works but
+12:11 with a simple board like this there is a
+12:12 lot of things you can do wrong and still
+12:14 have it work with that said if you have
+12:15 any questions hate or feedback please
+12:17 leave a comment below in the next video
+12:19 i'm going to get started on the software
+12:20 side of things by talking about my
+12:22 development environment so bye for now
+12:25 and see you in the next video

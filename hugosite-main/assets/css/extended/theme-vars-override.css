@@ -1,0 +1,13 @@
+:root {
+  --theme: #ffffff;
+  --entry: #ffffff;
+  --code-bg: #ffffff;
+  --header-bg: #f1f1f1 /* var(--code-bg); /* Optional custom variable */
+}
+
+.dark {
+  --theme: #1b1b1b;
+  --entry: #2e2e33;
+  --code-bg: #37383e;
+  --header-bg: #242424;
+}

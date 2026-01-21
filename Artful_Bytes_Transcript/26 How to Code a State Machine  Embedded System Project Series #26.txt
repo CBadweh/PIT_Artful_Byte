@@ -1,0 +1,583 @@
+00:00 in this video I'm going to talk about State machines which is a common pattern in embedded systems and in programming
+00:07 overall and as with other patterns it's a way to break down a system into smaller parts and in the case of a state
+00:13 machine we break down the system into a set of states and transition between
+00:18 these states when an event occurs for example if I take this uh Smartwatch that I got here you can imagine that
+00:24 normally when I'm not using the Smartwatch and it's just sitting on my hand the display is turned off and it's
+00:29 in some sort of low power mode but as soon as I press a button it's going to wake up and you can see this button
+00:36 press as an event that takes the Smartwatch from a low power state to a more active State and then if I go into
+00:42 the menu and try to change the settings you may represent that as another state this is probably not how it's
+00:48 implemented in this Smartwatch but uh you kind of get the idea State machines are a big topic and there are many ways
+00:54 to implement them they can be simple and they can be complicated and there are libraries and tools to help you
+00:59 implement them as well as entire books written about them and I'm not an expert on them so as I usually do in my videos
+01:05 I'm going to keep things simple and practical by demonstrating the topic through my limited knowledge and project
+01:12 and the project is this summer robot that I've been covering throughout this video series and as I've told you before
+01:18 the goal with this system is to act as a sumo wrestler it's going to be placed on a circular platform and it should find
+01:24 the other sumobot and then push it out of the platform in order to win and I'm now going to break this system Behavior
+01:31 into a set of states and transitions before I move on to implementing the actual code note I will have to write
+01:36 quite a lot of code for this so I'm not going to write all of it in this video and instead in this video I'm going to
+01:43 focus on getting the skeleton code in place like the overall structure and then in the next video I will finish the
+01:49 implementation by filling in the details and show that it works in the simulator I showed you in the last video and then
+01:55 also show you that I can run it on the actual robot and to create diagrams like these I like to use a tool called plant
+02:01 uml which is an open source tool that lets you generate diagrams from PL text
+02:07 which makes the the diagram easy to modify and also Version Control it's also good at creating sequence diagrams
+02:13 so overall a good tool to have in your documentation toolbx and in order to use plant uml you need to have yva installed
+02:19 on your machine and also download a y file from the official website and depending on the type of diagram you
+02:26 want to generate you may also need to install something called graph whs and then you can run this command in order
+02:31 to generate the diagram as an image file okay and since this is related to
+02:36 documentation I'm going to create my plain text file under my docs folder and I'm going to call it State
+02:44 machine. uml and then the pl text syntax I use uh
+02:49 is also explained on the official website so I'm not going to explain it here but each file has to start with at
+02:56 startl and end with endl and then I'm is going to add an option at the top to
+03:02 hide empty description just to make it look a bit nicer if I don't have a description inside my state and then I
+03:08 can start by filling out the main states that I will have in my state machine and overall I think uh this system or this
+03:14 Su robot is a pretty clear cut case for a state machine because the behavior can
+03:19 easily be divided into different states by simply thinking conceptually about
+03:25 what the system is going to be doing so at the start my sum robot is going to be placed on the pl platform and then it's
+03:31 going to wait for a start signal to be sent from an iron transceiver uh in my case uh that's going to or at least
+03:37 during development that's going to come from this IR remote which I've already written a driver for previously in this
+03:43 video series so I'm just going to have this first date and I'm going to call this state weight or as weight and then
+03:49 I'm going to add some additional description for this state and since this is the starting state I'm also
+03:54 going to add this uh at top here so let's try to generate this diagram now
+04:03 I can Mo this over and then I can just view it with an image
+04:09 viewer so this is just what it looks like so far and then once my sumobot
+04:14 receives the start signal it's going to start searching or trying to find the enemy it's meant to push out of the
+04:20 platform and I'm simply going to call this date search and add this in a similar manner as to the other state
+04:26 with a description as well and then when my suot detects enemy should drive towards the enemy and I'm going to call
+04:32 this state attack but there is also a surrounding white border around the platform and as soon as the my sbot
+04:39 notices this white line it should drive away from it in order to not drive out of the platform by itself and I will
+04:45 have to represent this as yet another state and I will call this state Retreat
+04:51 and this uh Retreat state is going to be the most complicated State and I will create another diagram for this in order
+04:57 to not clutter up the diagram I have here and this are actually the only states that I will need to represent my
+05:03 um system here but I'm also going to add another state for debugging purposes which is a state where I will be able to
+05:10 control the Sumo robot manually with this I remote and that's just a thing that is nice to have during development
+05:17 and I will call this state manual because in this state I will be able to manually control the behavior of the sum
+05:22 robot so if I then generate this diagram again and open it again you can see all
+05:29 of the states are available now of course doing it like I do it here now where I open the image viewer uh each
+05:36 time is a bit tedious and I know there are some uh like live viewers that you can use for plant uml but for this video
+05:43 I'm just going to do it like this next I need to define the different events
+05:48 that's going to cause this state machine to transition from one state to another
+05:53 state so beginning with the weight State the only reason it's going to transition from this state is if it receives a um
+06:00 command from this IR remote and then it should transition to the state search so I'm going to call this event command and
+06:07 I can add a transition like this so Das Dash arrow and then search and then the
+06:16 event so if I generate this I have some issues here so I think I will just remove the diagram first and then I will
+06:23 regenerate it so like this and then at the end like can also
+06:30 open the image
+06:37 viewer okay I have the weight State and then if I receive a command I'm going to
+06:42 transition to the search state and then inside the search state while the Sumo robot is searching for the enemy there
+06:49 can be several different things that can happen and take it to another state first of all if it detects enemy it
+06:56 should transition to State attack
+07:02 and I will add a new line here in between to make the drawing a bit tighter but in the search state it could
+07:08 also be that it detects the white border and then it should instead transition to The Retreat state so if it detects the
+07:15 line into transition to retreat inside the search state I'm also going to have two sub States the robot is going to
+07:23 either be rotating to see if it can find the enemy and if it rotates for a certain amount of time it's going to
+07:29 time out and transition to another state where it simply just drives forward and this is going to be my simple search
+07:35 strategy I'm going to add two new substates to the state
+07:42 charge so one state where it's rotating and another state where it's driving
+07:48 forward then I can add a transition between this as
+07:56 well that and it's going to transition between this internal State when a
+08:01 timeout happens so I'm going to add that here transition to itself and time out
+08:08 and finally if it's in the search state and I press a button on this IR remote I want it to transition into the manual
+08:14 state so that I can control the robot manually like that so now I can generate
+08:20 this diagram again and now it looks like this so we start in a weight State and as soon as
+08:26 we receive a command we going to transition to the search State and then depending on what happens inside the
+08:32 search state we're going to transition to these other states here so that's it for the search state moving on to the
+08:38 attack State this is going to be uh similar if we are in the attack State
+08:43 and we detect the enemy we should still be inside the attack state but similarly
+08:49 if we detect the line we should transition to State Retreat and if we
+08:55 are in the attack State and we suddenly lose sight of the enemy we should transition back to State
+09:01 search and in the state machine I'm going to represent this is as event none
+09:07 so if nothing happens it means that we no longer detect the enemy and we're not detecting the line or nothing else is
+09:13 happening I'm just going to say none here and then in that case we're going to transition back to State search and
+09:19 if I press the key on the iron mode it should transition to State manual
+09:24 command generating this again it looks like that and instead attack I'm also
+09:29 going to have internal substates three substates this is just going to make the robot drive a bit differently depending
+09:36 on where it's locating the enemy so whether it's seeing it slight it to the left slight to the right or straight in
+09:42 front of it so like that and then I'm going to have these three choices here originate from a choice and if I
+09:50 regenerate this it's going to look like this so now we get to attack State and
+09:56 then depending on the detection we have made it's going to transition to either substate
+10:02 here and then moving on to the retreat state from The Retreat State there are going to be three things that can happen
+10:08 either uh we have driven away from the line and we are done retreating and then we should transition to the search state
+10:15 so I'm going to call this finished and further on the way I'm going to implement this state is also as a set of
+10:21 substates and in each of these substate they're going to be represent a set of moves that needs to be taken in order to
+10:28 drive away from the line first of all it might drive back from the line and then it might turn around and go back a bit
+10:34 more inside the main Retreat State the timeout is going to happen once it has
+10:40 finished a single move and has to increment to the next move it's going to stay in the retreat State when a timeout
+10:46 happens this is going to become more clear when I move on to the code later on so you stay with me here and then
+10:51 again if I press a key on the IR remote I should transition to my debug State
+10:58 manual since this R state is a bit more complicated I'm going to draw its details in a separate diagram but so
+11:06 here I will just have a simplified version so like this and then finally we
+11:14 have the manual state if we transition to the manual state I'm just going to stay in this state forever and it's just
+11:19 going to react to a command event if I reate this again this is what it looks
+11:25 like ah this should be named manual up here so
+11:31 that's now so this is it for the overall State
+11:37 diagram for this Su robot and I'm going to reference this when I move on to the implementation uh but before I do I can
+11:44 just quickly also show you the diagram for the details of the retreat State uh I'm not going to go through it entirely
+11:51 here but I'm just going to show you the final version treat
+11:58 state so it looks like this depending on where
+12:05 the line is detected I mean the line might we might be driving straight ahead
+12:10 and then detect the line on either sensor either both of them or just one of them or it might detect the line back
+12:18 at here or to the side and depending on where it's detected it has to drive in a certain direction and I'm going to
+12:24 represent uh these different cases as different substates this is what I'm trying to visualize here in this diagram
+12:31 so I will refer to this uh actually in the next video when I implement the details of the retreat state but I will
+12:38 just leave it like this for now uh as I said there are many ways to implement a state machine but in this
+12:45 video I'm going to implement one in C and I'm going to keep things quite simple and implement it with standard
+12:52 code constructs available in C so it's going to be if statements switch statements and um in s and structs and I
+13:00 will handle everything sequentially in a Big Y Loop and there's not going to be any threads events or anything like that
+13:07 involved here it's going to be a fairly simple implementation and while this might not work for a more complicated
+13:13 State machine I think it's a quite nice implementation for a smaller State machine like I will have for this
+13:19 project and I will write it in a quite General way so that it's going to be easy to extend to have more States and
+13:25 more events but first let me create a new local branch to track the IAS that I make in this
+13:32 video uh or before I do I also have to mention a couple of commits that I made
+13:38 in preparation for this video uh so let's look at the G history here one thing I implemented before this video uh
+13:45 was to improve my ring buffer implementation that I implemented in a previous video previously this ring
+13:50 buffer implementation could only take elements of a single bite and in the next video I'm going to implement a way
+13:57 to store previous input from my sensors in order to implement a more complicated Behavior because I will want this
+14:04 sumobot to take into account for example where the enemy was last seen in order to do this implementation I will need to
+14:11 have a ring buffer that can take elements of different size so that's why I extended this implementation and then
+14:18 I have a second commit where I implement the timer functionality so first I
+14:24 Implement a function called Millis which works the same way as the Millis function in the ardino platform so it
+14:32 Returns the number of milliseconds pass since the microcontroller was started and I use this to implement timer
+14:39 functionality which I'm going to use to be able to have the timeouts inside the state machine so for example I will need
+14:45 the ZM to be able to drive in a single direction for say 350 milliseconds and
+14:51 to be able to do this I will need to have timer functionality so that's what I'm going to use this for and
+14:57 interestingly enough I implemented this by repurposing the available Watchdog timer inside this microcontroller to be
+15:04 used as a timer instead of rebooting the microcontroller after some time and I
+15:10 did that because I don't need the normal Watchdog behavior in my sim robot and the number of timing peripherals are
+15:16 limited on the microcontroller and I'm already using them for other things in this implementation so I thought this
+15:23 was a good idea and finally I made a small commit where I move all of my enum
+15:28 to stre functions to a single file just to make it easier to compile them out
+15:34 because they take quite a lot of flash base and what I'm going to show you in the next video is that I'm running out of flash base here my my controller is
+15:41 quite small and my implementation is getting so big that it's taking up all of the available flash base so in the
+15:47 next video in order to compile my code I will have to compile out some of the things that are not necessary but only
+15:53 nice to have and enum to string functions are used there to make the tracing nicer that's it for the commit I
+15:59 did in preparation for this video and if you want to see the details as always you can go to GitHub and look at the
+16:06 commits and you can also clone the repository yourself and look at the differences anyway let's now create a
+16:11 new local git branch and I'm going to call this feature State machine I'm
+16:16 going to divide my state machine implementation into multiple files first of all I will have two files a header
+16:23 file and a C file state machine. C and state machine. h and these files are
+16:29 going to hold the overall State machine logic it's going to hold the different Transitions and Define these Transitions
+16:36 and also handled input and translate these into events that can then cause the Transitions and then I'm going to
+16:42 implement the different states in separate files can just go ahead and add these different files immediately for
+16:49 the different states first wave state weight State search and state manual
+16:58 then that will also be some data to be shared or definitions to be shared between the different states and also
+17:03 the overarching state machine logic and I'm going to keep this in a file called
+17:08 State Common and this is just going to be a header file and while I add it I can also add this to the make
+17:23 file beginning with the overarching state machine logic this this is just
+17:29 going to have a single function called State machine run in order to start the
+17:34 state
+17:43 machine and this will start a state machine and keep it running endlessly so during execution when this function is
+17:49 called it's going to get called once and we're never going to leave this function I'm going to call this directly from the
+17:56 main file so after I initialized that everything which I also have to do here
+18:01 and then I will call it down here and I also need to add the required
+18:09 headers here that yes okay so going into the
+18:15 implementation for State machine. C with including header file then State
+18:24 machine run so in this function what we need to do first we need to initialize
+18:30 the state machine data because there's going to be a bunch of data or state that we need to hold during the
+18:36 execution of the state machine allocate and initialize State machine data then a
+18:41 y Loop and in this while loop we should process the input we're going to have a bunch of inputs line timeout enemy
+18:51 command and whatnot and this processing the input is going to take this input
+18:56 and turn it into event and then we should Pro process this event in order to cause the transition and beginning
+19:02 with the state machine data I'm going to represent that as a struct called State
+19:08 machine data this is first of all going to hold the state which is going to be an enam that I'm going to Define soon
+19:15 and then it's going to hold the data for the individual states so I'm going to
+19:21 Define additional data strs for the individual states let's just sketch them out here for now so first we have one
+19:27 for common data
+19:32 yeah and then I will have some additional things here but I will just add a comment for here for now then I can head over to State Common where I'm
+19:38 going to have the different enums for the states and the events that can happen where that
+19:47 exists and state manual then for
+19:57 events and here I'm also going to have the state common struct data and this is
+20:04 going to hold a pointer to State machine
+20:11 data then it's going to have timer or pointer to the
+20:17 timer also enemy this is going to contain everything that needs to be accessible uh within the individual
+20:23 states or within all individual states basically the shared data is going to be the shared input I'm also going to have
+20:31 ring buffer for the input history what all of these do here is going to become
+20:37 clear as I go about implementing this so I'm just trying to just Define everything right now and then to keep
+20:42 this header clean I will do some four declarations up
+20:49 here and have a comment and also the necessary include and include that's it
+20:57 for the common header for now and then moving back to State machine. c i can
+21:03 implement the struct for a transition this is going to contain three things first it needs to hold the state which
+21:11 the transition is going to come from so that's going to be from then it's going to have the event that's going to cause
+21:17 the transition and finally the state we are transitioning to and then I can
+21:22 create a big static cons table to hold all of the possible transitions here it's really just a
+21:29 matter of filling in the corresponding transitions that I drew in the diagram
+21:35 if we refer to the diagram again we're going to have a bunch of different transition and events so I'm
+21:42 just basically going to fill in the possible transitions here so these are all the possible
+21:50 Transitions and as you can see having it defined in a table like this it's going to be easy to add additional transitions
+21:56 if I want to which makes the state machine easy to extend when you implement it like this and then I can have a comment up here that also gives a
+22:04 tip about looking at the diagram to understand where these transitions are
+22:09 coming from then I can implement the function that's going to take an event and then that's going to go through this
+22:15 state transition table in order to find the corresponding
+22:21 transition and I will make this in line since this will only be called in a single place justed to save the function
+22:28 call Overhead event so it's going to take two
+22:33 arguments and that's going to be State machine data which is going to contain the state we're currently in and then
+22:40 this event that we received and inside here I need to Loop over the available
+22:46 transitions size and then I should have an if statement that checks if it is a match
+22:52 or not positions I do from
+23:01 and next this should be called next
+23:07 event and if next event equals the
+23:13 transitions event and if it is a match we should enter this new state so I'm
+23:19 going to call State enter which is going to be another function I need to Define and this is going to pass data and state
+23:27 transition next event I guess I could pass the entire or
+23:33 point to the transition as well but well I will just do it like this then I can return from this function and if we
+23:39 don't find a match this shouldn't happen because in the state machine or state transition table I should cover all of
+23:45 the cases but in case I miss something I should trigger an an assert down
+23:51 here then I will have static void State
+23:56 enter state data to inside here I should just call
+24:03 the corresponding enter function depending on the state that I'm entering so for each individual State I will have
+24:09 a function called enter to enter this particular State uh but let's implement this a bit
+24:17 later and continue with State machine run here to allocate and initialize the
+24:23 state machine data I'm going to allocate this data on the stack just because in
+24:28 this case I think that's a bit nicer I like to allocate things on the stack whenever I can instead of like create
+24:34 making it statically and globally accessible and then I just pass it as a
+24:40 pointer in each function instead and then I will have a function to initialize this data struct and
+24:47 endless y Loop going to take event then that's going to come from process input
+24:56 function uh in when when I have the event I can call Process event which is
+25:02 the function that's going to call will cause the transition to another state if a particular event has
+25:11 happened and another thing I'm going to add here is a delay which I don't need for when I'm
+25:19 running it on the actual microcontroller but for my simulation I need to have this and that's because in the
+25:25 simulation I'm going to run this in a separate thread and I need a way to sleep in this thread so that it can
+25:32 execute the rest of the simulation but you will see what I mean in the next video when I actually simulate this
+25:38 code it's going to be State machine in it and it's going to take Str State
+25:45 machine data make this in line as well first I'm going to set the initial state
+25:50 which is going to be State weight then I can set all of the things inside or
+25:57 let's see if I can open up the state common here to begin
+26:05 with okay first set State machine data inside
+26:10 here so that's just going to be data this going to be
+26:16 common enemy position going to initialize these two default values
+26:22 because they are going to be or I'm going to set this when I process the inputs
+26:29 that then I can also set and that's going to point to the timer I'm going to
+26:34 allocate in this data over overall State machine data stct I should clear this
+26:43 timer this is what I implemented in preparation for this video so I can just quickly show you so
+26:51 it's this interface right here and I'm also going to set two other things here
+26:56 I need to handle something called internal event which I'm going to explain soon and input history which I'm
+27:03 not going to implement in this video but in the next video and uh the input history is just going to be the history
+27:09 of previous inputs which I'm going to implement with uh the ring buffer and then I can set the common data for all
+27:16 of the individual states and also call their corresponding init functions
+27:22 weight common is going to be equal to data common pointer to the common search
+27:30 common and I'm not going to have an init function for all of the states only for search attack and
+27:47 Retreat yeah and then I can continue with maybe filling out this state enter a bit more I'm going to switch across
+27:54 the state to our transitioning to and then I'm going to have a case for each individual State and simply call the
+27:60 enter function for each
+28:08 state and as you can see here I use a switch statement without a default case
+28:14 which means I will get a compile error as soon as I add a new state which is
+28:19 nice and when a transition happens I also want to do some additional thing first in case there is an ongoing timer
+28:25 I want to reset that timer so that if I transition from a state that started the
+28:31 timer I don't want the that timer to trigger timeout in the next state and I also must update the variable holding
+28:37 the current state and finally I'm going to trace here so from to then event that
+28:45 cost the transition and here I'm going to add some enom to string functions state to string state to string
+28:54 two and then I can go to my num to string
+28:59 functions and add these new functions and in here I
+29:08 can and then the next one like so and going back to State
+29:17 machine C that's it for this state enter function then I should also implement
+29:23 the process input function line void Pro process input and
+29:29 most of this function I'm going to implement in the next video just going to add a few comments or to- do comments
+29:37 here make this unused for now the first thing we're going to do in this function is get input from the sensors it's going
+29:42 to be enemy IR remote and the line and I should save input to history then I'm
+29:48 just going to have an if statement going through the different uh things or inputs that can happen and return a
+29:54 corresponding event if remote command then should return the event command
+30:00 else if if it's an eternal event which I'm going to talk about soon I'm going to return the internal event and if a
+30:08 timeout happened should return the out and I'm doing this if else um cases in a
+30:15 distinct order here from uh the most important ones to the least important ones for example if multiple things has
+30:21 happened uh the remote command should always take precedence so even if I have detected an enemy I should process the
+30:27 remote command because that's going to transition to the manual State and when when we are in the manual State we're
+30:33 not going to care about any other input line detected then return State event
+30:38 line and if enemy detected return State event enemy and if there are no input I
+30:45 will just return State event none do so let's now add the functions for handling
+30:53 Eternal events and what I mean by an eternal event here is events that can can be posted from within the states
+30:60 themselves for example in the retreat State there's going to come a point when all of the moves uh The Retreat moves
+31:06 has been executed and when that's done it's only going to be known inside the state Retreat so we need a way to be
+31:13 able to post events from within the states themselves and that's what I mean by an internal
+31:20 event we going to need a couple of functions for this first one function to post an internal event and that's just
+31:27 going to set internal event to event and I can
+31:34 add this here too and I'm also going to assert here to
+31:41 see that there is no pending internal event yes that's a sanity
+31:48 checkal event turn none and then we need a function to
+31:55 also remove an internal event when we're handling the internal event call a take internal event return value State event
+32:03 and here we can also have an assert to check that there is an internal event then we can get the internal event and
+32:10 set internal event to and then finally return event like that and then I'm
+32:17 going to have the Declaration of this function being inside State Common so that all of the states can access this
+32:24 function inside here can also add an comment
+32:30 [Music] above oh and then I can go ahead and add timer here as well and I will also have
+32:39 buffer input history remove that comment and if I don't use this function now I'm
+32:45 going to get a compile error so until next video I will just add this as an
+32:50 empty call basically like that and what I'm going to do now is
+32:59 implement the individual states or at least implement the skeleton code for
+33:04 the different states and before I do what's important to understand here is that for this implementation to work I
+33:10 must be running these while iterations very quickly because if any of the code
+33:15 inside here blocks that means that it's going to take a long time before we process input because the pro because
+33:21 the input is only processed once uh for each iteration for example if one of the states has some blocking code so it
+33:28 waits for maybe half a second or a second that's not going to work because then we're not going to process the
+33:33 input fast enough because in order for this to work we need to like for example
+33:38 these surrounding sensors here need to be able to detect the line as quickly as possible ideally within 10 milliseconds
+33:44 or less when I implement this I need to make sure that all of the code is just executed in a sequential Manner and
+33:50 doesn't block anywhere and this further means that when there is nothing happening I will still be iterating
+33:57 through this y Loop but the only thing that's going to happen when uh we don't get any input is that we're going to
+34:02 return event none here and that's going to be processed and most of the times that's not going to do anything but
+34:08 that's just a way to keep this y Loop executing so we keep on checking the inputs okay before I get to implement
+34:14 the individual states let's just add a commment that explains what I just told
+34:22 you what I've written here is just basically what I just explained no code inside the state machine can block
+34:28 because otherwise this approach doesn't work note not being able to block for a certain duration of time doesn't prevent
+34:35 me from executing actions over a certain amount of time because instead of blocking for a certain amount of time
+34:41 inside this process input I'm simply just going to check repeatedly whether the timer has timed out and that's going
+34:47 to give me the same behavior okay starting with first state state
+34:54 weight I will have state weight and enter that's going to take struct data B
+35:01 then to define the struct that's going to hold the data that this um State
+35:06 needs to be very simple it's just going to have a pointer to the common
+35:12 data I need to add the necessary include stock signal remote command and
+35:20 inside the implementation file include void there and here I can begin with an
+35:26 assert is for S to check in because we should never enter this state from any
+35:31 other state so I can just say State wait here and then that's going to be it for this function actually and that's
+35:39 because when a command happens uh we don't need to handle it here because that's going to be taken care of uh
+35:45 inside the overall State machine code because that's where we process the input and when we get an input from this
+35:53 uh remote control it's going to translate to a state event command which is going to cause a transition and then
+35:60 I'm going to add a comment above all of the entering functions just to make it very clear that no code can be blocking
+36:07 inside this function and I'm also going to add another clarifying comment here
+36:12 because what this state is currently doing is not how it should behave in an
+36:17 actual simbot competition because then it's not going to take the input from a remote control like this but instead
+36:23 take the input from some other IR transceiver uh but I'm not going to implement that in this video series but
+36:30 the approach is still the same we're going to get something from an i transceiver and this is an i transceiver
+36:35 in a way that's all there is to the weight State very simple and moving on
+36:41 to the search state it's going to be a bit more complicated or I shouldn't forget the necessary includes here need
+36:47 assert and then State search Define State search so the structure in all of
+36:54 these uh State files is going to be very similar and and this also means that it's easy to add additional state which
+36:60 is kind of the idea with the way I implement this state machine once again we're going to have an enter enter
+37:06 function and that's going to take a data the struct that contains the data specific to this state and from state
+37:15 state event to and for this state I also need an initialization function and in
+37:22 the data struct there's going to be two things first of all a pointer to the data common to all State and then the
+37:29 since the state search is going to have internal States it needs a variable to
+37:34 keep track of which states it's currently in I'm going to have another enum for this state so these are the two
+37:41 internal states that I showed you in the diagram before so that's State search rotate and search State forward and I
+37:48 need to include common here then I need to comment this state is supposed to do drive around until enemy is found or
+37:56 line is detected and then inside the implementation file I need to implement these functions
+38:02 include void the init function and here I'm just going to set the initial internal State that's going to be search
+38:08 State rotate then inside the state search enter function comment the top
+38:15 here as well here as I'm going to do in most other enter function I'm going to add a switch statement across the
+38:23 possible State we may have come from and then inside I'm going to switch on the
+38:29 different events and these are also going to be switch statements without a default case so that when I add a new
+38:35 state or a new event I will get a compile error which is going to make it easier to remember that I need to handle
+38:42 the event or state in each individual State from here is going to be the different state wait T search
+38:50 treat manual and for State weight the only way we can get to from State weight
+38:56 is if a command event has happened so let's add an assert to send it to check
+39:03 this and then I will have another function that's going to set the actual
+39:09 drive that corresponds to this internal state I'm going to have a function called state or an internal static
+39:16 function called State search run break and then the attack and Retreat state is
+39:22 going to be handled the same way so I will use fall through here inside here I'm going to switch AC Ross the event
+39:28 there is a bunch of different event and for timeout line and enemy that should never be a reason for why we transition
+39:34 from Retreat to search so I'm going to assert here and if State event none from
+39:40 State Retreat that should also never happen from The Retreat state but it can happen from the state attack because
+39:47 that means we have lost enemy and transitions to State search so I'm just going to add a sanity check here for
+39:53 that as well just to make sure that we're coming from State attack and then
+39:59 I'm going to fall through here and do the same as if we got the command or
+40:06 that's also going to be down here uh and then I'm just going to call
+40:12 State search run here as well break and if State event finished happens that
+40:19 means must have come from State Retreat and in that case I should also call State search run but here I also need to
+40:29 change the state in case we are currently driving forward just to make sure that if we're going back and forth
+40:36 between searching and hitting the surrounding Edge border I should change
+40:41 the strategy so that I don't end up driving forward all the time now it's hard to show you why this is a problem
+40:47 but otherwise this robot can get into a state where it's just driving back and forth detecting the line driving back
+40:52 detecting line driving back adding this if statement here make sure that I break out of a case like
+41:01 that and here I'm also going to assert or for State manual I'm going to assert
+41:07 but then I also need to handle the state search case and similarly I switch across the possible events if I get
+41:14 event none here we are in the search state and nothing has happened so I shouldn't do anything here and as I
+41:20 explained this is just to be able to keep the state machine iterating so that it can process the input and then for
+41:27 all of these below here they should not be possible so I will assert and the only one that's going to be possible is
+41:34 the time out and when a timeout happens I should switch to the other internal State I can switch across the internal
+41:41 states case search rotate and case
+41:46 search State forward and I'm going to change to State opposite State it's
+41:52 going to be forward below here is going to be rotate it's called the regular run run function in both of these cases like
+41:59 that well I could move this down here instead and then I can go ahead and
+42:05 implement the Run function now I'm not going to implement this function fully because to implement this fully I need
+42:12 to have the input history in place because when I decide which direction to
+42:18 rotate I want to check where the enemy was last scene which I need to use input history for scene but going to switch St
+42:27 internal States word
+42:33 break for now I'm just going to start the timer and then I'm going to have a Define for the duration we're going to
+42:38 stay inside this state this set this to 1,000 and the reason I'm setting this to
+42:45 1,000 or this is in millisecond so that's going to be 1 second is because I've tried running this code on the
+42:51 actual robot and I find with the speed that I'm running at uh 1 second is good duration for this and I'm also going to
+42:58 have a timeout for the other state and set this to 3 seconds also based on my experimentation and here I can also set
+43:05 the drive so I'm just going to drive forward forward fast then also start the
+43:10 timer and I also need to include some additional things here and also
+43:16 assert okay this is all I'm going to do for the state search in this video
+43:22 that's going to cores you can just open the diagram here again
+43:29 it's going to correspond to what's happening inside here inside State search we're going to transition between
+43:36 these two states here either we are rotating or we're driving forward and we might get to this search state for
+43:41 different reasons from different states as you can see in this diagram and that's what I've been handling inside
+43:47 the code here now I'm going to do something similar for the rest of the states starting with or moving on to
+43:54 State attack first once again everything follows a very similar pattern going to have a init function and I'm going to
+44:02 have an enter function this is going to take struct State Tag data as argument
+44:09 which is the data struct that's particular holds the data uh specific to this state state from the state we came
+44:16 from and the event that costed the transition here I'm going to have a data strict and this going to contain a
+44:22 pointer to the common data and also hold a variable to keep track of the internal attack State because the state attack is
+44:30 also going to have internal States it's going to have three different states I'm going to represent that as an enum
+44:36 called a tack State type def this enom up here TX State forward if we detect
+44:41 enemies right in front of us attack State left if the enemy is slightly to the left and attack state right if we
+44:48 detect the enemy slightly to the right and then include App State Common and
+44:54 also a small commment drive toward enemy detected enemy then switching over to
+44:59 the implementation file include and beginning with the init function that's
+45:05 just going to set the initial State and then I can go on to the enter function
+45:11 here I'm just first going to get the next uh internal state which is going to
+45:16 be based on where we detected the enemy and I'm going to have a separate function for that called Next attack
+45:22 State that's going to take enemy as an argument and also need to keep track of
+45:28 the internal state that we left and then I'm going to switch over the states we
+45:33 may have come from I'm also going to add a comment on top of this function like the other end functions to remind myself
+45:39 that I should not have any blocking code inside these functions and then I'm
+45:44 going switch over the events and the only reason we can go from State search
+45:49 or from searching to State attack is if we detected enemy here I'm also going to have a state attack run function break
+45:57 and if we got here for some other reason that should not be possible and I'm going just going to add an assert here
+46:02 for sign check and if we are in came from State attack it means we are
+46:08 already inside attack State and if we detected enemy again it might be that we
+46:14 detected enemy in another Direction and in that case we might have to change the way we are driving I'm going to check if
+46:20 the previous state is the same as the current state and that's why I save this variable up here
+46:26 and if that's the case I need to run the state attack run function again and if not I'm not going to do anything and
+46:32 simply Drive the way we're currently driving because we are already inside attack stage and it will also be
+46:38 possible to get the timeout uh while you are in the attack state it might be for
+46:43 example that we are head on to the other enemy and we're just like maybe they're driving in the same speed so they're
+46:50 basically at a stand still and I'm going to have a timeout to detect this case
+46:55 but I'm actually like it would be possible to kind of implement a breakout strategy to handle this case but I'm not
+47:01 going to do that and instead I'm just going to have an assert I will still have a timeout but I will assert when the timeout happens and I will have a to
+47:09 do here breakout instead of asserting and for all of these other
+47:17 events we should never uh be in the TX State and get this event and then process it here again this is not
+47:23 possible there are no State transitions for this I'm going to assert as ass to check we should never go from State
+47:29 Retreat directly to State attack we should always go Pass State search first
+47:35 I should just assert here but I will also add a comment break and it's also
+47:40 not possible to go from the weight state or from the manual State uh to state attack so this is also an assert here
+47:47 then I can implement this next attack State function here I'm just going to
+47:53 have an if statement going to over the different directions enemy may be at
+47:58 this is not possible so if enemy at front I should return attack State
+48:05 forward and if eny at left left and if right attack state right then I will
+48:14 have the state attack run function attack data as an argument I will switch
+48:21 over the internal states to handle each individual case case tag State
+48:29 left I will set the drive if it's in uh forward or if it's in front I should use
+48:35 drive straight ahead so that's going to be Drive Direction forward and I will
+48:41 use fast so drive at the fast speed and if to the left I will do an arc turn
+48:48 turn to the left similarly if to the right I will do an arc turn to the right
+48:53 and then I will have the timer time out I talked about start time data timer State time out Define time
+49:03 out I'm just going to set that to 5 seconds then also add the includes that I need we drive timer and the Handler
+49:12 okay that's it for State attack moving on to the next state state Retreat same
+49:19 pattern again State and I'm going to have a state init function so State retreat nit
+49:26 to initialize the internal uh State data enter
+49:31 stct and so first the common data or pointer
+49:37 to the common data and then there will be a bunch of internal States for this state as well and as I said each Retreat
+49:45 Retreat state is is going to correspond to a set of distinct moves and we need a
+49:51 variable to keep track of which move we are currently at so that's just going to be an integer move index and then an
+49:59 enom to for all of the internal States there's a bunch of this States this
+50:05 ones and that's it for the header so moving into the implementation file
+50:11 include app class State Retreat and begin with the init function so here set
+50:18 the initial State and here it's also important that I let the move index to Z
+50:24 since this data struct is going to be initialized on the stack uh which means
+50:29 that the initial value or it's not going to be zero initialized we need to set zero explicitly here then I can do the
+50:36 state retreat in function add the usual comment on top and switch across the different states we may have come from
+50:44 and whether we came from the search date or the attack state that should be handled in the same way so here I'm
+50:50 going to do a fall through it should not be possible to come from the weight or manual State as assigned to check I will
+50:55 start right so inside here I need to switch over the possible events and the only reason for transitioning from
+51:02 search or attack to retreat is if we have detected line and if we got any other event that should not be possible
+51:08 there is no transition for that so I'm just going to assert as well then I'm going to have a separate search run
+51:14 function similar to what I had inside State attack and if we are already in state Retreat it means we are currently
+51:22 driving away from the line and it might be that we need to increment the current move we are at so let's just switch over
+51:29 the possible events here as well so if we detect the line again that means that we have detected the same line or that
+51:35 we have detected some different line position and this means that we should just start over so I'm just going to
+51:41 call the search run otherwise if we got the timeout it means that we are done with the current move and we need to
+51:47 increment the move index increment move index Plus+ and then I need to check if this
+51:53 Retreat state is done because then we need to leave this state and here is
+51:58 where I need to use the internal event um functionality I'm going to post
+52:05 internal event so come on state machine data and state
+52:12 event finished I post this state event finished here because the retreat state
+52:17 is the only place where we know whether we are done with this state so I post event here and then inside the overall
+52:23 State Mach machine logic I'm going to pick up this event and transition away from this state but if we are not done
+52:31 then I need to start Retreat move which is another function I'm going to implement then these two finished and
+52:38 command should not happen inside or not be in Retreat State and handle these
+52:43 events inside here so that's going to be an assert but it's fine to detect the enemy
+52:50 or to not get any event at all so then I'm just going to do nothing
+53:03 eny okay so let's implement the helper functions Tre
+53:11 run this means that we are starting a new Retreat state so we should that move
+53:16 index to zero and we should set the state to the next Retreat State have
+53:23 separate functions to decide which retreat State we should use based on the
+53:28 where we have detected the line and then we should start Retreat
+53:33 move then I need a function to shake current receipt state is done it's going
+53:38 to be a matter of checking whether we have reached the maximum move index for
+53:44 this particular state I'm going to have a table for these individual states so
+53:50 just going to work like this and then function start a retreat move
+53:58 assert first that move index is less
+54:03 than the maximum amount of moves inside this uh State then I'm going to get the
+54:09 move based on the index move index then I'm going to start a timer and set it to
+54:15 the value for how long this move is going to go on and then finally set the
+54:20 drive for this so the direction and the speed and then I will have a big table
+54:26 to Define all of the different states and the moves inside the states I'm not
+54:32 going to fill this in completely now uh but instead do that in the next video but I will still create a table here in
+54:38 this video and add one move at least reverse each of the states is going to contain the number of moves and the
+54:46 information for each move so that's going to be the direction and the speed and the duration if we are in state
+54:54 reverse we should be driving backwards at maximum speed and time out
+55:00 of 300 milliseconds rest which I will do in the next video as I said and then we
+55:06 also need the find the struct for a retreat State moves then move count
+55:12 stuct represent the move duration Define
+55:19 count none of the state is going to have more than three moves so I set this to three here just to reduce the amount of
+55:27 uh flash base this table requires then I need a function to check the
+55:33 corresponding internal Retreat state with that we should enter and here I'm going to switch over
+55:40 the line and there are many ways we can detect the line and I'm not going to
+55:46 implement this function fully here but do it in the next video but I'm going to write some of the code at
+55:51 least but when I detect the line to front left I will need to do some more
+55:57 checking inside here to decide which Retreat state to enter is to get a smarter behavior and that's also going
+56:03 to be true for this other state and also for these one and for front but if we
+56:10 DET take it to the back that should just be return Retreat State forward and if
+56:17 left return state
+56:23 right this should be our turn left and if diagonally left or right I'm
+56:30 actually going to assert here for now this can happen but it happens rarely and it's a bit ambiguous so I would need
+56:38 to have some more complicated code for doing something smart here and I'm not
+56:43 going to do that in this video series so I will just add a comment and if line none I will
+56:49 assert because then we shouldn't have called this function and we should nav get to here but for the compiler not
+56:55 complain I need to return some so I will use return reverse and later on I will
+57:00 also need a function to get the current move uh but I will just add this function here for now and not actually
+57:07 use it uh but I need to call it from somewhere so I don't get the compiler so
+57:12 we just call it here and then includes that we
+57:18 need so there's going to be a lot going on inside this Retreat State it's the
+57:24 most complicated State uh but overall it's similar to the other states in a
+57:29 way at least the structure and then I can go to the final state state manual
+57:35 and do the same for this one so State manual so a lot of dry coding in this
+57:41 video unfortunately but I promise I will be showing that everything works and how
+57:48 it works in the next video in this video it's more about just crunching out this skeleton code here so this is going to
+57:54 be a quite a simple State there's not going to be any internal States this is just going to be a manual have an enter
+58:01 function and a point to the command data and inside the implementation I
+58:09 will first include a manual enter function same comment above and then I'm not even going to
+58:16 check which state we came from if we get got an event that is not State event
+58:22 command we should just do nothing and return and then I can switch across the
+58:28 possible command so if we got the command or pressed up we should drive forward if
+58:34 down we should drive rotate
+58:40 left if right we should rotate right and if we got something else we should
+58:51 stop and if we got none we should do nothing then we to add cludes Comm on
+58:57 Define St okay so let's now finally see
+59:02 if we can compile this code probably going to have a bunch of compile errors so let's just try to build this first
+59:08 build for oh
+59:14 yeah here need to include command
+59:24 h yeah I should be come
+59:29 on as you can see here now even though I haven't even fully implemented the state machine yet I am running out of flash
+59:37 Bas because as the compiler or the Linker tells me here now the ROM has overflow by 134 bytes which means that
+59:44 I've taken more than 16,000 bytes so what I did need to do now I need to
+59:51 since and that's was the reason I move all of this to a separate file so that I can pass this Define here in in order to
+59:58 disable the enom strings so I'm going to do that inside the make file that
+60:06 here clean oh yeah and then I also need
+60:12 to add empty defines for these ones here it kind of sucks that I'm running out of
+60:18 flash space because that means that when I have the final implementation in place I can't really run it in full debug mode
+60:25 with full tracing on and that's a bit annoying the entire reason for this is that I picked a micr controller that is
+60:31 too small for this implementation justed having maybe the double amount of flash Bas would have given me much less
+60:38 headache
+60:45 def but oh well okay so now it compiles so let's also run format and CPP
+60:54 check let's also run the build script or the build all test to see that that also
+61:01 compiles okay now I think I've written all of the code that I want to write in this video as I said unfortunately I'm
+61:08 not going to test out the code in this video so it's just a lot of dry writing of code but in the next video there will
+61:15 be more testing on inside my simulator and also on the actual robot to make sure that this code works now I'm just
+61:21 going to commit this code I will add all of the changes
+61:27 a new do Source
+61:35 app create a commit video
+61:44 25 that and then I can push this Branch it's going be origin St State machine
+61:51 then I can just make sure that this actually pass my C system as well create
+61:56 the pull request yeah and all checks passed so I can rease on
+62:05 merch okay so that's all I'm going to do in this video there's been a lot of
+62:11 coding in this video I've written a lot of code that I haven't actually tested yet but this video was mostly used to
+62:16 sketch out um overall structure of the state machine code and I wanted to show
+62:22 you like how you can write a state machine in C A simple State machine in C in a more General way so that it's
+62:29 easier to add new events Transitions and states and then in the next video that
+62:34 I'm going to make I will implement the details of this state machine to get the full behavior of this zot so that I can
+62:41 actually first simulate the behavior before moving the implementation to the actual robot to see that it actually
+62:48 works and this also means that now I am getting to the really end of this video series it's actually just going to be
+62:54 the next video and then a final video to sum everything up so thanks for watching
+62:59 and see you in the next video

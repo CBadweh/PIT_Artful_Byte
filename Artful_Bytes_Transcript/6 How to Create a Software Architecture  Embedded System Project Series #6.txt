@@ -1,0 +1,704 @@
+00:00 becomes a point in your programming
+00:02 journey when your project grows beyond a
+00:04 single function or a single file when
+00:06 you take the step from smaller and
+00:08 simpler projects perhaps a single file
+00:10 order in a project or an example project
+00:12 such as blinking an led or some simple
+00:15 tutorial two projects that do more than
+00:17 just a simple thing at some point it
+00:19 just doesn't make sense to put
+00:21 everything into a single place and you
+00:23 have to start thinking about how you
+00:25 divide and organize your code or in
+00:27 other words you have to think about your
+00:29 software architecture and while the
+00:31 project i'm covering in this series
+00:32 isn't huge by any means it's definitely
+00:35 big enough to warrant multiple files and
+00:37 some upfront thinking about how to
+00:40 organize the software so hello and
+00:41 welcome back to artful bytes and to
+00:43 another video in this video series where
+00:45 i'm programming an embedded system from
+00:47 scratch in a previous video i showed you
+00:49 the hardware block diagram for this
+00:51 summer robot and in this video i'm going
+00:53 to do something similar but instead of
+00:55 for the hardware i'm going to do it for
+00:57 the software overall software design and
+00:59 software architecture and organizing
+01:01 software is a very broad and context
+01:03 dependent topic and i'm going to touch
+01:05 on it in some way or the other in most
+01:07 of the videos throughout this video
+01:09 series and i'm also far from an expert
+01:11 on it and i don't expect to do this
+01:13 subject and justice in this small video
+01:15 or even throughout this video series and
+01:17 what i can only hope to do is to give
+01:19 you a small glimpse of this subject from
+01:22 my limited point of view with that said
+01:24 in this video i'm going to talk about
+01:26 why you should organize your software
+01:27 and why it's good to come up with a
+01:29 decent software architecture before you
+01:31 go ahead with your implementation it may
+01:34 seem obvious but i think it's important
+01:36 to emphasize some of the strong reasons
+01:37 for doing this because we should always
+01:39 ask ourselves why we do what we do and
+01:42 then i want to spend most of this video
+01:44 talking about the software architecture
+01:46 i came up with for this project i've
+01:48 actually drawn a diagram to describe the
+01:51 modules of the software and how they
+01:54 relate to each other and i want to use
+01:56 this diagram as a talking point i will
+01:58 talk about the topic of software design
+02:01 in general to some degree but mostly i
+02:03 want to center my discussion around this
+02:06 particular project because i think it's
+02:07 easy to get carried away when talking
+02:09 about topic of software design and end
+02:12 up talking in very general and vague
+02:14 terms which is not very useful and i
+02:16 want to remain practical in this video
+02:18 and in this video series so putting
+02:19 things into perspective this video is
+02:21 mostly about looking at the software
+02:23 from above and the future videos and
+02:26 implementation videos are going to be
+02:27 about slotting in the organizational
+02:30 details that is what files to create and
+02:32 what functions to create and how to
+02:34 organize the software within those
+02:36 functions
+02:37 okay so why should you even care about
+02:39 organizing your software and coming up
+02:41 with a decent software architecture
+02:43 simply speaking having a good design
+02:45 helps you develop better software faster
+02:48 dividing statements into functions and
+02:50 grouping functions into modules and
+02:53 organizing modules into an architecture
+02:55 and so on makes your code easier to
+02:57 reason about one of the big limitations
+02:59 we are constantly trying to work around
+03:01 is our limited brain our brain can only
+03:04 process a small chunk of information at
+03:06 a time and one of the main ways we work
+03:09 around this limitation is by dividing
+03:11 bigger problems into smaller
+03:13 sub-problems that is the principle of
+03:16 divide and conquer and this also applies
+03:18 to software because codes is well
+03:21 organized is easier to implement and
+03:23 even more importantly it's easier to
+03:25 read and easier to understand because as
+03:27 software developers we spend more time
+03:29 actually reading software than writing
+03:31 it it also makes our software and code
+03:34 easier to maintain and to extend code
+03:37 that is separate well is easier to
+03:38 maintain because changing one part of
+03:40 the code doesn't unexpectedly affect all
+03:43 other parts of the code and it makes the
+03:45 code easier to extend because it's more
+03:47 obvious where the next thing should go
+03:49 and it also makes the project easier to
+03:51 scale because we don't constantly have
+03:53 to refactor our code all the time it
+03:55 also makes collaboration easier because
+03:57 if your code is organized well it's much
+03:59 easier for new developers to get up to
+04:01 speed and start contributing to your
+04:03 project instead of them having to spend
+04:05 a lot of time just understanding the
+04:07 code and it's also going to be much
+04:09 easier to collaborate on the project in
+04:11 parallel because if the different parts
+04:13 of the project is separate well
+04:15 different people can work on different
+04:17 parts of the project without colliding
+04:19 with each other it's also going to make
+04:20 your code easier to reuse port and test
+04:25 good separation means that you can reuse
+04:27 functionality across projects because
+04:29 you will often find that when you
+04:31 develop a new project that you want to
+04:33 reuse some functionality from an older
+04:35 project and if that code is separated
+04:37 into an isolated module it's going to be
+04:39 much easier to use that code in your new
+04:41 project and this is basically the entire
+04:43 idea behind shared libraries and related
+04:46 to this is making the code portable and
+04:48 i think this is especially relevant for
+04:50 embedded systems where we are coding
+04:52 against a particular hardware platform
+04:54 it's important that we separate our
+04:57 platform dependent code from our
+04:59 platform independent code because for
+05:01 example there is going to be some part
+05:03 of our project that is dependent on the
+05:05 particular hardware we're working on
+05:06 some of the code is going to interact
+05:08 directly with the registers of say a
+05:10 microcontroller but a lot of the code is
+05:12 also going to be separated from this
+05:14 platform-dependent code and it's going
+05:15 to be platform independent and we really
+05:17 want to separate these two layers of the
+05:19 code to make it as easy as possible to
+05:22 change platform if we have to do that or
+05:24 to make our code easy to port to another
+05:26 platform and this is highly relevant now
+05:28 that there are ship shortages and many
+05:30 companies realize they have to change to
+05:31 another microcontroller or another ship
+05:33 because the one that initially shows ran
+05:36 out of stock and this also makes the
+05:38 code easier to test because if we have
+05:40 separated the platform independent code
+05:42 from the platform dependent code we can
+05:45 actually test the platform dependent
+05:47 code in platform independent code in
+05:49 isolation and this is actually exactly
+05:51 what i'm going to do in this video
+05:52 series later on when i simulate the
+05:54 project on a simulator that runs on a
+05:56 host computer okay so these are not all
+05:58 of the reasons but i think these are
+05:60 some of the most important ones and now
+06:02 i want to move on to the next part of
+06:04 this video
+06:06 now that we are clear on why we should
+06:08 organize software let's take a look at
+06:10 how i have organized the software in
+06:12 this project first i'm going to explain
+06:13 how i organized the software and then
+06:16 i'm going to talk more about why i have
+06:18 organized it this way what you see here
+06:20 is my attempt at the software
+06:21 architecture diagram of my sumo robot
+06:24 it's a collection of boxes or modules
+06:26 that represents a
+06:27 single id or concept in the code
+06:30 and i've organized them in a way from
+06:32 low
+06:33 to high meaning that the boxes or the
+06:35 modulus higher up in the diagram are
+06:38 further away from the microcontroller
+06:40 and less dependent on the hardware and
+06:42 i've divided the modules into two big
+06:45 categories
+06:46 drivers
+06:47 and application and drivers in this
+06:50 context encapsulate the modules that are
+06:52 dependent on the hardware in this case
+06:54 the microcontroller so the code in these
+06:57 modules will contain code that interacts
+07:00 directly with the microcontroller for
+07:02 example by reading and writing to
+07:04 registers to configure the individual
+07:07 peripherals of the microcontroller and
+07:08 the modules inside application layer are
+07:10 independent from the hardware i mean the
+07:12 modules inside the application layer
+07:14 might as well run on the host computer
+07:16 as far as they know because they don't
+07:17 contain any code that is directly
+07:20 dependent on the particular
+07:21 microcontroller i'm using i've also
+07:23 drawn some arrows and organized the
+07:26 different modules above each other to
+07:28 represent the different dependencies and
+07:31 relationships between the modules so for
+07:33 example the trace and printf module
+07:35 depends on the uart module so starting
+07:38 from the top at the application layer i
+07:40 have the state machine and this is the
+07:43 big machinery that makes the decisions
+07:46 it takes the input from the
+07:48 sensors that is the enemy detection and
+07:51 the line detection and makes decision
+07:53 based on this and outputs a drive
+07:56 command to the motors it's going to have
+07:58 three different states uh search attack
+08:01 and retreat and you can probably guess
+08:03 what each of these dates are going to
+08:04 entail i'm not going to explain them in
+08:06 further detail now we'll get to that in
+08:08 a later point in this video series and
+08:10 this whole state machine is going to be
+08:12 the bulk of the application code and the
+08:14 main idea with the modules on the net
+08:17 state machine is to simplify the output
+08:19 and the input from the driver layer i
+08:22 mean for example the data i get from the
+08:24 range sensor driver is going to come in
+08:26 an array or a struct of integer values
+08:29 that represents the distance detected by
+08:31 each sensor and the enemy module is
+08:33 going to translate these values into a
+08:35 more rough representation so instead of
+08:37 providing the state machine with the
+08:38 structure of integer values the enemy
+08:40 module is going to translate that into a
+08:42 rougher representation which is going to
+08:44 be like tell whether the enemy is close
+08:47 or nearby or whether the enemy is to the
+08:49 left or to the right or in the front and
+08:52 by simplifying the input this way it's
+08:54 going to be much easier to deal with
+08:56 input in the state machine and similarly
+08:58 the line module is going to tell whether
+09:00 the line is in front or at the back or
+09:03 to the right and the drive module is
+09:05 going to simplify the interface to the
+09:07 motors so instead of the state machine
+09:09 having to give a distinct duty cycle
+09:11 it's going to ask the drive module to
+09:14 rotate go to the front or make an arc
+09:17 turn and whether it should do that in a
+09:19 fast or slow way and then it's up the
+09:21 drive module to translate that into
+09:23 something that makes sense to the driver
+09:25 layer and the trace and printf module to
+09:27 the left here are responsible for
+09:29 providing functions
+09:31 that the state machine can use to print
+09:33 messages to a console on a host computer
+09:36 and the printf module here is actually
+09:38 an external project that i'm going to
+09:39 use because the regular printf
+09:41 implementation in the standard library
+09:43 is too large for an embedded system so
+09:46 i'm using this external project instead
+09:48 that is optimized for a smaller system
+09:50 with smaller memory and the trace and
+09:52 printf module uses the uart to write
+09:55 characters to the uart line which is
+09:57 then going to be connected to the host
+09:60 computer via usb and then to the right
+10:02 here i have a module called timer which
+10:04 is going to provide functionality for
+10:07 measuring the
+10:09 time elapsed which is going to be used
+10:11 by the state machine to keep track of
+10:13 how long it's been in a certain state so
+10:15 it can time out and go to another state
+10:17 if it gets stuck for example it's also
+10:19 going to be used to
+10:21 create different movements so maybe
+10:23 drive to the left for one second for
+10:25 example and moving one level below to
+10:28 the driver layer the code that is
+10:30 dependent on the hardware i first have a
+10:32 module called
+10:34 mcu init which stands for
+10:36 microcontroller initialization and this
+10:38 module will take care of initializing
+10:40 the microcontroller so it will have
+10:42 functions that run at boot so for
+10:44 example it's going to be responsible for
+10:45 configuring the clock rate as well as
+10:48 initializing the io pins and then there
+10:50 is the ui driver as i've already talked
+10:52 about before it's going to have code
+10:55 that configures the ur peripheral to be
+10:57 able to send characters over the uart
+10:59 line to the host computer
+11:01 and
+11:01 then i have the
+11:03 driver for the range sensor as well as
+11:06 the i squared c driver and similar to
+11:08 the uh driver the i squared c driver is
+11:10 going to have code that writes to the
+11:12 registers related to the i squid c
+11:14 peripheral and i squared c driver is
+11:16 just
+11:17 focused on providing functionality for
+11:19 sending things over i squared c
+11:21 and the
+11:22 module above the
+11:24 vl53l0x is going to hold the code that
+11:27 knows what messages to send over i
+11:29 squared c to communicate with the range
+11:32 sensor and i have a similar division for
+11:34 the
+11:35 line sensor for the line sensor i'm
+11:37 going to use the adc prefill to know
+11:39 whether the line is detected or not and
+11:41 the adc module takes care of setting up
+11:44 the adc peripheral as well as
+11:46 writing to the registers to read the
+11:49 values of the adc pins
+11:51 and then it's up to the module above
+11:52 here to look at adc values and decide
+11:55 whether the line is detected by a single
+11:58 sensor or not
+11:59 and then there is a module for the i
+12:01 remote and this module is going to use
+12:04 the timer peripheral to parse the input
+12:06 from the ir receiver and the pvm module
+12:08 here is also going to make use of the
+12:10 timer peripheral to create the pvm
+12:12 signal sent to the motor driver and the
+12:14 module above here represents the motor
+12:16 driver and is going to make use of the
+12:18 pvm module below it as well as configure
+12:21 the right eye pins to set the direction
+12:23 the motor should drive in and then there
+12:25 is a smaller ld module here that will
+12:27 hold the code for toggling the i o pin
+12:30 that blinks the small test led i have on
+12:32 my pcb and below all of these drivers i
+12:34 have drawn a bigger box or module called
+12:37 io because all of these drivers or
+12:39 modules make use of iopins either by
+12:41 mixing the ioping to their peripheral or
+12:44 by toggling a gpio pin or installing an
+12:47 interrupt for a particular pin and this
+12:49 io module is going to hold functions for
+12:52 configuring the individual pins it's
+12:54 also going to keep track of the pin
+12:56 mapping by having an enum that names all
+12:59 of the pings and maps them to
+13:00 corresponding pin numbers and finally i
+13:03 have this module here called millis and
+13:05 if you're familiar with the melees
+13:06 function from the ordinary library you
+13:08 will already know what this does it's
+13:10 going to provide a function called mean
+13:12 list that gives us the time he left
+13:14 since the microcontroller was booted and
+13:16 i'm actually going to repurpose the
+13:18 watchdog to implement this functionality
+13:21 so i'm not going to use the watchdog for
+13:22 its normal purpose in this project but i
+13:24 will talk more about this later on
+13:26 overall this diagram is pretty simple
+13:28 and high level and contains few details
+13:31 because at this stage it's mostly about
+13:33 sketching out an overview and filling
+13:35 out the exact details on how this should
+13:38 be implemented is going to be the work
+13:40 of the future programming videos of this
+13:43 video series and this diagram will help
+13:45 us stay oriented while we work through
+13:47 the implementation but since this
+13:49 project is simple even at this level
+13:51 this diagram gives a pretty good idea of
+13:53 what files we will have to create i mean
+13:55 most of these modules are going to map
+13:57 pretty clearly to single pairs of header
+13:60 and implementation files going over this
+14:02 a second time there are some things i'm
+14:03 not entirely satisfied with here and
+14:06 when i get to the implementation i might
+14:08 shift things around so i will see how
+14:09 this turns out in the end but overall
+14:11 i'm pretty satisfied with this division
+14:13 of modules
+14:15 now that you've seen the diagram you
+14:17 might be asking yourself why did i
+14:19 organize the software this way where did
+14:21 all of these modules come from and why
+14:23 did i organize them in this manner first
+14:26 of all i've already implemented this
+14:27 project which is kind of shifting
+14:29 because in hindsight i can confidently
+14:32 fill in all the parts because i've
+14:33 already made all the big decisions
+14:35 normally at this stage of a project
+14:37 there's going to be many more unknowns
+14:39 and the design is something you clarify
+14:42 over time as you explore more of the
+14:44 implementation secondly i would be lying
+14:46 if i said that i had a rigid formula for
+14:48 coming up with a good design i think
+14:50 much of software design comes down to
+14:53 common programming sense a sense that
+14:55 you develop as you work on more projects
+14:57 i mean with experience you kind of build
+14:60 up an intuition for what makes sense and
+15:02 what doesn't but of course when you take
+15:04 on the role as a software architect you
+15:05 should not only rely on your intuition
+15:08 because after all software is a very
+15:10 logical field and yields itself to a lot
+15:12 of theorizing which means that a lot of
+15:14 books have been written on it and many
+15:16 principles and common patterns have been
+15:19 distilled and if you want to get good at
+15:20 software design you should probably pick
+15:22 up a book or two to familiarize yourself
+15:25 with the most common principles and
+15:26 patterns and i have left a link in the
+15:28 description to a blog post summarizing
+15:30 some of the most useful resources on
+15:32 this topic and this is a blog called
+15:34 embedded artistry and is actually a good
+15:36 blog to follow in general if you are
+15:38 getting into embedded systems but while
+15:40 you can theorize a lot about software
+15:41 design i also think it's a topic that
+15:44 it's easy to over theorize especially
+15:46 when the project is not huge as in this
+15:48 case so i don't want to spend too much
+15:50 time talking about it in general terms
+15:52 and instead focus on talking about what
+15:54 i've done for this particular project
+15:55 and you can't really learn software
+15:57 design by just reading about it yes
+15:59 reading books can help you build a
+16:00 better mental bank so you get better at
+16:03 recognizing certain problems and common
+16:05 solutions to those problems but you have
+16:07 to actually work on real projects to
+16:10 synthesize that knowledge and this is
+16:12 kind of the entire premise of this video
+16:14 series as well as my youtube channel you
+16:17 learn by working on actual projects now
+16:19 with all of that said i still want to
+16:21 try to explain my reasoning behind this
+16:23 architecture first of all to create a
+16:25 sensible architecture you must first
+16:27 understand the problem you're dealing
+16:28 with because if you fully understand the
+16:30 problem the architecture comes more
+16:33 easily because in short architecting
+16:35 software boils down to breaking things
+16:38 into logical sections modules or boxes
+16:42 boxes that encapsulates a single idea or
+16:45 concept and then to define the
+16:47 relationship between these boxes and
+16:49 separating into boxes and defining what
+16:52 should go into these boxes often just
+16:54 comes as a consequence of breaking down
+16:55 the problem into smaller sub-problems
+16:58 and in this case the big problem is to
+16:60 make this sum robot look at the enemy
+17:03 and push it out of the ring while still
+17:05 staying inside of the ring itself and
+17:07 the sub problems are how we control the
+17:09 motors and how we take input from the
+17:11 sensors how we configure the peripherals
+17:14 on the microcontroller and how we make
+17:16 sense of the input and translates that
+17:18 into useful output to the motors and so
+17:21 on and the nice thing about an embedded
+17:23 system compared to other software
+17:25 projects is that we actually have actual
+17:27 hardware we can refer to i mean the
+17:29 hardware is to some degree just another
+17:31 representation of the problem or the
+17:33 solution to the problem and therefore it
+17:35 can be extremely useful to use the
+17:36 hardware block diagram as a reference or
+17:39 guide when we architect our software
+17:42 just looking at the separations in this
+17:43 block diagram it naturally follows that
+17:46 the code for the range sensors should be
+17:48 different from the code for the line
+17:50 sensors which should be different from
+17:52 the code for the motor drivers and
+17:54 different from the code for the ir
+17:56 receiver and the square c is
+17:58 conceptually different from the gpio and
+18:01 uart is conceptually different from the
+18:04 pvm things that are conceptually one
+18:06 idea or one thing in the hardware should
+18:08 also be one thing and separated in the
+18:11 software design for example this box
+18:14 represents the ua driver and it makes
+18:16 sense to conceptualize that as one thing
+18:18 because there is one thing in the real
+18:20 world it maps to a single peripheral on
+18:23 the microcontroller and the same goes
+18:25 for the i squared c box it represents
+18:27 the driver for the i squared c
+18:29 peripheral which is one thing in the
+18:31 real world these things are conceptually
+18:33 different from each other and should
+18:35 also be different from each other in the
+18:37 code and the same goes for the
+18:39 relationships between these boxes i mean
+18:41 it makes sense for the enemy module to
+18:43 depend on the
+18:44 range sensors because we use the range
+18:47 sensor input to determine whether we
+18:49 detect the enemy or not but it doesn't
+18:51 make sense for the enemy module to have
+18:53 any kind of dependence to the pvm module
+18:56 because that is only used by the
+18:58 multi-driver to control the motors and
+18:60 we don't need to control the motors to
+19:02 detect enemy so it wouldn't make sense
+19:04 for the code in the enemy module to have
+19:05 anything to do with the pvm module so
+19:08 those two should be separated and if i'm
+19:10 going to classify my approach here in
+19:12 terms of patterns i would say that this
+19:14 is some flavor of the layered
+19:17 architecture pattern meaning that it's
+19:18 an architecture mostly represented by
+19:21 abstraction layers and this is a very
+19:22 common and suitable pattern for embedded
+19:25 systems and this whole thinking i'm
+19:26 trying to convey here also maps to many
+19:29 of the principles i've listed separating
+19:31 and making the boxes independent from
+19:32 each other ties into the ideas of
+19:35 decoupling and modularity and boxing in
+19:38 independent and separate ideas ties into
+19:41 the idea of separation of concern as
+19:43 well as the single responsibility
+19:45 principle and further on by realizing
+19:47 that iu code would be used by many of
+19:49 the modules and by putting that into a
+19:52 single place and a single module i avoid
+19:54 repeating myself in the code because i
+19:56 can have code used by many modules in
+19:59 the single place and that follows the
+20:02 principle of don't repeat yourself the
+20:04 dry principle and this also relates to
+20:06 the principle of cohesion that is
+20:08 putting related code as close to each
+20:10 other as possible and building in layers
+20:12 i mean the boxes in the drive layer
+20:15 abstracts the details of the
+20:16 microcontroller and the boxes in the
+20:17 application layer don't really know
+20:19 anything about the microcontroller and
+20:21 this is the principle of encapsulation
+20:24 that is hiding details and this also
+20:26 helps achieving modularity because we
+20:28 can replace the bottom layer without
+20:30 affecting the upper layers and this once
+20:32 again ties into the idea of decoupling
+20:34 actually one of the most important
+20:36 things when it comes to architecturing
+20:37 software for embedded systems is to
+20:40 decouple as much of the code as you can
+20:42 from the hardware or the processor we
+20:44 want the application layer to be
+20:45 independent from the hardware and it's
+20:47 very easy to accidentally couple code to
+20:49 the hardware which makes it hard to port
+20:52 the code further down the road if you
+20:53 end up having to change the processor
+20:55 and besides making the code more
+20:57 portable in general as i said before i
+20:60 have a very specific reason for why i
+21:01 want to separate the application layer
+21:03 from the driver layer because it makes
+21:05 it much easier to run the application
+21:07 layer in isolation on a host computer
+21:10 which is what i'm going to do later on
+21:12 when i run the simulation and related to
+21:14 this is making the code testable by
+21:16 separating the application layer i made
+21:18 it much easier to test the application
+21:21 layer in isolation and while i'm not
+21:23 strictly going to test my code or well
+21:25 in my defense simulation is a form of
+21:27 testing just thinking about testing at
+21:30 the stage of designing software often
+21:33 makes your software design better
+21:35 because you have to think more about how
+21:36 you separate things in a good way as i
+21:39 hope you might realize from all my
+21:41 talking is that you don't necessarily
+21:43 have to think actively about all of
+21:45 these principles or patterns when you
+21:48 design your software of course it's good
+21:50 to have this in the back of your head
+21:52 but you can come a long way with just
+21:54 mere logical reasoning and you will
+21:56 often find that by thinking logically
+21:58 about the problem and dividing the
+21:59 problem into smaller problems in a
+22:01 logical manner that you actually apply
+22:04 many of these principles automatically
+22:06 now i've battled enough and i'm going to
+22:08 try to end my discussion here before i
+22:09 get too vague and i would rather just
+22:11 get to the implementation sooner if what
+22:13 i've said here if some of the sections
+22:15 in this diagram don't make sense yet
+22:17 don't worry they should become more
+22:19 clear as i work on the implementation in
+22:21 the coming videos but before i end i
+22:23 want to again remind you that the whole
+22:24 reason for designing software is to
+22:27 achieve the wise i talked about before
+22:29 it should make the code easier to port
+22:32 easier to understand easier to test and
+22:34 easier to collaborate on and so on and
+22:36 it's easy to realize how doing things a
+22:38 different way could go against some of
+22:40 these wise for example if the uar code
+22:42 wasn't separated from the i squared c
+22:44 code then changes in the uart code could
+22:46 unexpectedly lead to changes in the ice
+22:49 code c code which in turn would affect
+22:51 things dependent on the square c code
+22:53 and this would make the software harder
+22:55 to understand to maintain and to extend
+22:58 also harder to collaborate on another
+23:00 example is if i were to not separate the
+23:03 io code into a separate module and
+23:05 instead spread the same code out into
+23:08 multiple places
+23:09 then it would mean that if i want to
+23:11 change the code in one place i would
+23:12 have to change it in all other places to
+23:14 remain consistent and that would be very
+23:17 time consuming and error-prone and i can
+23:20 come up with several of these examples
+23:22 and it's important to remember all of
+23:24 these reasons for why we architect code
+23:26 so that we remain pragmatic and focused
+23:28 on making the software easier to work
+23:30 with and don't get caught up with
+23:32 achieving a theoretical ideal which can
+23:34 happen if you focus too much on the
+23:36 theory of software design and get caught
+23:38 up with a specific pattern or principle
+23:41 instead of focusing on the project at
+23:42 hand your project is never going to fit
+23:44 perfectly into one pattern or align
+23:47 perfectly with all of these principles
+23:49 and while putting everything into a
+23:50 single function or a single file is
+23:52 obviously a bad idea so is separating
+23:54 abstracting and over generalizing every
+23:56 little thing in the end it's about
+23:59 striking a balance and sometimes it's
+24:01 even better to just ask yourself how can
+24:03 i make this as simple as possible
+24:04 finally what i've done here is certainly
+24:06 not the only way to do things and what
+24:09 i've done is centered around this
+24:10 project and my limited perspective
+24:12 within the embedded domain but at least
+24:14 i hope it has given you some insight in
+24:16 how you can think about software
+24:18 architecture when you're used getting
+24:19 started with embedded systems enough
+24:21 said in the next video i'm going to
+24:23 create a simple directory structure that
+24:25 matches the architecture i've come up
+24:27 with here i know lots of logistics stuff
+24:29 to cover before i get to the actual
+24:31 implementation but this also kind of
+24:33 reflects how it is to work with embedded
+24:35 systems especially in a professional
+24:37 setting i mean programming and a better
+24:39 system or programming in general is so
+24:41 much more about use writing code that
+24:44 was all for now see you in the next
+24:45 video

@@ -1,0 +1,269 @@
+00:00 today I'm going to talk about
+00:01 documentation coding guidelines and code
+00:04 formatting and I'm going to fix two bugs
+00:05 I ran into while writing code for the
+00:07 coming videos I will end up with four
+00:09 new commits and for each one I will
+00:11 follow the workflow I laid out in the
+00:12 last video where I create a new Branch
+00:14 commit push to GitHub and open a pull
+00:16 request I will go through all of this
+00:17 pretty quickly but all of the code and
+00:19 changes are available on GitHub so have
+00:21 a look there to study them in detail so
+00:23 beginning with the documentation in this
+00:25 project I'm keeping things very simple
+00:27 when it comes to documentation the main
+00:29 bulk of it will be in the readme file
+00:30 and I think having a readme file with
+00:33 the most important instructions is the
+00:34 bare minimum for any project and that's
+00:36 also what's most helpful for someone new
+00:38 to the project and what I include in
+00:40 this readme is basically is the summary
+00:41 of all of the things that I've talked
+00:43 about in the previous videos that is a
+00:45 small introduction to the project
+00:46 describe the directory structure how to
+00:48 set up and build a project the workflow
+00:50 and so on note at the moment this readme
+00:53 is a bit ahead of the implementation
+00:54 because I've written down instructions
+00:56 for things that I will Implement in the
+00:57 coming videos so just be aware of that
+00:59 if you have a look at it now anyway
+01:00 besides to read me I also created a
+01:03 separate document to describe the coding
+01:04 guidelines I'm following in this project
+01:06 these are practices or patterns that I
+01:08 adhere to when I write C code I have a
+01:10 good reason for some of these practices
+01:11 but others are just also based on my
+01:13 personal preference but if you see me
+01:14 write some quirky say code in the coming
+01:16 videos that you don't recognize I most
+01:18 likely describe it in this document and
+01:20 if not please leave a comment on the
+01:22 video because I will keep on adding
+01:23 stuff to this document throughout the
+01:25 video series it's perhaps not super
+01:26 important to have a document like this
+01:27 when I'm the only one working on the
+01:29 project I decide how the code is written
+01:31 and nobody questions me it's more useful
+01:33 when collaborating with other developers
+01:34 because then there will be different
+01:36 opinions about how to do things and in
+01:38 those cases you need to settle on a set
+01:40 of encoding guidelines to avoid Sealy
+01:42 discussions during code reviews and then
+01:43 it's very nice to have a document like
+01:44 this 2.2 as a side note I also added two
+01:48 files to git ignore these are files that
+01:50 get generated when I run something
+01:51 called beer to generate a completion
+01:53 database used to provide me features
+01:55 like LinkedIn Auto completion
+01:57 Diagnostics in my editor beam which is
+01:59 not relevant unless you have the same
+02:00 setup as me once I had made these
+02:02 changes I created a new commit
+02:05 wrote a descriptive commit message and
+02:08 pushed it to GitHub and with a local
+02:09 branch push I opened a pull request and
+02:11 left to see a system I set up in the
+02:13 last video round which I expected to
+02:14 succeed since I hadn't made any changes
+02:16 to the code I could then merge the pull
+02:18 request onto the main branch simply
+02:20 enough the first out of four commits
+02:22 done moving on to the next one related
+02:24 to the coding guidelines is the
+02:26 formatting of the code or in other words
+02:27 how the code is indented two or four
+02:30 spaces or tabs or whether the braces
+02:32 should be on the same or a separate line
+02:34 that boring stuff that you don't even
+02:35 want to think about and the good thing
+02:37 about this is that most of it can be
+02:39 automated and I use an auto formatter
+02:41 called Clank format for this this is a
+02:43 formatter for CNC plus built upon clang
+02:46 part of the llvm project it's a widely
+02:48 used format readily available in Ubuntu
+02:51 standard repository and I'm using
+02:52 version 12.
+02:57 it's easy to use you just need a
+02:59 configuration file in the root directory
+03:01 describing the rules of the coding style
+03:03 I think I've already mentioned this file
+03:05 in an earlier video because I had
+03:06 already added it to the repository with
+03:08 this config file in place formatting a
+03:10 file is just a matter of running clang
+03:11 format Dash I on a file Dash I tells the
+03:14 client format overwrite or format the
+03:16 file in place but running it like this
+03:18 is a bit cumbersome if you have many
+03:20 files or when you keep on adding more
+03:22 files to the project so I also decided
+03:24 to add it to my make file so I could run
+03:25 a simple command from the command line
+03:27 to format all source files in one go but
+03:29 first I had to create the new local
+03:30 branch and since I hadn't merged let's
+03:32 commit to the main branch I had to
+03:34 locally Fetch and check out the latest
+03:36 remote again
+03:40 I then went ahead with adding the
+03:42 formatting rule to my make file
+03:46 and Mark it as phonies since it doesn't
+03:49 produce any output and apart from making
+03:51 it easy to run from the command line
+03:52 This rule also made it possible for me
+03:54 to add it to my CS system and adding it
+03:56 there would protect me against merging
+03:58 unformatted code to my main branch but
+04:00 it was not used enough to add this
+04:02 command to the configuration file for
+04:03 the GitHub action I also had to update
+04:05 the Dockery match which I created in the
+04:07 last video because it didn't include
+04:08 clearing format to update the docker
+04:10 image I updated Docker file and then
+04:12 went through the same steps as in the
+04:14 last video and I'm not including them in
+04:16 this video so please look at the last
+04:17 video if you are interested
+04:23 Clank format S8 doesn't return an error
+04:25 if there is unformatted code so to have
+04:27 the Cs system fail if there is I use git
+04:30 diff and that's why I also made git part
+04:32 of the docker file before so with this
+04:33 change now the sales system first checks
+04:35 formatting then runs static analysis and
+04:38 finally builds the project so these are
+04:40 three shakes each commit must pass
+04:42 before they can be merged I could then
+04:44 commit the change write commit message
+04:46 and push it to GitHub
+04:50 open a put request and make sure the new
+04:52 steps were executed
+04:59 and just to show you how it works
+05:01 locally I can modify file
+05:05 git diff then returns an error
+05:10 and if I format the files it's removed
+05:12 the differences and gitif should return
+05:14 okay or zero which it does I could then
+05:16 go ahead and merge the pull request
+05:25 two out of four commits done now to the
+05:27 two bugs I run into but first a fresh
+05:29 local branch
+05:35 the first issue I ran into was that make
+05:37 didn't rebuild the project when I
+05:39 modified header files and that's kind of
+05:41 the point we'd make that it should
+05:42 detect when a change occurs and then
+05:44 rebuild the necessary parts of the
+05:46 project but in my case it didn't notice
+05:48 this if what I modified was a header
+05:50 file for example if I modified I squared
+05:52 C dot h with something that should give
+05:54 a completion error and then ran make it
+05:56 said that the executable was already up
+05:58 to date I had the first kill in the
+05:59 project and then run make to notice the
+06:01 completion error the problem was that
+06:03 the rule I created for building the
+06:04 project didn't include the header files
+06:06 as dependencies but only included the
+06:08 implementation files the C files the
+06:10 solution was simple I just had to
+06:12 include the header files as part of the
+06:13 dependencies as usually I couldn't keep
+06:15 myself from simplifying things a bit
+06:17 while at it I worked the variables
+06:19 holding the files into a variable to
+06:21 First hold all CA files with
+06:22 corresponding header files
+06:28 and then a second variable with all the
+06:31 C files
+06:35 and then I could use the first variable
+06:37 to get the corresponding header files by
+06:39 replacing this fix and finally I added
+06:41 this variable with the headers to the
+06:43 dependencies I also added the headers to
+06:45 the formatting rules since this should
+06:47 also be formatted then if I do the same
+06:49 thing again and modify the header file
+06:51 and ran make again make detected the
+06:53 modified file and rebuild the project
+06:55 and I could see the completion error
+06:57 good
+07:02 so commit and push again
+07:15 open a pull request
+07:19 see I passed and then I merged the pull
+07:21 request
+07:24 three out of four commits down last bug
+07:27 this last bug or issue had to do with
+07:29 static analysis which I set up in a
+07:31 previous video similar to formatting I
+07:33 have a rule in my make file to Ram
+07:35 static analysis on all files in one go
+07:37 and similarly it's also part of the CI
+07:39 flow at the time I added it it ran
+07:41 instantly as expected but as I began
+07:43 adding more code it suddenly began
+07:45 taking a very long time much longer than
+07:47 it should given the small amount of code
+07:49 I added so I had to revert my changes to
+07:51 track down the wrist and it was taking
+07:52 so long and the problem was the file
+07:55 msp430 they had a file from the vendor
+07:58 TI apparently CPP Shake can become slow
+08:00 like this when analyzing files with a
+08:02 lot of if deaths and boy does this file
+08:04 have a lot of them it's not really
+08:05 necessary to analyze this files since I
+08:07 don't intend to change it and I trust
+08:09 that it's correct so I used removed it
+08:11 from the list of files CPP was checking
+08:12 while I did I of course also couldn't
+08:14 help myself from reworking things in the
+08:16 make file I split up the CBP shake
+08:18 recipe into multiple variables and
+08:20 re-running makes it to pay shake it then
+08:21 ran quickly again
+08:24 but now I instead got a new warning
+08:27 about the file I had used excluded
+08:32 to remove this warning I just added
+08:34 another suppression to avoid warnings
+08:35 about system header files
+08:43 I also got another warning about
+08:45 unmatched depressions when I reverted my
+08:47 changes so I also added a suppression
+08:49 for that as well
+08:50 and finally a third suppression for
+08:52 earniest functions since I will
+08:53 introduce some unused functions in the
+08:55 coming videos and I don't want to be
+08:56 pleased to complain about them the
+08:58 compiler will catch those if they are
+08:60 part of the build anyway and once again
+09:01 committing the changes and writing a
+09:03 commit message
+09:13 or that was one more small thing I want
+09:15 to fix because I noticed that making a
+09:17 gave an error if I ran it twice because
+09:19 it expects the build folder to access so
+09:21 I added the dash a flag to avoid that
+09:24 error
+09:28 and then I could push the commit to
+09:29 GitHub
+09:33 open a pull request and making sure
+09:34 everything ran okay
+09:42 before finally merging the pull request
+09:44 now the project was in a good state to
+09:46 finally start writing code which I will
+09:48 do in the next video thank you for
+09:49 watching

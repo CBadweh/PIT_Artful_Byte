@@ -1,0 +1,332 @@
+00:00 the robot that I'm covering in this series is a zoom robot and it's supposed to drive on a platform a black platform
+00:08 with the surrounding white Edge border and my summer robot has four line sensors one in each Corner in order to
+00:14 detect this surrounding border and they are there to make sure that my robot doesn't drive out of the platform
+00:20 accidentally by itself and in this video I'm going to write a driver to take the input from these sensors and the way
+00:26 these sensors work is quite simple they emit a light signal and then they measure the light that is reflected back
+00:33 and then they have an output pin that gives the corresponding voltage output and the voltage output is going to be
+00:39 different depending on the color of the surface so in this case since the mobile
+00:45 platform is mostly black that's going to give one value and then the surrounding
+00:50 white Edge border is going to give another value which means it's going to be easy for me to detect whether my Sumo
+00:57 robot is above the white line and I connect this voltage pane to 1 the pins on my microcontroller and I can
+01:03 configure the ADC peripheral analog to digital converter peripheral to
+01:08 translate the analog value into a digital value and as I usually do I'm going to divide my code into multiple
+01:15 layers so at the bottom I'm going to have the ADC driver and this is going to be the code that configures the or sets
+01:21 up the ADC peripheral and above this layer I'm going to have a thin layer called the same as the line sensor so
+01:28 qre113 and this is just going to be a simple layer which is mostly going to be
+01:33 there to name the individual voltages so instead of saying ADC channel one I can say voltage front left for example and
+01:42 then above this I'm going to have an application layer that translates the individual voltages to line positions
+01:48 so for example if the voltages in the front indicates that they are above the
+01:54 white line I can translate this into the line position which is going to be line front and similarly if the front left
+02:01 sensor indicates with its voltage that it's above the white line then I can say line front left
+02:07 so this layer is just going to return a range of different values depending on where the line is located so let's begin
+02:14 by creating a new local git branch and language is going to call this
+02:19 feature line sensors and then I Can Begin by creating the
+02:25 files for the ADC driver and these are going to be located under the drivers
+02:31 directory
+02:37 and then I can go ahead and open this files
+02:43 starting with the header file so the interface here is going to be
+02:48 quite simple I'm just going to have two functions one function to initialize the
+02:53 ADC driver and then a second function to retrieve the latest Channel values
+02:60 and this function is going to take an argument because the caller is going to
+03:05 have to pass its own Strack that's going to contain the return Channel values and I'm going to create a new type for this
+03:15 so it's going to be a typedef and this type deficiency for to make the
+03:21 code more readable
+03:36 and the channel count is eight because on my mic controller the msp413 uh there
+03:43 are in total eight pins on the mic controller that supports ADC and so and
+03:49 these these are all located on the first Port so from Port one uh pin zero to pin seven I'm
+03:58 not going to use all of these channels because I only have the four line sensors so I only need to use four of the ADC pins but to simplify the code
+04:05 I'm still going to have an array here that can return all of the eight values even though I'm not going to return all eight values and then I also have to
+04:11 include STD in since I'm using the Type U in 16 underscore T here I also have to
+04:18 add this ADC implementation file to my make file so that it's built as part of
+04:24 my project
+04:29 that and and I can also add a comment on top of my header file dot C
+04:37 yeah so now I'm going to head over to the io file the file that contains my driver for the
+04:44 io pins or the configuration of all the i o pins which I've shown in a previous video and I'm going to create a separate
+04:51 uh already in this file that's going to hold the pins that I want to use as ADC
+04:58 pins I'm going to add it here and this is going to be a static constant array
+05:05 since it's just supposed to be accessible within this implementation file and I'm not going to change it and
+05:12 that's why I'm making it constant and since I don't have that many pins
+05:18 available on the Launchpad development board I'm using for the first couple of
+05:23 videos in this video series I'm just going to for demonstration
+05:28 purposes I'm just going to use one pin on the launch pad but then I'm obviously going to use all four when I move over
+05:34 to the actual robot
+05:41 and then I'm going to add two additional functions one function to retrieve the array that
+05:47 I just defined and this is just going to return the pointer to this array but
+05:52 also give me the size of the array it's not strictly necessary for me to have the array in this file I could have used
+05:59 as well had it inside the ADC driver but I think it just makes a little bit more sense to keep it next to the rest of the
+06:06 i o configuration
+06:11 and then I will have a second function to return the channel index of a
+06:17 corresponding pin and I'm going to have an assert here to make sure that the past pin is part of Port one since no
+06:24 pins on the other ports supports ADC
+06:32 and then I can just use the existing pin index function
+06:38 that I created in an earlier video and then I also need to add this to the header file
+06:48 and for this video or for the Launchpad I will assign pane 3 of Port 1 to one of the
+06:58 line sensors or one of the pins on one of the line sensors I will replace this with higher
+07:05 line detect from left come back to the implementation file
+07:10 and also make sure that it's configured appropriately remove that from here and then
+07:21 left and I will create a separate Define macro to hold the ADC ping
+07:29 configuration I'm going to call that EDC config and I'm going to Define that similar to
+07:35 how I've defined the unused config
+07:40 it doesn't really matter which configuration are you see here since the ADC peripheral is going to overwrite the
+07:46 configuration so I'm just going to leave this as an input pin with no pull up or
+07:51 pull down resistor move this command to
+07:56 above here
+08:03 and replace this as well
+08:11 so then I can head into the implementation file for the ADC driver and start implementing the ADC driver
+08:26 and for the ADC peripheral on my msp430 which is called hc10 because it's a
+08:34 10-bit ADC it has quite a lot of configurations you can do and I won't
+08:40 cover all of the details in this video but the overall strategy I'm going to use for the ADC in this project is that
+08:46 I'm going to set up the peripheral to sample a sequence of channels and then to write this the sample values to a
+08:53 given address in the memory and once that's done I'm going to have it
+08:59 generate an interrupt so that I can read the values from this memory and copy it
+09:04 into another location in memory that will act kind of like a cache which I
+09:10 will then use to retrieve the values inside my application and once the values have been copied to
+09:15 the cache I will then have the interrupt Source here to install the next sequence of samplings which means that my ADC
+09:22 driver is going to be sampling the channels all the time basically and then whenever my application wants to
+09:30 retrieve the values it's going to get the latest values from the cache and since my application is going to run in
+09:36 a big while loop or a super Loop that's going to maybe iterate 10 or something
+09:41 times per second it's not going to be super important for this ADC driver to run very fast and as such I'm going to
+09:48 configure it to use a slower internal clock called a clock because this is going to put less load on the CPU
+09:55 because I'm going to have a few where interrupts and when copying the values from the samples I'm going to be using
+10:03 dma direct memory access which is also going to reduce the load on the CPU so let's now write to the individual
+10:09 registers of the ADC peripheral to set up this strategy so the first thing I'm
+10:14 going to do is retrieve the ADC pins from the i o interface
+10:19 and I'm going to store this in separate variables here so that I only need to retrieve them once and access
+10:26 them from other functions as well
+10:31 and the registers I'm going to write to now are all described inside the datasheet and I've read this data sheet
+10:37 very closely to be able to understand how to configure this ADC peripheral and that's something that you always have to
+10:43 do when you configure a particular peripheral of the microcontroller you have to read the data sheet to
+10:48 understand how you need to set it up and I actually think this ADC briefly is one
+10:54 of the more advanced peripherals to configured or at least the one that I'm configuring in this project
+10:60 because I've had some issues getting the configuration right here
+11:08 Okay so First I write to the ADC 10 ctl1 register and this register kind of
+11:16 contains the overall configuration for the peripheral so first I set the clock divider to its largest value to make the
+11:24 clock as slow as possible and the concept value where the concept bits determines the mode the ADC runs in
+11:31 whether it's going to sample a single Channel or a sequence of the channels basically and as as I explained before
+11:38 I'm going to have the ADC sample a sequence of channels so that's why I'm using consec one here and
+11:45 the next value shs selects how the ADC should be
+11:51 started or what's going to trigger the next sampling sequence and I want to do this manually because I
+11:59 want to start it from the interrupt service routine so that's why I'm selecting cro here because then I can
+12:05 set the ADC 10 start conversion bit to start the next conversion and finally I
+12:11 select the clock source and these particular values selects a clock as
+12:16 clock source and finally the inch value or the inch
+12:22 bit selects which channels to sample and the value you write to these bits is
+12:28 going to depend on the mode you use so for example if you use a sampling a
+12:33 single Channel you're just going to write the singles Channel you want to sample here but since I'm sampling a
+12:39 sequence of channels I have to use the last channel in the sequence and I'm going to write some additional code
+12:44 above this line to compute this channel
+12:57 and then I'm going to write to adc10 Ctrl 0 and similarly this configures
+13:05 some other aspects of the ADC peripheral adc10 on enables the peripheral sref
+13:10 sets the voltage references basically the VCC and ground this can also be configured with other values depending
+13:17 on the voltage references you want to use sometimes your application may require your adcet to be very precise
+13:23 and accurate and then you might want to use a dedicated voltage reference that is that has less
+13:29 noise but that's not something I'm doing in this application and adc10 sht sets
+13:36 the sample and hold time and this is basically how much time the ADC spends
+13:42 on sampling each value or I think that's what it does and I'm just basically
+13:47 setting the largest value here and I think this is going to give me more accurate readings
+13:55 and the next value sets multiple sample conversions which basically configures
+14:00 the ADC to do to sample and convert all of the values of the sequence of
+14:06 channels being sampled and finally
+14:12 adc10 ie enables interrupts and next I need to write to ldc10 AE 0
+14:21 which is the registry right tool to enable the corresponding ADC pins and
+14:27 similar to the inch value here I'm going to have code up here to compute the bits
+14:33 that I need to set based on the channels that I've assigned to ADC and this is what's going to ensure that the ADC
+14:40 peripheral overwrites the Ping configuration for the ADC pins and then I'm going to configure something called
+14:46 the data transfer controller which is basically the hardware component that
+14:51 provides the dma functionality for the ADC peripheral on the msp430 and this is
+14:57 what's going to allow the ADC to write the sample values of the individual
+15:03 channels to a dedicated location in memory without involving the CPU because
+15:09 if I didn't use this transfer controller I would have to interrupt after each Channel had been sampled and transferred
+15:16 the value manually using the CPU but now I can instead wait for all of the channels to be sampled before involving
+15:22 the CPU so this is just overall going to be more efficient but one more important detail when you
+15:29 sample a sequence of channels using this ADC peripheral is that it only supports sampling channels contiguously which
+15:35 means that even if you for example just want to sample channel one two and five
+15:41 you you will have to go through all channels from five all the way down to zero this is a limitation in the
+15:47 hardware and there is no way around it and you just need to make sure that you account for it in the configuration
+15:53 so the channel count is going to be the last Channel index incremented by one
+15:59 and I'm also going to compute the last index or last Channel index up here
+16:07 and then the data transfer controller has some corresponding registers you
+16:13 need to write to to configure it and this adc10 sa sets the address the
+16:19 values should be written to and I will have an array allocated for this
+16:27 and I'm going to make this volatile since it's touched by the hardware and I don't want my compiler to optimize it
+16:33 away and I explicitly needed to cast The
+16:39 Pointer value to a 16-bit integer here as well as my compiler is going to
+16:45 complain about that even though the yeah pointer value is a 16 bit value on
+16:52 the msp430 and then after the configuration is done I'm
+16:57 going to start the first sampling and conversion
+17:04 which I'm going to have a separate function for
+17:12 and then I can write the code to compute these values here and I'm just going to iterate over the
+17:19 pins inside this ADC pin array that I defined inside the IU code
+17:29 and for each pin I can get the corresponding bit value but I just
+17:35 shifting the value 1 with the pin index and then I will set this corresponding
+17:40 bit inside this ADC 10 AE register and then I can keep track of the last index
+17:45 with the simple if statement
+17:55 and then the inch value is just going to be the last index but I also need to
+18:01 shift it to make sure that the correct bits of this register is set so that's
+18:07 going to be shift by 12 so that's essentially it for the configuration so then I can add the implementation for
+18:13 the interrupt service routine and here I'm just going to copy the values that
+18:18 data transfer controller has written to memory to another location in memory and the reason I'm doing this is because I
+18:24 want to I want the application to be able to retrieve the values safely so that it doesn't touch the same array as
+18:31 the data transfer controller is touching and to make this safe I'm also going to have the application disable interrupts
+18:37 while retrieving the values from this second array
+18:43 so I'm going to Define this here
+18:49 and the data transfer controller or the ADC peripheral is going to sample the
+18:55 channels from the last index to index 0. so I just need to make sure that I
+19:00 retrieve the values in opposite order when I assign the values to the cache array here
+19:08 like this and then once it has copied all of the values it can start the next sequence of sampling
+19:16 like that and finally I can implement the function that the application is going to use to
+19:22 retrieve the values from this cached array
+19:38 and in this function I'm just looping over the pins that are actually assigned
+19:43 as ADC and then copy the values from the cache array for these corresponding pins and I also need to disable interrupts
+19:50 here so that I don't get an interrupt in the middle of this for Loop and I'm going to disable the interrupt globally
+19:57 here and not just for the ADC peripheral because I've had some issues when only disabled interrupt for the
+20:05 ADC peripheral I haven't been able to figure out why so I'm just doing it this
+20:10 kind of as a workaround here [Music]
+20:16 so let's now see if this code compiles
+20:23 let's add some includes
+20:30 so I'm getting a bunch of completion errors so let's just go through this
+20:36 first of all it complains about are you unused one
+20:46 yeah so I should remove that since I've replaced that now
+20:57 yeah I need semicolon here and I also need to include things
+21:21 oh yeah I should make this Global installed
+21:38 yeah and this needs to be const now it compiles
+21:45 so let's also create a test function to test that it works
+21:56 so I'm just going to iterate the ADC values and print them to the console
+22:09 and add a piece of weight to ensure I only print them once a
+22:15 second and I also need to include ADC at the top
+22:24 then I can build this oh yeah
+22:34 okay so to test this then I can connect my launch pad
+22:39 to my computer
+22:50 and Flash the code
+23:01 I can open the terminal
+23:09 okay so it doesn't seem to work as I expected to so let me use debug why it doesn't work
+23:18 okay now I know why it didn't work I had missed three things first of all this
+23:24 inch variable should be a 16 bit value since this register is a 16 bit register
+23:29 and I'm shifting this value beyond the eight bits
+23:35 and then this should be iue and not uint 8
+23:40 and most importantly I forgot to
+23:45 configure the a clock so what I need to do when I initialize
+23:51 the my controller is to set the source for the a clock which is going to be
+23:56 this low frequency oscillator which is internal to this smart controller and
+24:02 like I said this by writing this value to this register
+24:08 so now if I build and Flash this again it should work
+24:16 now since I'm on the launch pad and I've only set up to use a single pin and this is going to correspond to channel 3. so
+24:24 I'm just going to verify that this works by looking at the value on channel 3. okay so here I have this jumper wire
+24:30 connected to pin 3 of Port 1 and if I connect this to uh high so 3.3
+24:38 I read value yeah almost 1023
+24:44 and then if I connect this to ground instead I should expect to read some value close to zero
+24:52 yeah and I do so it seems to be working yep
+25:00 so now I can go ahead and format this
+25:07 CP check and commit the code
+25:31 like this I should also run all of the tests
+25:43 or build all of the tests yeah that works as well and then I can go ahead and push this
+26:08 and make sure that it passes the eye before I move on to the next commit
+26:14 open a pull request
+26:20 it did not pass AI so let's see what they don't
+26:35 oh yeah I need to remove this value from here
+27:04 foreign
+27:10 it's weird because I should catch this error when I build all of the tests but I guess there is something wrong with my
+27:17 make file that makes it so that I don't rebuild all of the files when they
+27:22 change okay so now it passed CI so let's move on to the next commit
+27:30 and I'm going to begin by creating the files
+27:39 see
+27:48 and this is going to be a much simpler driver because the bulk of the work has already been done inside the ADC driver
+27:58 the first function to initialize the driver
+28:06 then a function to get the voltages
+28:11 is going to be a struct which I'm also going to Define inside the header
+28:22 right and a small competent
+28:28 and then inside implementation file
+28:44 this is just going to call a DC unit
+28:54 and call the function we created inside a DC driver
+29:00 and then I can assign the corresponding values to the struct that I'm returning and here I'm
+29:07 going to use the i o function that takes the iupane and gives me the
+29:15 corresponding index basically the channel index
+29:22 right
+29:30 um I also need to make sure that I only get the
+29:36 all of the values for the actual robot since I haven't defined the other
+29:42 themes for the launch pad like that and I also have to add
+29:48 the this other qre implementation file to my make file
+29:57 so let's save this builds now yes
+30:03 like this nope probably bigger so I forgot some defines
+30:26 yeah and some semicolons
+30:32 and also need to include drivers it is pH
+30:39 nog bits so let's go ahead and add the test function as well
+31:00 and similarly I'm just going to print the values here as well
+31:12 [Music]
+31:43 so now I can build this it's gonna build
+31:54 oh
+32:03 and they come up so let's try this as well
+32:10 so now I get an assert um okay so cleaning the project and
+32:16 building it again made it work so I definitely have some bug inside my
+32:21 make file that I have to resolve but I'm not going to do that in this video okay so let's now do the same test as before
+32:28 if I pull the pin Low by connecting it to ground I read a low voltage value close
+32:34 to zero and then if I pull it high to 3.3 I read a high voltage value close to 1023
+32:43 so it seems to be working good then I can go ahead and Commit This code as well
+32:50 well format first shape
+32:56 and I clean then
+33:01 tools builders and then I can go ahead and commit the code
+33:16 to that push this as well
+33:30 [Music] and make sure that it has a CI
+33:39 yeah and it passed so let's now move on to the final part of the code which is going to be
+33:46 the application layer so once again I'm going to create two
+33:52 new files line.h the inside here
+34:02 this is also going to have two functions one initialization function and one function to
+34:07 get the position of the line and then I'm going to have an enum
+34:14 naming the different positions
+34:19 oh based on the different voltages we're going to get a range of different
+34:25 possible positions for the line so it can be in the front the back left right
+34:30 front right front left diagonal left and diagonal right and so on and then inside
+34:36 the implementation file or let's just go to make file quickly and add
+34:43 to here
+34:49 then in the importation file I'm first going to include app line h
+34:56 and then the initialization function is going to be very simple
+35:04 just going to call query 103 in it
+35:15 I'm also going to add a comment on top of this file
+35:22 and then before the second function I will have a
+35:31 big if else statement to go through all of the retrieved voltages and turn them
+35:37 or translate them into a line position so first I'm going to get the voltages
+35:43 and then I'm going to have four booleans that determines whether a single line
+35:49 detector has detected a line and for this I'm going we're just going to Define a threshold value
+35:59 and I'm going to set this to Value 700 and this is just based on my own
+36:05 experimentation it makes sense to have this threshold to distinguish between the black platform and the white line
+36:13 I'll do this for all of the sensors
+36:22 and then it's just a matter of going through all of the cases so if both from left and front right is detected
+36:30 I return line front
+36:35 and in front left and back left
+36:41 I return line left and then I just do this for all of the other cases
+36:46 and if no nothing is detected I return line none
+36:53 [Music] and then I can add a test function for this as well
+37:18 let's clean and unbuild
+37:27 so I got some errors
+37:33 you know closing bracket include is
+37:42 and include command
+37:53 oops they should be named line yet another way of something so let's Flash and test it so now we're
+37:60 going to hook up one of these licensors and actually show that I get a different value when I hold it over a white
+38:05 compared to a black surface and it has three panes one is connected to VCC and
+38:12 the other one is connected to ground and then the third one is the input pin which I connect to the
+38:18 pin 3 or 41 in this case since that's the pin I'm using for ADC
+38:25 if I put the terminal now it's giving me a value 4 when I don't
+38:32 have anything in front of the sensor and four is going to correspond to line right
+38:38 so zero one two three four and then let's just see if I hold something with
+38:45 white color above it so let's say for example I hold this over it we should see a different value
+38:53 yeah so now we get line one instead so if I hold something black over it I
+38:59 think it's going to just give me the same value as not having anything else over it
+39:05 yeah so it gives still gives me line four
+39:14 and then if I take something else that's white maybe this cable for example
+39:25 I get line one again so it seems to be working and the reason I'm not getting this value here which is
+39:33 six I think is because even though this is the front left sensor and that's the
+39:39 only one detecting anything right now since I'm not using the other
+39:45 sensors here these voltages are going to be zero so it's going to be as if all of
+39:51 these sensors are detecting the line but to confirm that it works it's just
+39:57 enough to see that when I hold something white over it I get a different value compared to if I hold something in Black
+40:02 over it okay so now that I've confirmed that this works I can commit this code as
+40:07 well after I formatted it around CP Shake
+40:17 and build all stuff
+40:37 like that and then I can push this as well
+40:48 and look to see that it passes the eye yeah any pass so let's go ahead and
+40:54 merge the pull request
+41:04 that was all code I was going to write in this video so now I have the implementation in place for
+41:13 or that's needed to for this robot to detect the line on all of these four
+41:19 sensors and I will of course double check and make sure whether it works when we bring
+41:24 the code onto this actual robot later on in this video series so thanks for watching and see you in
+41:31 the next video
