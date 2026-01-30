@@ -32,7 +32,7 @@ Based on the 28 lessons of the Artful Bytes Embedded Systems series, here are su
 
 ---
 
-### **4. Core Embedded Programming Concepts** (Lessons 14-17)
+### **5. Core Embedded Programming Concepts** (Lessons 14-17)
 - **Lesson 14**: Assert on Microcontroller
 - **Lesson 15**: Test Functions
 - **Lesson 16**: Microcontroller Memory
@@ -41,7 +41,7 @@ Based on the 28 lessons of the Artful Bytes Embedded Systems series, here are su
 
 ---
 
-### **5. GPIO & Hardware Abstraction** (Lessons 12-13)
+### **4. GPIO & Hardware Abstraction** (Lessons 12-13)
 - **Lesson 12**: GPIO Programming
 - **Lesson 13**: Multiple Hardware Versions
 *Focus: Direct hardware control and portability strategies.*
