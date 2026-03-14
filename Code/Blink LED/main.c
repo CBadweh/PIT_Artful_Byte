@@ -62,6 +62,6 @@ int main(void)
     {
         P1OUT ^= 0x01;                        // Toggle P1.0 using exclusive-OR
 
-        for (i=10000; i>0; i--);
+        for (i=5000; i>0; i--);
   }
 }

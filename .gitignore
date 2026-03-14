@@ -136,3 +136,9 @@ nsumo/src/drivers/uart.h
 nsumo/src/test/test.c
 nsumo/src/test/test.h
 nsumo/tools/dockerfile
+Code/Blink LED/Debug/Blink LED_linkInfo.xml
+Code/Blink LED/Debug/Blink LED.map
+Code/Blink LED/Debug/Blink LED.out
+Code/Blink LED/Debug/Blink LED.txt
+Code/Blink LED/Debug/main.obj
+Code/Blink LED/Debug/.clangd/.cache/clangd/index/main.c.9B5B2B57075CB29A.idx

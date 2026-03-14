@@ -82,23 +82,56 @@ External dependency: `external/printf/` (lightweight printf, git submodule).
 
 ## Directory Layout
 
-| Path | Contents |
-|------|----------|
-| `nsumo/` | Full nsumo codebase (from lesson 9 onward) |
-| `nsumo_video/` | Snapshot of upstream `nsumo_video` repo |
-| `nsumo_video-feature_io_handling_2/` | Feature branch snapshot |
-| `Code/blink_example/` | Custom Makefile blink project (lesson 5) |
-| `Code/Blink LED/` | IDE-generated blink project |
-| `Artful_Bytes_Transcript/` | 28 lesson transcripts (`.txt`) |
-| `Chat/` | AI conversation logs and troubleshooting notes |
-| `nsumo/docs/` | Architecture docs, coding guidelines, class notes |
-| `Artful_Byte_Sandbox/` | MBC sandbox experiments |
+```
+Artful_Byte/
+├── .github/workflows/          ← CI config (GitHub Actions)
+├── Artful_Bytes_Transcript/    ← 28 lesson transcripts (.txt) + course summary files
+├── Artful_Byte_Sandbox/        ← MBC sandbox experiments
+├── Chat/                       ← AI conversation logs and troubleshooting notes
+├── Code/
+│   ├── blink_example/          ← Custom Makefile blink project (lesson 5)
+│   ├── Blink LED/              ← IDE-generated blink project (CCS) by CBadweh [[Critical]] (lesson 4)
+│   ├── nsumo/                  ← nsumo codebase snapshot (lesson 9+)
+│   ├── nsumo_video/            ← Upstream nsumo_video repo snapshot
+│   ├── nsumo_video-feature_io_handling_2/  ← Feature branch snapshot
+│   └── source_code/
+│       └── nsumo_video/        ← Primary reference source code
+│           ├── src/app/        ← Application layer (state machine, drive, enemy, line)
+│           ├── src/drivers/    ← Peripheral + device drivers (uart, i2c, pwm, adc, io)
+│           ├── src/common/     ← Shared utilities (assert, ring_buffer, trace)
+│           ├── src/test/       ← On-target test functions
+│           ├── external/       ← Lightweight printf (git submodule)
+│           ├── docs/           ← Architecture diagrams, coding guidelines
+│           ├── tools/          ← Dockerfile, build scripts
+│           └── Makefile        ← Main build system
+├── CLAUDE.md
+└── README.md                   ← Course section mapping (lessons → topics)
+```
 
 ---
 
 ## Multiple nsumo Copies
 
 The repo contains three copies of nsumo firmware at different stages. `nsumo/` is the primary working copy. `nsumo_video/` and `nsumo_video-feature_io_handling_2/` are reference snapshots from the upstream Artful Bytes repo. When making changes, work in `nsumo/` unless specifically asked to modify a snapshot.
+
+---
+
+## Course Summary
+
+The full course summary lives in `Artful_Bytes_Transcript/ArtfulBytes_Claude_Summary.md` (3,154 lines, all 10 sections + Pareto appendix). Per-section files for quick navigation:
+
+| File | Lessons | Topic |
+|------|---------|-------|
+| `Artful_Bytes_Transcript/S01_Hardware_Design_Component_Selection.md` | 1-3 | Parts, schematic, PCB |
+| `Artful_Bytes_Transcript/S02_Development_Environment_Setup.md` | 4-5 | IDE, Makefile, toolchain |
+| `Artful_Bytes_Transcript/S03_Software_Architecture_Project_Organization.md` | 6-7 | Layered architecture, project structure |
+| `Artful_Bytes_Transcript/S04_Development_Workflow_Best_Practices.md` | 8-11 | Git, cppcheck, CI/CD, clang-format |
+| `Artful_Bytes_Transcript/S05_Low_Level_Programming_Fundamentals.md` | 12-20 | GPIO, interrupts, UART, memory, IR remote |
+| `Artful_Bytes_Transcript/S06_Motor_Control_PWM.md` | 21 | PWM, TB6612FNG, tank drive |
+| `Artful_Bytes_Transcript/S07_Sensor_Integration.md` | 22-23 | ADC/DMA line sensors, I2C range sensors |
+| `Artful_Bytes_Transcript/S08_System_Integration_Testing.md` | 24-28 | Board bring-up, simulator, state machine, reflection |
+
+When answering questions about course content, lessons, or concepts — read the relevant section file rather than the full summary.
 
 ---
 
