@@ -91,9 +91,7 @@ Artful_Byte/
 ├── Code/
 │   ├── blink_example/          ← Custom Makefile blink project (lesson 5)
 │   ├── Blink LED/              ← IDE-generated blink project (CCS) by CBadweh [[Critical]] (lesson 4)
-│   ├── nsumo/                  ← nsumo codebase snapshot (lesson 9+)
-│   ├── nsumo_video/            ← Upstream nsumo_video repo snapshot
-│   ├── nsumo_video-feature_io_handling_2/  ← Feature branch snapshot
+│   ├── nsumo_video-feature_io_handling_2/  ← Mid-course checkpoint: IO driver fully implemented (lesson 12-13)
 │   └── source_code/
 │       └── nsumo_video/        ← Primary reference source code (NEVER MODIFY THIS)
 │           ├── src/app/        ← Application layer (state machine, drive, enemy, line)
@@ -110,9 +108,11 @@ Artful_Byte/
 
 ---
 
-## Multiple nsumo Copies
+## nsumo Firmware Copies
 
-The repo contains three copies of nsumo firmware at different stages. `nsumo/` is the primary working copy. `nsumo_video/` and `nsumo_video-feature_io_handling_2/` are reference snapshots from the upstream Artful Bytes repo. When making changes, work in `nsumo/` unless specifically asked to modify a snapshot.
+The repo contains two copies of nsumo firmware:
+- `Code/source_code/nsumo_video/` — **Complete finished project** (unmodified upstream clone). Do NOT modify.
+- `Code/nsumo_video-feature_io_handling_2/` — Mid-course snapshot with fully implemented IO driver (lesson 12-13 checkpoint).
 
 ---
 
