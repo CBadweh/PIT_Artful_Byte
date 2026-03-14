@@ -150,3 +150,17 @@
   - For a single-project codebase (not a library), separating headers into a dedicated `include/` directory adds navigational overhead without clear benefit. Finding the implementation file for a header is easier when they sit side-by-side. Separate header directories make sense when building a library where consumers need headers but not source files.
 - **Q2: Why use placeholder files in empty directories?**
   - Git does not track empty directories. To commit the project skeleton with its directory structure intact, placeholder files (e.g., `.gitkeep` or similar) are needed in otherwise-empty directories. These are removed once real files are added.
+
+
+
+## CBadweh Appendix
+Both are pure theory — no code implementation.
+
+  Lesson 6 (Software Architecture): Presents and explains the software architecture diagram —  
+  the two-layer design (drivers vs. application), module relationships, and design principles  
+  (SRP, DRY, encapsulation, decoupling, cohesion). No code is written.
+
+  Lesson 7 (Project Structure): Creates the directory skeleton (src/app/, src/drivers/,        
+  src/common/, src/test/, external/, docs/, tools/) and discusses naming conventions.
+  References the Pitchfork layout. No source code is written — just empty folders and top-level
+   files (Makefile, README, LICENSE, .clang-format, .gitignore).
