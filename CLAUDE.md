@@ -95,7 +95,7 @@ Artful_Byte/
 │   ├── nsumo_video/            ← Upstream nsumo_video repo snapshot
 │   ├── nsumo_video-feature_io_handling_2/  ← Feature branch snapshot
 │   └── source_code/
-│       └── nsumo_video/        ← Primary reference source code
+│       └── nsumo_video/        ← Primary reference source code (NEVER MODIFY THIS)
 │           ├── src/app/        ← Application layer (state machine, drive, enemy, line)
 │           ├── src/drivers/    ← Peripheral + device drivers (uart, i2c, pwm, adc, io)
 │           ├── src/common/     ← Shared utilities (assert, ring_buffer, trace)
