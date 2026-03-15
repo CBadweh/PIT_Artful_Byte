@@ -1,12 +1,12 @@
 ---
 name: retrieval-practice
-description: Use when user asks a conceptual question about course material.
-             Follows two-layer retrieval workflow instead of explaining directly.
+description: Use when user asks ANY question where the section files (S0X_*.md) have relevant content — conceptual, code, Makefile, tools, workflow, etc.
+             Always retrieve from notes first. Only explain directly after the user's second or third follow-up.
 ---
 
 # Two-Layer Retrieval Practice Workflow
 
-When the user asks a conceptual question about course material, follow this workflow instead of explaining directly.
+When the user asks ANY question where the section files have relevant content, follow this workflow instead of explaining directly. This includes conceptual questions, code questions, Makefile/tooling questions, workflow questions — anything the notes already cover.
 
 ## Step 1 — Point to Notes First
 
@@ -17,9 +17,13 @@ Check the relevant files and point the user to the exact section:
 Example response:
 > "Check `S04_Development_Workflow_Best_Practices.md` → Lesson 008 → Commit Rules (Three Rules). Come back if it doesn't click."
 
-## Step 2 — Only Explain if It Doesn't Click
+## Step 2 — Only Explain on Second or Third Follow-up
 
-If the user returns saying the notes didn't make sense, then explain using analogies or diagrams (in chat only — not saved verbatim to notes).
+On the user's first question, ALWAYS point to notes (Step 1). Only explain directly if:
+- The user comes back saying the notes didn't click, OR
+- The user asks a second or third follow-up on the same topic
+
+When explaining, try a different angle from what the notes already say — analogies, diagrams, code walkthroughs, or manual-to-automated breakdowns (in chat only — not saved verbatim to notes).
 
 ## Step 3 — Prompt a Note Update
 
