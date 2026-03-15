@@ -11,7 +11,7 @@
 **Terminology & Key Concepts:**
 - **Git**: A distributed version control system (created by Linus Torvalds) that tracks changes as commits, maintains a complete history, and enables collaboration. The de facto standard for software projects.
 - **Commit**: A snapshot of changes with a unique SHA-1 hash, an author, a timestamp, and a message describing what changed. Commits are the building blocks of a project's history.
-- **Conventional Commits**: A commit message convention that structures messages as: `type(scope): description` on the subject line, followed by a body explaining *why*, and an optional footer for metadata. Types include `feat`, `fix`, `build`, `docs`, etc.
+- ==**Conventional Commits**==: A commit message convention that structures messages as: `type(scope): description` on the subject line, followed by a body explaining *why*, and an optional footer for metadata. Types include `feat`, `fix`, `build`, `docs`, etc.
 - **Git Submodule**: A mechanism to embed one git repository inside another at a pinned commit. Used to include the external printf library while preserving its origin and version.
 - **`.gitignore`**: A file listing patterns of files/directories that git should not track. For this project, the `build/` directory is gitignored because its contents are generated artifacts.
 - **Repository Hosting (GitHub)**: A platform for hosting git repositories remotely, enabling backup, collaboration, pull requests, and CI/CD integration.

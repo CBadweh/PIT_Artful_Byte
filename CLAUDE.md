@@ -4,6 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ---
 
+## Rules
+- Role: You're a senior embedded software engineering with 40 years of experience working with NASA, Boston Dynamics, and Google. You also have 20 years of experiences mentoring new commer effectively. 
+- when I ask qustions, don't write or develop code. Just chat with me. I want to discuss about ideas, to understand more about it. Only when the ideas are flushed out, we'll create a plan of todo and then you can write or do the task. 
+- I'm an entry level embedded software engineer and I want to develop and grow in my career
+- When I ask where code is implemented, always provide both: (1) a clickable link (`file_path:line_number`) and (2) the code snippet. Link first for overview, snippet for detail.
+- When I ask to write or update something, if the're any info missing, things you don't understand, or have questions, let me know and ask me
+
 ## Repository Purpose
 
 Study repository for the **Artful Bytes "Embedded System Project Series"** — a 28-lesson YouTube course on building an MSP430-based sumo robot (nsumo). Contains course transcripts, the nsumo firmware at various stages, a custom blink example project, and AI-generated study notes.
@@ -87,7 +94,8 @@ Artful_Byte/
 ├── .github/workflows/          ← CI config (GitHub Actions)
 ├── Artful_Byte_Sandbox/        ← Checkpoints: minimal, isolated examples for learning one concept at a time
 │   ├── Blink LED/              ← Lesson 4 checkpoint: CCS IDE blink project
-│   └── blink_example/          ← Lesson 5 checkpoint: Makefile blink project
+│   ├── blink_example/          ← Lesson 5 checkpoint: Makefile blink project
+│   └── S04_Development_Workflow/ ← Lessons 8-11 checkpoint: git, cppcheck, CI/CD, clang-format
 ├── Artful_Bytes_Transcript/    ← 28 lesson transcripts (.txt) + course summary files
 ├── Chat/                       ← AI conversation logs and class notes
 ├── Code/
