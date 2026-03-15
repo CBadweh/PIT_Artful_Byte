@@ -225,6 +225,8 @@ Two developers work on separate branches. When merging back, changes to the same
 - **Excluding External Code**: Using `-i` flag to exclude directories (like `external/printf/`) from analysis, since third-party code should not be modified.
 
 **Source Code Mapping:**
+
+==**Automate with Makefile**==
 - `Makefile:116-130` --- cppcheck configuration in the production Makefile:
   ```makefile
   CPPCHECK_INCLUDES = ./src ./
@@ -241,6 +243,16 @@ Two developers work on separate branches. When merging back, changes to the same
   cppcheck:
   	@$(CPPCHECK) $(CPPCHECK_FLAGS) $(SOURCES_FORMAT_CPPCHECK)
   ```
+
+==**To run it Manually**==
+To run it manually on a single file:
+
+cppcheck --quiet --enable=all --error-exitcode=1 src/drivers/io.c
+
+Then you'd add flags one by one as you hit issues:
+- --suppress=missingIncludeSystem — because cppcheck can't find system headers
+- -I./src — so it can resolve your project headers
+- -iexternal/printf — skip third-party code
 
 **Demo / Example:**
 - **Goal:** Install cppcheck, demonstrate it catching bugs the compiler misses, and integrate it into the Makefile.
