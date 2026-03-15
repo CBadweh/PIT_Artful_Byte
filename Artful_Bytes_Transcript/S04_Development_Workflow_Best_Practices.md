@@ -2,7 +2,7 @@
 
 ---
 
-### Lesson 008 --- How I Version Control with Git (Best Practices)
+# Lesson 008 --- How I Version Control with Git (Best Practices)
 
 **File Path:** [Lesson_008_transcript.txt](Artful_Bytes_Transcript/8%20How%20I%20version%20control%20with%20git%20(Best%20Practices)%20%20Embedded%20System%20Project%20Series%20%238.txt)
 
@@ -199,7 +199,7 @@ Two developers work on separate branches. When merging back, changes to the same
 
 ---
 
-### Lesson 009 --- Static Analysis for C/C++ with cppcheck (+Makefile)
+# Lesson 009 --- Static Analysis for C/C++ with cppcheck (+Makefile)
 
 **File Path:** [Lesson_009_transcript.txt](Artful_Bytes_Transcript/9%20Static%20Analysis%20for%20CC+%20with%20cppcheck%20(+Makefile)%20%20Embedded%20System%20Project%20Series%20%239.txt)
 
@@ -278,16 +278,132 @@ Then you'd add flags one by one as you hit issues:
 
 ---
 
-### Lesson 010 --- Simple CI/CD with GitHub Actions and Docker (Compile + Analysis)
+# Lesson 010 --- Simple CI/CD with GitHub Actions and Docker (Compile + Analysis)
 
 **File Path:** [Lesson_010_transcript.txt](Artful_Bytes_Transcript/10%20Simple%20CICD%20with%20GitHub%20Actions%20and%20Docker%20(Compile+Analysis)%20%20%20Embedded%20System%20Project%20Series%20%2310.txt)
 
 **Objective:** Sets up a continuous integration (CI) pipeline using GitHub Actions and Docker to automatically build the project and run static analysis on every push, establishing a workflow where code must pass CI before merging to the main branch.
 
+**Visual Diagrams (from video ~00:00–02:40):**
+
+*Diagram 1: Bringing It All Together*
+
+The three tools from previous lessons all feed into Continuous Integration, powered by Git and Docker:
+
+```
+     Makefile (L5)         Git (L8)          Static Analysis (L9)
+    ┌─────────────┐    ┌─────────────┐     ┌─────────────────────┐
+    │ cross-gcc   │    │ git log     │     │ cppcheck            │
+    │ make        │    │ commits     │     │ --enable=all        │
+    │ build/flash │    │ branches    │     │ --error-exitcode=1  │
+    └──────┬──────┘    └──────┬──────┘     └──────────┬──────────┘
+           │                  │                       │
+           └──────────────────┼───────────────────────┘
+                              │
+                              ▼
+                 ┌────────────────────────┐
+                 │  Continuous Integration │
+                 └────────────────────────┘
+                    /                  \
+                   ▼                    ▼
+              ┌────────┐          ┌──────────┐
+              │  Git   │          │  Docker  │
+              └────────┘          └──────────┘
+```
+
+*Diagram 2: CI/CD Developer Workflow*
+
+The complete workflow for every change — local steps in green, CI in yellow, failure path in red:
+
+```
+                              Workflow
+
+    LOCAL (developer machine)
+    ═══════════════════════════════════════════════════════
+    Branch ──> Code ──> Build ──> Commit ──> Push ────┐
+               change   + cppcheck                    │
+                                                      │
+    ═══════════════════════════════════════════════════════
+                                                      │
+    GITHUB                                            │
+    ═══════════════════════════════════════════════════════
+                                                      ▼
+                                               Pull Request
+                                                      │
+                                                      ▼
+                                      ┌───────────────────────────┐
+                                      │      GitHub Actions       │
+                                      │   ┌───────────────────┐   │
+                                      │   │ make + Analyse    │   │
+                                      │   └───────────────────┘   │
+                                      └─────────────┬─────────────┘
+                                                    │
+                                             ┌──────┴──────┐
+                                             │             │
+                                          PASS           FAIL
+                                             │             │
+                                             ▼             ▼
+                                          Merge        Rework
+                                          to main      & re-push
+```
+
+*Diagram 3: CI as a Protection Wall*
+
+The CI system acts as a firewall — only code that passes gets through to the main branch:
+
+```
+                    Continuous Delivery + CI Protection
+
+    Developer                CI System                Repository
+                                                      main branch
+       O
+      /|\     code      ┌───────────────┐             ┌───┐
+       |    ──change──> │ ┌───┬───┬───┐ │  ──pass──>  │   │
+      / \               │ │   │   │   │ │             │ ┌─┤
+       O                │ │   │   │   │ │             │ │ │
+      /|\   code        │ │   │   │   │ │             │ ├─┤
+       |   ──change──>  │ │   │   │   │ │             │ │ │
+      / \               │ └───┴───┴───┘ │             └─┴─┘
+       O                │ "protection"  │           (stable,
+      /|\   code        └───────────────┘          working code)
+       |   ──change──>        │
+      / \                  FAIL ──> blocked
+    (continuous
+     delivery)
+```
+
+*Diagram 4: GitHub Actions Architecture Stack*
+
+Nested layers showing where the MSP430 cross-toolchain lives:
+
+```
+    ┌─────────────────────────────────────────┐
+    │            GitHub Action                │
+    │  ┌───────────────────────────────────┐  │
+    │  │             Job                   │  │         ~100 MB
+    │  │  ┌─────────────────────────────┐  │  │    ┌──────────────┐
+    │  │  │          Docker             │  │  │    │Cross-toolchain│
+    │  │  │  ┌───────────────────────┐  │  │  │    │ msp430-gcc   │
+    │  │  │  │        Linux          │  │  │  │    │              │
+    │  │  │  │  ┌─────────────────┐  │  │  │  │    │  compiles    │
+    │  │  │  │  │Virtual Machine  │  │  │  │  │    │  code for:   │
+    │  │  │  │  │                 │  │  │  │  │    │ ┌──────────┐ │
+    │  │  │  │  └─────────────────┘  │  │  │  │    │ │ MSP430   │ │
+    │  │  │  └───────────────────────┘  │  │  │    │ │   MCU    │ │
+    │  │  └─────────────────────────────┘  │  │    │ └──────────┘ │
+    │  └───────────────────────────────────┘  │    └──────────────┘
+    └─────────────────────────────────────────┘
+```
+
+- The VM is GitHub's server running Ubuntu
+- Docker runs inside the VM with the pre-built toolchain image
+- The Job executes `make` and `make cppcheck` inside Docker
+- The cross-toolchain is too large for git (~100MB) — Docker solves this
+
 **Terminology & Key Concepts:**
 - **Continuous Integration (CI)**: The practice of automatically building, analyzing, and testing code on every commit/push to catch integration errors early. Prevents broken code from reaching the main branch.
 - **GitHub Actions**: GitHub's built-in CI/CD platform. Workflows are defined in YAML configuration files under `.github/workflows/`. Jobs run on GitHub's servers, triggered by events like pushes or pull requests.
-- **Docker Container**: A lightweight, reproducible environment that packages an OS, tools, and dependencies. Used here to package the MSP430 GCC toolchain so the CI system has a consistent, reproducible build environment.
+- ==**Docker Container**==: A lightweight, reproducible environment that packages an OS, tools, and dependencies. Used here to package the MSP430 GCC toolchain so the CI system has a consistent, reproducible build environment.
 - **Docker Hub**: A hosting platform for Docker container images (analogous to GitHub for git repositories). The instructor pushes the custom MSP430 toolchain container to Docker Hub so GitHub Actions can pull it.
 - **Dockerfile**: A script defining how to build a Docker image. Specifies the base OS (Ubuntu 22.04), installs tools (wget, unzip), and sets up the user environment.
 - **Pull Request (PR)**: A GitHub feature for proposing changes. The developer pushes a branch, opens a PR, CI runs automatically, and the PR can only be merged if CI passes.
@@ -296,7 +412,7 @@ Then you'd add flags one by one as you hit issues:
 - **Rebase and Merge**: A merge strategy that replays commits on top of the main branch without creating a merge commit, resulting in a cleaner linear history.
 
 **Techniques & Methods:**
-- **Docker for Toolchain Encapsulation**: The MSP430 GCC cross-toolchain is not available in standard OS package repositories and is too large to commit to git. A Docker container solves both problems --- it encapsulates the toolchain in a reusable, shareable image.
+- **Docker for Toolchain Encapsulation**: ==The MSP430 GCC cross-toolchain is not available in standard OS package repositories and is too large to commit to git. A Docker container solves both problems --- it encapsulates the toolchain in a reusable, shareable image.==
 - **CI Pipeline Design**: Three checks executed sequentially on every push: (1) format check, (2) static analysis, (3) build. If any step fails, the pipeline fails and the PR cannot be merged.
 - **Branch-Based Development Workflow**:
   1. Create a local feature branch (`git checkout -b feature-name`).
@@ -349,15 +465,101 @@ Then you'd add flags one by one as you hit issues:
   9. Demonstrate that pushing directly to main is now blocked.
   10. Update Makefile to use `TOOLS_PATH` environment variable. Update CI config to set `TOOLS_PATH` for the Docker container.
   11. Create branch, commit, push, open PR --- CI passes --- merge with rebase.
+- **Terminal Commands (exact, from video):**
+  ```bash
+  # 1. Install Docker and configure non-root access/ Same as GUI Installer on Windows
+  sudo apt install docker.io
+  sudo groupadd docker
+  sudo usermod -aG docker $USER  # handles permissions automatically without sudo
+  newgrp docker
+
+  # 2. Create Dockerfile
+  cd tools
+  rm PLACEHOLDER
+  vim dockerfile # tools include: wget bzip2 make unzip cppcheck clang-format-12 git
+  # ... write Dockerfile contents ...
+
+  # 3. Build and run the Docker image
+  docker build -t msp430-gcc .       # build the image, name it msp430-gcc
+  docker images                      # list all the image in the machines
+  docker run --interactive --tty msp430-gcc /bin/bash # Create the container using msp430-gcc image, and then run the container
+
+  # --- Inside the container ---
+  # 4. Download MSP430 toolchain and support files from TI
+  wget https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LICjWuAbzH/9.3.1.2/msp430-gcc-9.3.1.11.linux64.tar.bz2
+  wget https://dr-download.ti.com/software-development/ide-configuration-compiler-or-debugger/MD-LICjWuAbzH/9.3.1.2/msp430-gcc-support-files-1.212.zip
+
+  # 5. Unpack and organize toolchain
+  mkdir -p dev/tools
+  tar xjvf msp430-gcc-9.3.1.11_linux64.tar.bz2
+  unzip msp430-gcc-support-files-1.212.zip
+  mv msp430-gcc-support-files/include/* msp430-gcc-9.3.1.11_linux64/include/
+  mv msp430-gcc-9.3.1.11_linux64 dev/tools/msp430-gcc
+  exit
+  # --- Back on host ---
+
+  # 6. Commit and push Docker image to Docker Hub
+  docker ps -a
+  docker commit <container-id> artfulbytes/msp430-gcc-9.3.1.11:latest
+  docker images
+  docker login
+  docker push artfulbytes/msp430-gcc-9.3.1.11:latest
+
+  # 7. Create CI config (.github/workflows/ci.yml as written in this lesson)
+  ```
+  ```yaml
+  # .github/workflows/ci.yml (Lesson 10 version — build + cppcheck only)
+  on: [push]
+  jobs:
+    build_and_static_analysis:
+      runs-on: ubuntu-latest
+      container:
+        image: artfulbytes/msp430-gcc-9.3.1.11:latest
+      steps:
+        - name: Checkout the repository
+          uses: actions/checkout@v3
+        - run: TOOLS_PATH=/home/ubuntu/dev/tools make
+        - run: make cppcheck
+  ```
+  Note: The `ci.yml` in Source Code Mapping above shows the *final* version (with format check, multiple HW targets, tests) — those are added in Lesson 11+.
+
 - **What Changed:**
   - `Makefile`: `TOOLS_DIR` now reads from `${TOOLS_PATH}` environment variable.
   - `.github/workflows/ci.yml`: New CI configuration file.
   - `tools/dockerfile`: New Dockerfile for the MSP430 toolchain container.
 
 **New Tools Introduced:**
-- **GitHub Actions** --- CI/CD platform integrated with GitHub for automated build/test/analysis pipelines
 - **Docker** --- containerization platform for creating reproducible build environments
+	- Docker Desktop allow you to run docker, build, run
+	- Docker can push and pull images to Docker Hub
+  - Docker is a platofrm that build images and run container. It build images using Dockerfile
+	- **Image** - a read only template (OS + tools + files) used to create container. Docker read Dockerfile to build an Image. 
+	- **Container** a running instance of an image (Can run mkdir, tar, mv)
 - **Docker Hub** --- hosting platform for Docker container images
+- **GitHub Actions** --- CI/CD platform integrated with GitHub for automated build/test/analysis pipelines
+
+
+**Analogy to OOP's Class and Object**
+  ┌──────────────────────────────┬──────────────────────────────────────────┐
+  │             OOP              │                  Docker                  │                       
+  ├──────────────────────────────┼──────────────────────────────────────────┤                       
+  │ Class (blueprint/template)   │ Image (read-only template)               │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ Object (instance of a class) │ Container (running instance of an image) │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ new MyClass()                │ docker run myimage                       │
+  ├──────────────────────────────┼──────────────────────────────────────────┤
+  │ One class → many objects     │ One image → many containers              │
+  └──────────────────────────────┴──────────────────────────────────────────┘
+
+My system 
+```
+My system
+- Docker.desktop
+- Image's name msp430-gcc,
+- image ID sha256:2387b040ce74
+- Container
+```
 
 **Discussion Prompts:**
 - **Q1: Why use Docker for CI instead of installing the toolchain directly in the GitHub Actions VM?**
@@ -369,7 +571,7 @@ Then you'd add flags one by one as you hit issues:
 
 ---
 
-### Lesson 011 --- Documentation and Clang Format (+2 Bugs)
+# Lesson 011 --- Documentation and Clang Format (+2 Bugs)
 
 **File Path:** [Lesson_011_transcript.txt](Artful_Bytes_Transcript/11%20Documentation%20and%20Clang%20format%20(+2%20bugs)%20%20%20Embedded%20System%20Project%20Series%20%2311.txt)
 

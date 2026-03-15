@@ -12,6 +12,7 @@ CBadweh Plan to developing watching each lesson guide
 
 # Exploring techniques
 - What, why, when, how, i/o, relates
+    - Problem/Solution, Cause/Effect
 - Demo example
 
 - Create Diagram
@@ -22,4 +23,5 @@ CBadweh Plan to developing watching each lesson guide
 - spatil and temperal
 - before and after
 - with or without, right vs wrong version 
+
 
