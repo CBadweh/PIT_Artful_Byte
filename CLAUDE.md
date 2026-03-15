@@ -85,15 +85,15 @@ External dependency: `external/printf/` (lightweight printf, git submodule).
 ```
 Artful_Byte/
 ├── .github/workflows/          ← CI config (GitHub Actions)
+├── Artful_Byte_Sandbox/        ← Checkpoints: minimal, isolated examples for learning one concept at a time
+│   ├── Blink LED/              ← Lesson 4 checkpoint: CCS IDE blink project
+│   └── blink_example/          ← Lesson 5 checkpoint: Makefile blink project
 ├── Artful_Bytes_Transcript/    ← 28 lesson transcripts (.txt) + course summary files
-├── Artful_Byte_Sandbox/        ← MBC sandbox experiments
-├── Chat/                       ← AI conversation logs and troubleshooting notes
+├── Chat/                       ← AI conversation logs and class notes
 ├── Code/
-│   ├── blink_example/          ← Custom Makefile blink project (lesson 5)
-│   ├── Blink LED/              ← IDE-generated blink project (CCS) by CBadweh [[Critical]] (lesson 4)
-│   ├── nsumo_video-feature_io_handling_2/  ← Mid-course checkpoint: IO driver fully implemented (lesson 12-13)
+│   ├── nsumo_video-feature_io_handling_2/  ← IO driver implementation (lesson 12-13)
 │   └── source_code/
-│       └── nsumo_video/        ← Primary reference source code (NEVER MODIFY THIS)
+│       └── nsumo_video/        ← Complete upstream reference (NEVER MODIFY)
 │           ├── src/app/        ← Application layer (state machine, drive, enemy, line)
 │           ├── src/drivers/    ← Peripheral + device drivers (uart, i2c, pwm, adc, io)
 │           ├── src/common/     ← Shared utilities (assert, ring_buffer, trace)
@@ -108,17 +108,20 @@ Artful_Byte/
 
 ---
 
-## nsumo Firmware Copies
+## Directory Roles
 
-The repo contains two copies of nsumo firmware:
-- `Code/source_code/nsumo_video/` — **Complete finished project** (unmodified upstream clone). Do NOT modify.
-- `Code/nsumo_video-feature_io_handling_2/` — Mid-course snapshot with fully implemented IO driver (lesson 12-13 checkpoint).
+| Directory | Role | What goes here |
+|-----------|------|----------------|
+| `Code/source_code/` | **Unmodified upstream reference** | Git-cloned project. Never modify. Read-only reference for the complete finished codebase. |
+| `Code/` | **Implementations with real code** | Feature branches, CBadweh experiments, anything with actual working implementations. |
+| `Artful_Byte_Sandbox/` | **Learning checkpoints** | Minimal, isolated examples stripped of dependencies. For exploring one concept at a time without the complexity of the full project (e.g., `blink_example/` for understanding Makefiles without the full nsumo build system). |
+| `Artful_Bytes_Transcript/` | **Course content** | Lesson transcripts + AI-generated summaries and section files. |
 
 ---
 
 ## Course Summary
 
-The full course summary lives in `Artful_Bytes_Transcript/ArtfulBytes_Claude_Summary.md` (3,154 lines, all 10 sections + Pareto appendix). Per-section files for quick navigation:
+The full course summary lives in `Artful_Bytes_Transcript/ArtfulBytes_ClaudeOpus_Summary.md` (3,154 lines, all 10 sections + Pareto appendix). Per-section files for quick navigation:
 
 | File | Lessons | Topic |
 |------|---------|-------|

@@ -18,19 +18,19 @@
 - **Agile Mindset / Incremental Development**: The philosophy of delivering small, well-defined, working increments rather than large monolithic changes. Aligns with small, frequent commits.
 
 **Techniques & Methods:**
-- **Commit Rules (Three Rules)**:
+- ==**Commit Rules (Three Rules)**:==
   1. Each commit contains only one change (single feature, fix, or logical unit).
   2. Each commit must build successfully (and pass static analysis).
   3. Each commit has a good message explaining what and especially *why*.
-- **Conventional Commit Message Format**:
+- ==**Conventional Commit Message Format**:==
   ```
-  type(scope): short description (max 50 chars)
+  type(scope, subject line): short description (max 50 chars, describe solution not problem)
 
   Body: explain WHY this change is needed,
   not just what it does. Motivate the change
   to a potential reviewer or future self.
 
-  Footer: video name, issue number, etc.
+  Footer: video number, issue number, etc., JIRA-123
   ```
 - **Imperative Mood**: Write "Add feature" not "Added feature" or "Adding feature." Think of the commit as something to be applied.
 - **Command-Line Git**: Using git exclusively from the terminal (`git init`, `git add`, `git commit`, `git push`, `git log`, `git config --local`). Editor plugins (Vim + fugitive) supplement but don't replace CLI usage.
@@ -84,6 +84,118 @@
   - Small commits are easier to review (including self-review), easier to revert if something breaks, create a more granular history for `git bisect`, and align with an agile workflow of incremental progress. Large commits often mix unrelated changes, making them harder to understand and debug.
 - **Q3: Why use git submodules for the printf library?**
   - Submodules preserve the connection to the upstream repository and pin to a specific commit. This makes it clear where the code came from, which version is in use, and avoids modifying third-party code. Alternatives (copy-paste, package managers) lose this traceability.
+
+**commit tempalte**
+● No, Vim doesn't enforce any structure — it's just a blank text editor. He can type whatever he wants.         
+  The Conventional Commits format (subject line, blank line, body, footer) is a self-imposed discipline, not   something the tool enforces. Nothing stops him from writing "fixed stuff" and saving.                      
+                                                                                                             
+  However, there are ways to enforce structure:
+  
+  - Git hooks (commit-msg hook) — a script that rejects commit messages not matching a pattern
+  - CI tools like commitlint — check commit messages in the pipeline
+  - Editor templates — git config commit.template .gitmessage pre-fills a template when the editor opens
+
+**Visual Diagrams (from video ~00:57–03:03):**
+
+These three diagrams answer **"Why use git?"** in increasing order of importance:
+
+*Diagram 1: Commits Build a History*
+
+A commit packages your change with an ID and description. Each commit links to the next, forming a traversable history that doubles as project documentation.
+
+```
+                                          History
+  Commit                      ┌───┐   ┌───┐   ┌───┐   ┌───┐   ┌───┐   ┌───┐
+ ┌──────────────┐             │ C1├──>│ C2├──>│ C3├──>│ C4├──>│ C5├──>│ C6│
+ │              │             │   │   │   │   │   │   │   │   │   │   │   │
+ │  ID          │ ─────────>  └───┘   └───┘   └───┘   └───┘   └───┘   └───┘
+ │  +           │
+ │  Description │              Traverse  ◄── ◄── ◄── ◄──  (go back to any version)
+ │              │
+ └──────────────┘              Documentation  (quality depends on commit messages)
+```
+
+- Each box in the chain is one commit (ID + message + diff)
+- Git stores only the **differences**, not full copies
+- You can traverse backward to restore any earlier version
+- The chain itself is documentation — but only as good as your commit messages
+
+*Diagram 2: Side-benefit — Backup (Distributed Nature)*
+
+Because git is distributed, every clone holds the **complete** repository history. If any site is lost, the others still have everything.
+
+```
+                        Side-benefit: Backup
+
+         Comp 1              Comp 2              GitHub
+        ┌──────┐            ┌──────┐           ┌────────┐
+        │ ┌──┐ │            │ ┌──┐ │           │ Server │
+        │ │  │ │            │ │  │ │           │ ┌────┐ │
+        │ └──┘ │            │ └──┘ │           │ │    │ │
+        │  /\  │            │  /\  │           │ ├────┤ │
+        └──┘└──┘            └──┘└──┘           │ │    │ │
+             \                  |              └───┬──┘─┘
+              \                 |                 /
+               \                |                /
+                \               |               /
+                 v              v              v
+              ┌──────────────────────────────────┐
+              │     One complete copy on each     │
+              │     site (full history + code)    │
+              └──────────────────────────────────┘
+```
+
+- Git is **distributed** — not client-server
+- `git push` to GitHub = automatic off-site backup
+- Working from multiple computers = multiple backups
+- Each clone has the **entire** commit history, not just latest files
+
+*Diagram 3: Collaboration — Branches, Merging, and Conflict Resolution*
+
+Two developers work on separate branches. When merging back, changes to the same code create conflicts that must be resolved.
+
+```
+                        Collaboration!
+
+                  o───o───o───o              ~ Branch 1 (Dev A)
+                 /               \
+        o───o───o                 o──>  (merged)
+                 \               /
+                  o───o───o──o          ~ Branch 2 (Dev B)
+
+
+        When both branches modify the same code:
+
+        ┌─────────┐         ┌─────────┐
+        │ File v1 │         │ File v2 │
+        │ (Dev A) │ ──────> │ (Dev B) │
+        │  ~~~    │    \  / │  ~~~    │
+        └─────────┘     \/  └─────────┘
+                        /\
+                       /  \
+                    ┌────────┐
+                    │CONFLICT│
+                    │  ****  │
+                    └───┬────┘
+                        │
+                        v
+                   ┌──────────┐
+                   │ Resolve  │
+                   └──────────┘
+```
+
+- Branches let developers work on different parts of the code **in parallel**
+- Merging combines the work back together
+- **Conflicts** occur when both branches modify the same lines
+- Git detects conflicts and helps you **resolve** them
+- This is where git "truly shines" — code review, parallel work, conflict resolution
+- The instructor notes he won't use this much since he's a solo developer on nsumo
+
+| # | Diagram | Git Benefit | Transcript Timestamp |
+|---|---------|-------------|---------------------|
+| 1 | Commit chain | Track changes, traverse history, documentation | ~00:57–02:12 |
+| 2 | Distributed backup | Automatic backup across machines and GitHub | ~02:18–02:32 |
+| 3 | Collaboration | Branching, merging, code review, conflict resolution | ~02:36–03:03 |
 
 ---
 
