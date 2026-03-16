@@ -2,7 +2,7 @@
 
 ---
 
-### Lesson 012 -- How I Program GPIOs in C
+# Lesson 012 -- How I Program GPIOs in C
 
 **File Path:** [12 How I program GPIOs in C  Embedded System Project Series #12.txt](Artful_Bytes_Transcript/12%20How%20I%20program%20GPIOs%20in%20C%20%20Embedded%20System%20Project%20Series%20%2312.txt)
 
@@ -95,9 +95,23 @@
 - **Q3: Why use `volatile` and `const` together on the register pointer arrays?**
   - `volatile` tells the compiler the memory at the pointed-to address can change outside the program's control (hardware registers), preventing the compiler from optimizing away reads/writes. `const` on the pointer itself means the address stored in the array never changes (register addresses are fixed). Together they ensure correct hardware access while preventing accidental pointer modification.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ---
 
-### Lesson 013 -- Handling Multiple Hardware Versions
+# Lesson 013 -- Handling Multiple Hardware Versions
 
 **File Path:** [13 Handling multiple Hardware Versions  Embedded System Project Series #13.txt](Artful_Bytes_Transcript/13%20Handling%20multiple%20Hardware%20Versions%20%20Embedded%20System%20Project%20Series%20%2313.txt)
 
@@ -171,7 +185,7 @@
 
 ---
 
-### Lesson 014 -- Assert on a Microcontroller
+# Lesson 014 -- Assert on a Microcontroller
 
 **File Path:** [14 Assert on a Microcontroller  Embedded System Project Series #14.txt](Artful_Bytes_Transcript/14%20Assert%20on%20a%20Microcontroller%20%20Embedded%20System%20Project%20Series%20%2314.txt)
 
@@ -254,7 +268,7 @@
 
 ---
 
-### Lesson 015 -- My Small Test Functions
+# Lesson 015 -- My Small Test Functions
 
 **File Path:** [15 My Small Test Functions  Embedded System Project Series #15.txt](Artful_Bytes_Transcript/15%20My%20Small%20Test%20Functions%20%20Embedded%20System%20Project%20Series%20%2315.txt)
 
@@ -332,7 +346,7 @@
 
 ---
 
-### Lesson 016 -- How Microcontroller Memory Works
+# Lesson 016 -- How Microcontroller Memory Works
 
 **File Path:** [16 How Microcontroller Memory Works  Embedded System Project Series #16.txt](Artful_Bytes_Transcript/16%20How%20Microcontroller%20Memory%20Works%20%20Embedded%20System%20Project%20Series%20%2316.txt)
 
@@ -403,7 +417,7 @@
 
 ---
 
-### Lesson 017 -- Microcontroller Interrupts
+# Lesson 017 -- Microcontroller Interrupts
 
 **File Path:** [17 Microcontroller Interrupts  Embedded System Project Series #17.txt](Artful_Bytes_Transcript/17%20Microcontroller%20Interrupts%20%20Embedded%20System%20Project%20Series%20%2317.txt)
 
@@ -491,7 +505,7 @@
 
 ---
 
-### Lesson 018 -- Write a UART Driver (Polling and Interrupt)
+# Lesson 018 -- Write a UART Driver (Polling and Interrupt)
 
 **File Path:** [18 Write a UART driver (Polling and Interrupt)  Embedded System Project Series #18.txt](Artful_Bytes_Transcript/18%20Write%20a%20UART%20driver%20%28Polling%20and%20Interrupt%29%20%20Embedded%20System%20Project%20Series%20%2318.txt)
 
@@ -584,7 +598,7 @@
 
 ---
 
-### Lesson 019 -- Printf on a Microcontroller
+# Lesson 019 -- Printf on a Microcontroller
 
 **File Path:** [19 Printf on a Microcontroller  Embedded System Project Series #19.txt](Artful_Bytes_Transcript/19%20Printf%20on%20a%20Microcontroller%20%20Embedded%20System%20Project%20Series%20%2319.txt)
 
@@ -675,7 +689,7 @@
 
 ---
 
-### Lesson 020 -- NEC Protocol Driver (Infrared Remote)
+# Lesson 020 -- NEC Protocol Driver (Infrared Remote)
 
 **File Path:** [20 NEC Protocol Driver (Infrared remote)  Embedded System Project Series #20.txt](Artful_Bytes_Transcript/20%20NEC%20Protocol%20Driver%20%28Infrared%20remote%29%20%20Embedded%20System%20Project%20Series%20%2320.txt)
 

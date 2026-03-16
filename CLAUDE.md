@@ -148,7 +148,13 @@ When answering questions about course content, lessons, or concepts — read the
 
 ## Branches
 
-- `main` — primary branch
-- `fixed-Makefile` — Makefile fixes for Windows/local toolchain paths
-- `PIT-progress` — course progress tracking
-- `Artful-Byte-exp` — experimental work
+- `main` — primary branch (protected: requires PR + CI pass to merge)
+- `fixed-Makefile` — merged into main (Makefile fixes for Windows/local toolchain paths)
+- `PIT-progress` — course progress tracking (legacy, may be stale)
+- `Artful-Byte-exp` — experimental work (may be stale)
+
+## CI/CD
+
+GitHub Actions workflow at `.github/workflows/main.yml`. Triggers on every push. Uses Docker image `artfulbytes/msp430-gcc-9.3.1.11:latest`. Currently builds from `Code/nsumo_video-feature_io_handling_2/`.
+
+**Known issue:** `main.yml` needs `working-directory` added — CI fails because `make` runs from repo root instead of the Makefile directory. See `TODO.md` for fix instructions.

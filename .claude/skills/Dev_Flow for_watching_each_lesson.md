@@ -25,3 +25,7 @@ CBadweh Plan to developing watching each lesson guide
 - with or without, right vs wrong version 
 
 
+## During Watching lesson
+- Orignial Course_ClaudeOpus_Summary.md might not have the completed
+    - Diagram or Code entered in the video, so when watching the lesson, update diagram and commands so that Claude can also have those for full context without contradiation
+
