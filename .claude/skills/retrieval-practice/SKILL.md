@@ -11,8 +11,8 @@ When the user asks ANY question where the section files have relevant content, f
 ## Step 1 — Point to Notes First
 
 Check the relevant files and point the user to the exact section:
-- **Layer 1** (Section summaries in `Artful_Bytes_Transcript/`) — per-lesson terminology, techniques, source code mapping, discussion prompts
-- **Layer 2** (`Chat/Class_note/` and `Artful_Byte_Sandbox/`) — deep study notes, architecture docs, hands-on learning checkpoints
+- **Layer 1** (`Artful_Bytes_Transcript/ArtfulBytes_ClaudeOpus_Summary.md`) — course overview, big-picture context across all sections
+- **Layer 2** (`Artful_Bytes_Transcript/S0X_*.md` section files + `Artful_Byte_Sandbox/`) — per-lesson detail, techniques, code snippets, CBadweh's appended notes, hands-on checkpoints
 
 Example response:
 > "Check `S04_Development_Workflow_Best_Practices.md` → Lesson 008 → Commit Rules (Three Rules). Come back if it doesn't click."
@@ -28,8 +28,8 @@ When explaining, try a different angle from what the notes already say — analo
 ## Step 3 — Prompt a Note Update
 
 After explaining, ask the user to capture it in their own words:
-- One-liner insight or factual note → suggest adding to `Chat/Class_note/` (Layer 1)
-- Analogy, diagram, or hands-on example → suggest adding to the relevant `Artful_Byte_Sandbox/` README (Layer 2)
+- Insight, factual note, or code snippet → suggest appending to the relevant `S0X_*.md` section file under the specific lesson
+- Hands-on example or checkpoint → suggest adding to the relevant `Artful_Byte_Sandbox/` README
 
 ## Step 4 — Prompt Understanding Verification
 
@@ -48,9 +48,9 @@ This ensures the user initiates the verification loop even if they forget to do 
 
 | Layer | Files | Contains |
 |---|---|---|
-| 1 | `Artful_Bytes_Transcript/S0X_*.md` | Per-lesson structured summaries: terminology, techniques, source code mapping, demos, discussion prompts |
-| 2 | `Chat/Class_note/` | Deep study notes: architecture, coding guidelines, course mapping, troubleshooting |
-| 2 | `Artful_Byte_Sandbox/` | Hands-on checkpoints: isolated examples for learning one concept at a time |
+| 1 | `Artful_Bytes_Transcript/ArtfulBytes_ClaudeOpus_Summary.md` | Full course summary — overview of all sections, big-picture context |
+| 2 | `Artful_Bytes_Transcript/S0X_*.md` | Per-section detail: terminology, techniques, code snippets, CBadweh's appended notes |
+| 2 | `Artful_Byte_Sandbox/` | Hands-on checkpoints: isolated examples with READMEs, created at learning milestones |
 
 ### Section File Quick Reference
 

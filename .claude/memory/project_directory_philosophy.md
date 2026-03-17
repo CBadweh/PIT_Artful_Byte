@@ -1,30 +1,35 @@
 ---
 name: Directory Organization Philosophy
-description: CBadweh's directory structure conventions for course study repos — Code vs Sandbox vs Transcript roles and reasoning
+description: CBadweh's workspace design — two phases (Learning/Referencing), two layers (Overview/Detail), and how each directory serves them. Blueprint for new course workspaces.
 type: project
 ---
 
-CBadweh organizes each course study repo into three core directories, each with a distinct role:
+## Two Phases
 
-## `Code/` — Implementations with real code
+### Phase 1 — Learning
+Actively following the course. `Code/` has working implementations that get modified lesson by lesson. As concepts are learned, notes get appended directly to `S0X_*.md` section files under the specific lesson. At section or milestone boundaries, working code moves from `Code/` to `*_Sandbox/` as a checkpoint.
 
-- `source_code/` holds the **unmodified upstream reference** (git-cloned, never modified). This is the complete finished project for read-only reference.
-- Other subdirectories hold **feature branches, CBadweh's own experiments**, and anything with actual working implementations.
+### Phase 2 — Referencing
+Looking up what was learned. The reference system is Layer 1 (course summary for overview) and Layer 2 (section files + sandbox READMEs for detail).
 
-## `Artful_Byte_Sandbox/` (or `*_Sandbox/`) — Learning checkpoints
+## Two Layers (by detail level)
 
-Minimal, isolated examples stripped of dependencies. Each checkpoint lets you explore **one concept at a time** without the complexity of the full project.
+| Layer | Files | Purpose |
+|-------|-------|---------|
+| 1 — Overview | `*_Transcript/XXX_ClaudeOpus_Summary.md` | Full course summary. First place to check for big-picture questions. |
+| 2 — Detail | `*_Transcript/S0X_*.md` | Per-section depth: terminology, techniques, code snippets, CBadweh's appended notes. |
+| 2 — Detail | `*_Sandbox/` | Hands-on checkpoints with READMEs: isolated examples created at learning milestones. |
+| Source of truth | `Code/source_code/` | The actual codebase. Reference when Layers 1–2 don't suffice. |
 
-**Why:** The completed source code has many integrated dependencies. When exploring a basic concept (e.g., how a Makefile works), the full project's Makefile is overwhelming because it includes CI targets, conditional compilation, multi-hardware support, static analysis, etc. A checkpoint like `blink_example/` contains only the bare essentials — making the concept easy to understand.
+## Directory → Phase/Layer Mapping
 
-**What goes here:** Milestone snapshots from the course, stripped-down examples, CCS projects used for verification, anything that serves as a reference point for a specific lesson or concept.
+- **`Code/source_code/`** — Read-only upstream reference. Source of truth for both phases. Never modify.
+- **`Code/` (other folders)** — Active during Phase 1. Working implementations that get modified as lessons progress. At milestones, code moves to Sandbox.
+- **`*_Transcript/XXX_ClaudeOpus_Summary.md`** — Layer 1. AI-generated course overview for big-picture questions.
+- **`*_Transcript/S0X_*.md`** — Layer 2. Per-section detail. Notes from learning get appended here under specific lessons — this is where "chat" insights are captured (no separate Chat/ directory).
+- **`*_Sandbox/`** — Layer 2. Created at milestones during Phase 1 (code moves from Code/). Referenced during Phase 2 via READMEs. Each checkpoint isolates one concept without full-project complexity.
 
-## `*_Transcript/` — Course content
+### Why Sandbox Exists
+The completed source code has many integrated dependencies. When exploring a basic concept (e.g., how a Makefile works), the full project's Makefile is overwhelming because it includes CI targets, conditional compilation, multi-hardware support, etc. A Sandbox checkpoint contains only the bare essentials.
 
-Lesson transcripts (`.txt` files) plus AI-generated summaries and per-section summary files. This is the knowledge base, not code.
-
-## `Chat/` — AI conversation logs and class notes
-
-Notes from AI conversations, troubleshooting logs, and class-related notes.
-
-**How to apply:** When CBadweh creates a new course study repo or adds content to this one, follow these conventions. Code goes in `Code/`, checkpoints go in `Sandbox/`, transcripts go in `Transcript/`. When CBadweh says "CBadweh" in a folder name, it means their own implementation/experiment.
+**How to apply:** When creating a new course workspace, follow these conventions. Working code goes in `Code/`, milestone checkpoints go in `*_Sandbox/`, transcripts and notes go in `*_Transcript/`. All learning notes get appended to section files — no separate Chat/ directory.

@@ -97,7 +97,6 @@ Artful_Byte/
 │   ├── blink_example/          ← Lesson 5 checkpoint: Makefile blink project
 │   └── S04_Development_Workflow/ ← Lessons 8-11 checkpoint: git, cppcheck, CI/CD, clang-format
 ├── Artful_Bytes_Transcript/    ← 28 lesson transcripts (.txt) + course summary files
-├── Chat/                       ← AI conversation logs and class notes
 ├── Code/
 │   ├── nsumo_video-feature_io_handling_2/  ← IO driver implementation (lesson 12-13)
 │   └── source_code/
