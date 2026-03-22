@@ -39,10 +39,16 @@ HEADERS = \
 OBJECT_NAMES = $(SOURCES:.c=.o)
 OBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(OBJECT_NAMES))
 
+# Filter out external files from format and cppcheck
+IGNORE_FILES_FORMAT_CPPCHECK = \
+	external/printf/printf.h \
+	external/printf/printf.c
+SOURCES_FORMAT_CPPCHECK = $(filter-out $(IGNORE_FILES_FORMAT_CPPCHECK),$(SOURCES))
+HEADERS_FORMAT = $(filter-out $(IGNORE_FILES_FORMAT_CPPCHECK),$(HEADERS))
+
 # Static Analysis
 ## Don't check the msp430 helper headers (they have a LOT of ifdefs)
-CPPCHECK_INCLUDES = ./src
-CPPCHECK_IGNORE = external/printf
+CPPCHECK_INCLUDES = ./src ./
 CPPCHECK_FLAGS = \
 	--quiet --enable=all --error-exitcode=1 \
 	--inline-suppr \
@@ -82,7 +88,7 @@ flash: $(TARGET)
 	@$(DEBUG) tilib "prog $(TARGET)"
 
 cppcheck:
-	@$(CPPCHECK) $(CPPCHECK_FLAGS) $(SOURCES)
+	@$(CPPCHECK) $(CPPCHECK_FLAGS) $(SOURCES_FORMAT_CPPCHECK)
 
 format:
-	@$(FORMAT) -i $(SOURCES) $(HEADERS)
+	@$(FORMAT) -i $(SOURCES_FORMAT_CPPCHECK) $(HEADERS_FORMAT)

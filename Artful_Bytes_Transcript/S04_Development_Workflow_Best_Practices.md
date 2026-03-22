@@ -577,6 +577,66 @@ My system
 
 **Objective:** Covers four commits: adding project documentation (README, coding guidelines), integrating clang-format into the Makefile and CI pipeline, fixing a Makefile bug where header file changes were not triggering rebuilds, and fixing a cppcheck performance issue caused by the vendor header file.
 
+
+
+
+Your understanding is correct. Here's the workflow with where each file fits:
+
+```
+DEVELOPER MACHINE (local)
+═══════════════════════════════════════════════════════════════════
+
+  Branch ──► Code Change ──► Build + cppcheck ──► Commit ──► Push
+    │            │                  │                          │
+    │            │                  │                          │
+    │     .clang-format            Makefile                    │
+    │     (defines style      (make, make cppcheck,           │
+    │      rules for code)     make format)                   │
+    │                                                         │
+    │                                                         ▼
+    │                                                    GITHUB (remote)
+    │                                               ═══════════════════
+    │                                                         │
+    │                                                    Pull Request
+    │                                                         │
+    │                                                         ▼
+    │                                               ┌─────────────────┐
+    │                                               │  GitHub Actions  │
+    │                                               │    (ci.yml)      │
+    │                                               │                  │
+    │                                               │  1. make format  │
+    │                                               │     && git diff  │
+    │                                               │     --quiet      │
+    │                                               │  2. make cppcheck│
+    │                                               │  3. make         │
+    │                                               └────────┬─────────┘
+    │                                                        │
+    │                                                   PASS?│
+    │                                                ┌───────┴───────┐
+    │                                                │               │
+    │                                               YES              NO
+    │                                                │               │
+    │                                            Merge ◄── Fix & ◄───┘
+    │                                            to main   recommit
+    │                                                        │
+    └────────────────────────────────────────────────────────-┘
+
+
+FILES NOT IN THE WORKFLOW (reference docs):
+═══════════════════════════════════════════
+  README.md              ── how to set up and use the project
+  docs/coding_guidelines.md ── how to write code in this project
+  .gitignore             ── what to keep out of git
+  tools/dockerfile       ── defines the CI container environment
+
+So the flow
+.clang-format  ──(read by)──►  make format  ──(detects changes)──►  git diff --quiet
+  (static)                     (runs every                          (PASS/FAIL)
+                                commit/CI)
+```
+
+
+
 **Terminology & Key Concepts:**
 - **README.md**: The primary documentation file for the project. Contains a project introduction, directory structure description, setup instructions, build commands, and workflow description. Rendered by GitHub on the repository page.
 - **Coding Guidelines (`docs/coding_guidelines.md`)**: A document describing the coding conventions followed in the project: snake_case naming, 4-space indentation, module-prefixed functions, fixed-width integers, typedef rules for enums (suffix `_e`, don't typedef structs, don't use `_t`), include order (local -> project -> system), always use `{}` for if/else, `void` in empty parameter lists, `static` for internal functions, const correctness.
@@ -662,32 +722,44 @@ My system
   2. Update Dockerfile to install `clang-format-12` and `git`.
   3. Add `make format && git diff --quiet` as first CI step.
   4. Demonstrate locally: modify a file, `git diff` returns error; run `make format`, `git diff` returns zero.
+	  ci.yml
   5. Branch, commit, push, PR, CI passes, merge.
 
   **Commit 3 --- Header Dependency Bug Fix:**
-  1. Problem: modifying a `.h` file and running `make` says "up to date" --- the bug is not detected until a clean rebuild.
-  2. Root cause: header files were not listed as prerequisites in the Makefile.
-  3. Fix: create `HEADERS` variable from `SOURCES_WITH_HEADERS` using `.c=.h` substitution, add to build rule dependencies.
-  4. Verify: modify a header, run `make` --- rebuild triggered, compilation error detected.
-  5. Branch, commit, push, PR, CI passes, merge.
+  6. Problem: modifying a `.h` file and running `make` says "up to date" --- the bug is not detected until a clean rebuild.
+  7. Root cause: header files were not listed as prerequisites in the Makefile.
+  8. Fix: create `HEADERS` variable from `SOURCES_WITH_HEADERS` using `.c=.h` substitution, add to build rule dependencies.
+  9. Verify: modify a header, run `make` --- rebuild triggered, compilation error detected.
+  10. Branch, commit, push, PR, CI passes, merge.
 
   **Commit 4 --- cppcheck Performance Bug Fix:**
-  1. Problem: `make cppcheck` takes minutes instead of seconds after adding code.
-  2. Root cause: cppcheck was analyzing `msp430.h`, which has thousands of `#ifdef` branches.
-  3. Fix: use separate include paths for cppcheck (`CPPCHECK_INCLUDES = ./src ./`) that exclude the vendor header directory.
-  4. Add suppressions: `missingIncludeSystem`, `unmatchedSuppression`, `unusedFunction`.
-  5. Also fix `make cppcheck` error on second run by adding `-p` flag to `mkdir`.
-  6. Branch, commit, push, PR, CI passes, merge.
+  11. Problem: `make cppcheck` takes minutes instead of seconds after adding code.
+  12. Root cause: cppcheck was analyzing `msp430.h`, which has thousands of `#ifdef` branches.
+  13. Fix: use separate include paths for cppcheck (`CPPCHECK_INCLUDES = ./src ./`) that exclude the vendor header directory.
+  14. Add suppressions: `missingIncludeSystem`, `unmatchedSuppression`, `unusedFunction`.
+  15. Also fix `make cppcheck` error on second run by adding `-p` flag to `mkdir`.
+  16. Branch, commit, push, PR, CI passes, merge.
 - **What Changed:**
   - `README.md`: Complete project documentation.
   - `docs/coding_guidelines.md`: New coding conventions document.
   - `Makefile`: Added `format` target, fixed header dependencies, fixed cppcheck include paths and suppressions.
-  - `.github/workflows/ci.yml`: Added format check step.
+  - `.github/workflows/ci.yml`: Added format check step. 3 shakes each commit must pass before they can be merge
+		  - run make format && git diff -- quiet
+		  - run make cppcheck
+		  - run TOOLS_PATH =/home/ubuntu/dev/tools make
   - `tools/dockerfile`: Added `clang-format-12` and `git` packages.
-  - `.gitignore`: Added editor-generated files.
+  - `.gitignore`: Added editor-generated files. 
+	  - Bear: generates compile_commands.json so text editors (Vim) get IDE-like features. Output is machine-specific →  .gitignore it.
 
 **New Tools Introduced:**
 - **clang-format (v12)** --- auto-formatter for C/C++ that enforces consistent coding style based on a configuration file
+	- Run: 
+		- manuall y: clang-format-12 -i src/main.c
+		- Makefile
+			- ```
+			  format:
+				@$(FORMAT) -i $(SOURCES) $(HEADERS)
+				```
 
 **Discussion Prompts:**
 - **Q1: Why automate code formatting instead of relying on developers to format manually?**
@@ -696,3 +768,305 @@ My system
   - Without header files in the Makefile's dependency list, modifying a struct definition, changing a constant in `defines.h`, or altering a function signature in a header would not trigger a rebuild. The developer would run `make`, see "up to date," and believe the code is correct --- but the binary would contain the old definitions. This could cause subtle, hard-to-debug runtime errors. Only a `make clean && make` would catch it, which defeats Make's purpose.
 - **Q3: Why did cppcheck become slow on the vendor header file?**
   - The `msp430.h` header contains hundreds of `#ifdef` blocks (one for each MSP430 variant). cppcheck attempts to analyze all possible preprocessing paths, leading to combinatorial explosion. Since the vendor header is trusted and unmodifiable, excluding it from analysis is the correct approach.
+
+
+
+# S04_Summary
+
+## mermaid
+```mermaid
+flowchart TD
+    subgraph SETUP["📁 SETUP (one-time, lives in repo)"]
+        CF[".clang-format<br/>style rules (L11)"]
+        CG["docs/coding_guidelines.md<br/>how to write code (L11)"]
+        README["README.md<br/>project intro (L11)"]
+        DF["tools/dockerfile<br/>CI environment (L10)"]
+        GI[".gitignore<br/>exclude build artifacts (L8)"]
+    end
+
+    subgraph LOCAL["🖥️ LOCAL (developer machine)"]
+        BRANCH["① Branch<br/>git checkout -b feature-name"]
+        CODE["② Code Change<br/>write .c/.h files"]
+        CHECKS["③ Local Checks"]
+        FORMAT["make format<br/>auto-fix style"]
+        CPPCHECK["make cppcheck<br/>static analysis"]
+        BUILD["make<br/>compile"]
+        COMMIT["④ Commit<br/>type(scope): description<br/>body: WHY"]
+        PUSH["⑤ Push<br/>git push origin branch"]
+
+        BRANCH --> CODE
+        CODE --> CHECKS
+        CHECKS --> FORMAT
+        FORMAT --> CPPCHECK
+        CPPCHECK --> BUILD
+        BUILD --> COMMIT
+        COMMIT --> PUSH
+    end
+
+    subgraph GITHUB["☁️ GITHUB (remote)"]
+        PR["⑥ Pull Request<br/>self-review diff"]
+        subgraph CI["⑦ GitHub Actions (ci.yml)<br/>runs inside Docker container"]
+            S1["SHAKE 1<br/>make format && git diff --quiet<br/>is code formatted?"]
+            S2["SHAKE 2<br/>make cppcheck<br/>static analysis errors?"]
+            S3["SHAKE 3<br/>make<br/>does it compile?"]
+            S1 --> S2 --> S3
+        end
+        PASS["✅ PASS"]
+        FAIL["❌ FAIL"]
+        MERGE["⑧ Merge to main<br/>always stable"]
+    end
+
+    PUSH --> PR
+    PR --> CI
+    S3 --> PASS
+    S3 --> FAIL
+    PASS --> MERGE
+    FAIL -->|"fix locally, recommit"| CODE
+
+    CF -.->|"read by"| FORMAT
+    CG -.->|"reference for"| CODE
+    DF -.->|"builds container for"| CI
+    GI -.->|"excludes files in"| COMMIT
+
+    style SETUP fill:#1a1a2e,stroke:#e0e0e0,color:#fff
+    style LOCAL fill:#0d2818,stroke:#4caf50,color:#fff
+    style GITHUB fill:#2d1810,stroke:#ff9800,color:#fff
+    style CI fill:#3d2810,stroke:#ffc107,color:#fff
+    style PASS fill:#1b5e20,stroke:#4caf50,color:#fff
+    style FAIL fill:#b71c1c,stroke:#f44336,color:#fff
+    style MERGE fill:#1b5e20,stroke:#4caf50,color:#fff
+```
+
+
+## ASCII
+
+Now I have the full picture. Here's the complete S04 workflow with where every file fits:
+
+```
+S04 COMPLETE WORKFLOW: From Code to Merge
+══════════════════════════════════════════
+
+                    SETUP (one-time, lives in repo)
+    ┌──────────────────────────────────────────────────────────┐
+    │                                                          │
+    │  .clang-format          ── style rules (L11)             │
+    │  docs/coding_guidelines.md ── how to write code (L11)    │
+    │  README.md              ── how to use the project (L11)  │
+    │  tools/dockerfile       ── CI build environment (L10)    │
+    │  .gitignore             ── what to exclude from git (L8) │
+    │                                                          │
+    └──────────────────────────────────────────────────────────┘
+
+
+    LOCAL (developer machine)
+    ═══════════════════════════════════════════════════════════
+
+    ① Branch                    git checkout -b feature-name
+       │                                                (L8)
+       ▼
+    ② Code Change               write .c/.h files
+       │                        following coding_guidelines.md
+       ▼
+    ③ Local Checks              ◄── Makefile (L5, L9, L11)
+       │
+       ├─ make format           uses .clang-format to auto-fix style
+       ├─ make cppcheck         static analysis (catches bugs without running)
+       └─ make                  compile (catches syntax/type/link errors)
+       │
+       ▼
+    ④ Commit                    git commit (L8)
+       │                        ├─ type(scope): description
+       │                        ├─ body: WHY this change
+       │                        └─ footer: video/issue ref
+       ▼
+    ⑤ Push                      git push origin feature-name
+
+
+    GITHUB (remote)
+    ═══════════════════════════════════════════════════════════
+
+    ⑥ Pull Request              open PR on GitHub (L10)
+       │                        self-review the diff
+       ▼
+    ⑦ GitHub Actions            ◄── .github/workflows/ci.yml (L10, L11)
+       │                            runs inside Docker container (L10)
+       │                            ◄── tools/dockerfile
+       │
+       │  ┌─────────────────────────────────────────────┐
+       │  │  SHAKE 1: make format && git diff --quiet   │
+       │  │           (is code formatted?)              │
+       │  │                                             │
+       │  │  SHAKE 2: make cppcheck                     │
+       │  │           (any static analysis errors?)     │
+       │  │                                             │
+       │  │  SHAKE 3: make                              │
+       │  │           (does it compile?)                │
+       │  └─────────────────┬───────────────────────────┘
+       │                    │
+       │              ┌─────┴─────┐
+       │              │           │
+       │            PASS         FAIL
+       │              │           │
+       │              ▼           ▼
+       │           Merge      Fix locally,
+       │           to main    recommit & push
+       │              │           │
+       │              │           └──────► back to ②
+       ▼              ▼
+    ⑧ main branch = always stable, always working
+
+
+    FILE MAP ── which file does what
+    ═══════════════════════════════════════════════════════════
+
+    Step  │ File                        │ Lesson │ Role
+    ──────┼─────────────────────────────┼────────┼──────────────────────
+    ②     │ docs/coding_guidelines.md   │  L11   │ Reference: how to write code
+    ③     │ Makefile                    │ L5,9,11│ Runs build, cppcheck, format
+    ③     │ .clang-format               │  L11   │ Defines formatting rules
+    ④     │ (commit message convention) │  L8    │ type(scope): description
+    ⑤     │ .gitignore                  │  L8    │ Excludes build/, compile_commands.json
+    ⑦     │ .github/workflows/ci.yml    │ L10,11 │ Defines the 3 CI shakes
+    ⑦     │ tools/dockerfile            │  L10   │ CI container with toolchain
+    ──────┼─────────────────────────────┼────────┼──────────────────────
+    none  │ README.md                   │  L11   │ Project intro for newcomers
+```
+
+Want me to add this to your `S04_Development_Workflow_Best_Practices.md`?
+
+
+
+```
+Title: CBadweh Diagram
+
+    CODE ──► LOCAL CHECKS ──►           COMMIT ──► PUSH ──►         PR ──► CI ──► MERGE
+     │            │                        │                          │
+     │            │                        │                    ┌─────┴────────────────────────────┐
+     │            ├─ make format           │                    │  ci.yml                          │ ci uses the image that tools\dockerfile created and pushed 
+     │            ├─ make cppcheck         |                    │                                  │ continer - Git Hub Action's container 
+     │            └─ make                  │                    │ 1. format (.clang-format)        │ image - created by Dockerfile and to it to Docker Hub
+     │                                     │                    │ 2. cppcheck                      │ checkout - our repo
+     │        Makefile +                   │                    │ 3. make (Makefile)               │
+     │        .clang-format              commit msg             └─────┬────────────────────────────┘
+     │                                   convention                PASS/FAIL
+     │                                   (L8)                         │
+  coding_guidelines.md                                           FAIL → fix → ②
+  (reference only)
+```
+
+
+
+```mermaid
+---
+title: "CBadweh Diagram: S04 Development Workflow"
+---
+flowchart LR
+    CODE["② Code"] --> CHECKS["③ Local Checks"]
+    CHECKS --> COMMIT["④ Commit"]
+    COMMIT --> PUSH["⑤ Push"]
+    PUSH --> PR["⑥ PR"]
+    PR --> CI["⑦ CI"]
+    CI -->|PASS| MERGE["⑧ Merge"]
+    CI -->|FAIL| CODE
+
+    subgraph LOCAL ["Local"]
+        CODE
+        CHECKS
+        COMMIT
+        PUSH
+    end
+
+    subgraph GITHUB ["GitHub"]
+        PR
+        CI
+        MERGE
+    end
+```
+
+| Step     | Files Used               | Notes                                          |
+| -------- | ------------------------ | ---------------------------------------------- |
+| ② Code   | coding_guidelines.md     | Reference only                                 |
+| ③ Checks | Makefile, .clang-format  | make format, cppcheck, make                    |
+| ④ Commit | —                        | type(scope): description (L8)                  |
+| ⑦ CI     | ci.yml, tools/dockerfile | GitHub's container, our image, checks out repo |
+
+
+
+    GitHub Actions (orchestrator it decides when to run, what steps to execute, and where to run them.)
+    ├─ triggered by: push
+    ├─ reads: ci.yml
+    ├─ spins up: container (from your image)
+    ├─ runs steps inside container:
+    │   ├─ checkout code
+    │   ├─ make format
+    │   ├─ make cppcheck
+    │   └─ make
+    ├─ reports: PASS/FAIL
+    └─ destroys container
+
+
+
+```
+CI PROCESS SUMMARY (Lesson 10-11)
+══════════════════════════════════
+
+WHAT IT IS:
+- GitHub Actions reads ci.yml on every push
+- Creates its OWN container from your image (artfulbytes/msp430-gcc-9.3.1.11)
+- Checks out your repo code into that container (actions/checkout@v3)
+- Runs 3 shakes inside the container:
+    1. make format && git diff --quiet  (style check)
+    2. make cppcheck                    (static analysis)
+    3. make                             (compile)
+- Reports PASS → merge allowed, or FAIL → fix & re-push
+- Destroys container after run
+
+WHAT IT'S NOT:
+- NOT using your local container or Dockerfile directly
+- NOT running on your machine — runs on GitHub's servers
+- NOT the container you built — GitHub creates a new one each run
+- The Dockerfile is just the RECIPE to build the image (one-time)
+- The image is just the TEMPLATE stored on Docker Hub
+- GitHub Actions is the ORCHESTRATOR, not the container itself
+
+ONE-TIME SETUP:
+  Dockerfile ──► docker build ──► image ──► push to Docker Hub
+
+EVERY PUSH:
+  push ──► GitHub Actions reads ci.yml
+           ──► pulls image from Docker Hub
+           ──► creates container
+           ──► checks out your code
+           ──► runs 3 shakes
+           ──► PASS/FAIL
+           ──► destroys container
+```
+
+
+```
+S04 Development Workflow Files
+══════════════════════════════
+
+nsumo/
+├── .github/
+│   └── workflows/
+│       └── ci.yml                  ← CI pipeline config (L10, L11)
+├── docs/
+│   └── coding_guidelines.md       ← coding conventions reference (L11)
+├── tools/
+│   └── dockerfile                  ← image recipe for CI container (L10)
+├── external/
+│   └── printf/                     ← git submodule, third-party (L8)
+├── src/
+│   ├── main.c
+│   ├── app/
+│   ├── drivers/
+│   ├── common/
+│   │   └── defines.h
+│   └── test/
+├── Makefile                        ← build, cppcheck, format targets (L5, L9, L11)
+├── .clang-format                   ← formatting rules (L11)
+├── .gitignore                      ← excludes build/, compile_commands.json (L8, L11)
+├── .gitmodules                     ← tracks printf submodule (L8)
+└── README.md                       ← project documentation (L11)
+```
