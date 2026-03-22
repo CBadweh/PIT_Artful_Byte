@@ -27,6 +27,9 @@ FORMAT = clang-format-12
 TARGET = $(BIN_DIR)/nsumo
 
 SOURCES_WITH_HEADERS = \
+		src/drivers/io.c \
+		src/drivers/mcu_init.c \
+		src/common/assert_handler.c \
 
 SOURCES = \
 		src/main.c \
@@ -35,6 +38,7 @@ SOURCES = \
 HEADERS = \
 		$(SOURCES_WITH_HEADERS:.c=.h) \
 		src/common/defines.h \
+		src/common/assert_handler.h \
 
 OBJECT_NAMES = $(SOURCES:.c=.o)
 OBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(OBJECT_NAMES))
@@ -60,8 +64,9 @@ CPPCHECK_FLAGS = \
 
 # Flags
 MCU = msp430g2553
+DEFINES = -DLAUNCHPAD
 WFLAGS = -Wall -Wextra -Werror -Wshadow
-CFLAGS = -mmcu=$(MCU) $(WFLAGS) $(addprefix -I,$(INCLUDE_DIRS)) -Og -g
+CFLAGS = -mmcu=$(MCU) $(WFLAGS) -fshort-enums $(addprefix -I,$(INCLUDE_DIRS)) $(DEFINES) -Og -g
 LDFLAGS = -mmcu=$(MCU) $(addprefix -L,$(LIB_DIRS))
 
 # Build

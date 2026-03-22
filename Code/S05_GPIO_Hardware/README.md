@@ -1,21 +1,22 @@
-# S05 GPIO Hardware — Starting Point for Lesson 12
+# S05 GPIO Hardware — Lesson 12: GPIO Abstraction Layer
 
-Pre-lesson-12 baseline of the nsumo project. Contains the full project skeleton and development tooling from Sections 4-5, but **no GPIO driver code yet**. This is the starting point for implementing the IO abstraction layer taught in Lesson 12.
+Implementation of the GPIO driver (`io.c`/`io.h`) from Lesson 12 ("How I Program GPIOs in C"). This is the first real driver in the nsumo project — it translates the hardware schematic's pin assignments into a clean C abstraction layer.
 
-## Current State (Pre-Lesson 12)
+## What's Implemented (Lesson 12)
 
-- `src/main.c` — Raw blink using direct register writes (`P1DIR`, `P1OUT`)
-- `src/common/defines.h` — `UNUSED()` and `ARRAY_SIZE()` macros
-- `src/drivers/` — Empty (PLACEHOLDER only)
-- `src/app/` — Empty (PLACEHOLDER only)
-- `Makefile` — Full build system ready for new source files
+- `src/drivers/io.h` / `io.c` — GPIO abstraction: enum-based pin naming, config struct, array-indexed register access, bulk init
+- `src/drivers/mcu_init.h` / `mcu_init.c` — Watchdog stop, 16 MHz clock config, `io_init()` call
+- `src/common/assert_handler.h` / `assert_handler.c` — MCU-safe assert with LED blink on failure
+- `src/common/defines.h` — Utility macros (`BUSY_WAIT_ms`, `ARRAY_SIZE`, `INTERRUPT_FUNCTION`)
+- `src/main.c` — LED blink test using IO abstraction
+- `Makefile` — Updated with new sources, `-fshort-enums`, `-DLAUNCHPAD`
 
-## What Lesson 12 Will Add
+## Not Yet Implemented (Future Lessons)
 
-- `src/drivers/io.h` / `io.c` — GPIO abstraction layer (enum-based pin naming, config struct, register arrays, bulk init)
-- `src/drivers/mcu_init.h` / `mcu_init.c` — Watchdog stop, clock config (16 MHz), `io_init()` call
-- `src/main.c` — Updated to call `mcu_init()` + test functions (LED blink, all-pin output, all-pin input)
-- `Makefile` — Updated `SOURCES_WITH_HEADERS` to include new driver files
+- Lesson 13: Hardware versioning (`HW=LAUNCHPAD`/`NSUMO` Makefile arg, `io_detect_hw_type()`)
+- Lesson 14: GPIO interrupts (`io_configure_interrupt`, ISR vectors)
+- Lesson 15: Millisecond timer (watchdog repurposing for `millis.c`)
+- Lesson 16: UART driver (`uart.c`, `trace.c`)
 
 ## Prerequisites
 

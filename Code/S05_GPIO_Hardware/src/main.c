@@ -1,15 +1,19 @@
-#include <msp430.h>
+#include "common/assert_handler.h"
+#include "drivers/mcu_init.h"
+#include "drivers/io.h"
 
 int main(void)
 {
-    WDTCTL = WDTPW | WDTHOLD;
+    mcu_init();
 
-    P1DIR |= 0x01;
-
+    // Test: Blink LED using IO abstraction layer
     while (1) {
-        P1OUT ^= 0x01;
-        __delay_cycles(250000);
+        io_set_out(IO_TEST_LED, IO_OUT_HIGH);
+        BUSY_WAIT_ms(250);
+        io_set_out(IO_TEST_LED, IO_OUT_LOW);
+        BUSY_WAIT_ms(250);
     }
 
+    ASSERT(0);
     return 0;
 }

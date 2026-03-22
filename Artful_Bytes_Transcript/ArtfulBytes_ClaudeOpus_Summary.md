@@ -1057,6 +1057,160 @@ Section 8: System Integration & Testing (Lessons 24-28) [Capstone]
 
 **Objective:** Teaches how to write a clean GPIO abstraction layer in C for the MSP430 microcontroller, translating a hardware schematic's pin assignments into software by wrapping TI's register defines behind a well-structured interface. This is the first real driver code in the project and establishes the pattern for all subsequent driver implementations.
 
+**Diagram**
+
+```
+╔══════════════════════════════════════════════════════════════════════╗
+║  Sumobot Software Architecture                                       ║
+╠══════════════════════════════════════════════════════════════════════╣
+║                                                                      ║
+║  Application                                                         ║
+║  ┌──────────────────────────────────────────────────────────────┐    ║
+║  │  main()                                                      │    ║
+║  │  ┌─────┐    ┌─────────────────────────────────────────────┐  │    ║
+║  │  │Super│    │           State Machine                     │  │    ║
+║  │  │Loop │──> │                                             │  │    ║
+║  │  └─────┘    │          ┌────────┐ ┌────────┐ ┌─────────┐  │  │    ║
+║  │             │          │ Search │ │ Attack │ │ Retreat │  │  │    ║
+║  │             │          └────────┘ └────────┘ └─────────┘  │  │    ║
+║  │             └─────────────────────────────────────────────┘  │    ║
+║  │                                                              │    ║
+║  │  ┌───────┐  ┌───────┐  ┌──────┐     ┌───────┐  ┌───────┐     │    ║
+║  │  │ Trace │  │ Enemy │  │ Line │     │ Drive │  │ Timer │     │    ║
+║  │  └───┬───┘  └───────┘  └──────┘     └───────┘  └───────┘     │    ║
+║  │      │                                                       │    ║
+║  │  ┌───┴────────┐                                              │    ║
+║  │  │Printf      │                                              │    ║
+║  │  │(external)  │                                              │    ║
+║  │  └────────────┘                                              │    ║
+║  └──────────────────────────────────────────────────────────────┘    ║
+║                              │                                       ║
+║  Drivers                     ▼                                       ║
+║  ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ── ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐   ║
+║  │                                                               │   ║
+║  │ ┌─────┐ ┌────┐ ┌──┐ ┌───────┐ ┌───────┐ ┌────────┐            │   ║
+║  │ │ MCU │ │UART│ │I2C│ │VL53L0X│ │QRE1113│ │TB6612FNG│          │   ║
+║  │ │Init │ │    │ │  │ │       │ │       │ │        │            │   ║
+║  │ └─────┘ └────┘ └──┘ └───────┘ └───────┘ └────────┘            │   ║
+║  │                                                               │   ║
+║  │ ┌─────┐ ┌────────┐ ┌─────┐ ┌─────┐ ┌───────────┐              │   ║
+║  │ │ ADC │ │IR Remote│ │ PWM │ │ LED │ │  millis   │             │   ║
+║  │ │     │ │(timer) │ │(tmr)│ │     │ │(watchdog) │              │   ║
+║  │ └─────┘ └────────┘ └─────┘ └─────┘ └───────────┘              │   ║
+║  │                                                               │   ║
+║  └ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ─ ─ ─ ─ ─ ─ ─ ─┘   ║
+║                              │                                       ║
+║                              ▼                                       ║
+║  ┌──────────────────────────────────────────────────────────────┐    ║
+║  │                          I/O                                 │    ║
+║  └──────────────────────────────────────────────────────────────┘    ║
+║                              │                                       ║
+║                              ▼                                       ║
+║  ┌──────────────────────────────────────────────────────────────┐    ║
+║  │                    Microcontroller                           │    ║
+║  └──────────────────────────────────────────────────────────────┘    ║
+║                                                                      ║
+╚══════════════════════════════════════════════════════════════════════╝
+```
+
+```
+I/O Pins
+                            ========
+
+    ┌─────────────────────────────┐
+    │        Microcontroller      │
+    │                             │
+    │   ┌───────┐                 │
+    │   │  CPU  │                 │
+    │   └───────┘                 │
+    │                   ┌─────┐   │
+    │   ┌────────┐      │     │   │
+    │   │  UART  │──────│ M   │   ├──── pin
+    │   ├────────┤      │ U   │   ├──── pin
+    │   │  GPIO  │──────│ X   │   ├──── pin
+    │   ├────────┤      │     │   ├──── pin
+    │   │  I2C   │──────│     │   ├──── pin
+    │   ├────────┤      ├─────┤   │
+    │   │  ADC   │──────│ M   │   ├──── pin
+    │   ├────────┤      │ U   │   ├──── pin
+    │   │  ...   │──────│ X   │   ├──── pin
+    │   └────────┘      │     │   ├──── pin
+    │                   └─────┘   ├──── pin
+    │   Peripherals               │
+    │   "Specialized              │
+    │    hardware blocks"         │
+    └─────────────────────────────┘
+
+    Notes:
+    ─────────────────────────────────────────────
+    Pins are *logically* grouped into ports
+    MSP430 has 8 pins per port
+
+    LaunchPad : 2 ports  -->  16 pins
+    Robot     : 3 ports  -->  24 pins
+```
+
+```
+How to Configure I/O Pins?
+              ==========================
+
+                Memory Map                          Port
+              ┌───────────┐ 0xFFFE                ┌──────┐
+              │           │                       │ port │
+              │    ROM    │                       └──┬───┘
+              │           │                          │
+              ├───────────┤                          ▼
+              │           │               ┌──┬──┬──┬──┬──┬──┬──┬──┐
+              │     :     │            ──>│ 0│ 1│ 0│ 1│ 1│ 0│ 1│ 1│  8-bit
+              │    RAM    │          /    └──┴──┴──┴──┴──┴──┴──┴──┘  Hardware
+              │     :     │        /      ┌──┬──┬──┬──┬──┬──┬──┬──┐  Registers
+              │           │      /     ──>│ 1│ 0│ 0│ 1│ 0│ 0│ 1│ 1│
+              ├───────────┤ 0xFF1         └──┴──┴──┴──┴──┴──┴──┴──┘
+              │           │  /            ┌──┬──┬──┬──┬──┬──┬──┬──┐
+              │Peripherals│/           ──>│  │  │  │  │  │  │  │  │
+              │           │               └──┴──┴──┴──┴──┴──┴──┴──┘
+              ├───────────┤                          :
+              └───────────┘ 0                        :
+                                                     │
+   "Write to address                           1 bit per pin
+    in software"
+
+   ─────────────────────────────────────────────────────────────
+   Key idea: Peripheral registers are memory-mapped. Writing to
+   specific addresses in the "Peripherals" region of the memory
+   map directly configures the 8-bit hardware registers that
+   control each pin in a port.
+```
+
+
+```
+Select Register
+              ===============
+       Sets the overall function of a pin
+
+
+   ┌───────┬───────┬────────┐
+   │ PxSEL │PxSEL2 │  Func. │         ┌──────────┐
+   ├───────┼───────┼────────┤         │   GPIO   │──── pin func 0
+   │   0   │   0   │  GPIO  │         ├──────────┤
+   ├───────┼───────┼────────┤         │   Alt1   │──── pin func 1
+   │   1   │   0   │  Alt1  │    MUX  ├──────────┤
+   ├───────┼───────┼────────┤  Select │   Alt2   │──── pin func 2
+   │   0   │   1   │  Alt2  │         ├──────────┤
+   ├───────┼───────┼────────┤         │   Alt3   │──── pin func 3
+   │   1   │   1   │  Alt3  │         └──────────┘
+   └───────┴───────┴────────┘
+
+
+   AltX depends on the pin!
+   ────────────────────────────────
+   e.g.
+     Alt1 is ADC clock on pin 1.3,
+     while Timer on pin 1.5
+```
+
+
+
 **Terminology & Key Concepts:**
 - **IO Pins (GPIO)**: General Purpose Input/Output -- the configurable metal pins on a microcontroller used to communicate with external hardware (sensors, motors, LEDs)
 - **Pin Assignment / Pin Mapping**: The hardware-level decision of which microcontroller pin connects to which external component, determined during PCB design and documented in the schematic
