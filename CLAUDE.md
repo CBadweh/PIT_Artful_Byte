@@ -99,6 +99,7 @@ Artful_Byte/
 ├── Artful_Bytes_Transcript/    ← 28 lesson transcripts (.txt) + course summary files
 ├── Code/
 │   ├── nsumo_video-feature_io_handling_2/  ← IO driver implementation (lesson 12-13)
+│   ├── S05_GPIO_Hardware/                  ← Section 5: GPIO hardware implementation (lesson 12+)
 │   └── source_code/
 │       └── nsumo_video/        ← Complete upstream reference (NEVER MODIFY)
 │           ├── src/app/        ← Application layer (state machine, drive, enemy, line)
@@ -163,6 +164,6 @@ GitHub Actions workflow at `.github/workflows/main.yml`. Triggers on every push.
 ## Active Task Context
 
 - **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
+- **Active work**: `Code/S05_GPIO_Hardware/` — GPIO hardware implementation starting from Lesson 12
 - **Last completed**: S04 review session — Sandbox Makefile fixed, CI workflow fully understood
 - **S04 Sandbox status**: `S04_Development_Workflow/` — all files verified against source code, Makefile fixed (3 filter/include corrections)
-- **Next**: Lesson 12+ GPIO implementation
