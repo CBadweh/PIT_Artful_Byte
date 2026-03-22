@@ -157,3 +157,12 @@ When answering questions about course content, lessons, or concepts — read the
 GitHub Actions workflow at `.github/workflows/main.yml`. Triggers on every push. Uses Docker image `artfulbytes/msp430-gcc-9.3.1.11:latest`. Currently builds from `Code/nsumo_video-feature_io_handling_2/`.
 
 **Known issue:** `main.yml` needs `working-directory` added — CI fails because `make` runs from repo root instead of the Makefile directory. See `TODO.md` for fix instructions.
+
+---
+
+## Active Task Context
+
+- **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
+- **Last completed**: S04 review session — Sandbox Makefile fixed, CI workflow fully understood
+- **S04 Sandbox status**: `S04_Development_Workflow/` — all files verified against source code, Makefile fixed (3 filter/include corrections)
+- **Next**: Lesson 12+ GPIO implementation

@@ -1070,3 +1070,53 @@ nsumo/
 ├── .gitmodules                     ← tracks printf submodule (L8)
 └── README.md                       ← project documentation (L11)
 ```
+
+
+
+
+### 2026-03-21 — S04 Development Workflow deep dive (Lessons 8-11 review)
+
+**Goal**: Understand Lesson 11 (Documentation & Clang Format) in depth, then build a big-picture view of the entire S04 Development Workflow section.
+
+**What worked**:
+- Walking through each file in the S04 Sandbox and comparing against source code — found 3 Makefile mismatches (missing `SOURCES_FORMAT_CPPCHECK`/`HEADERS_FORMAT` filters, incomplete `CPPCHECK_INCLUDES`).
+- Clarifying "make bare" was actually "Bear" (compilation database generator for Vim).
+- Breaking down the CI process: GitHub Actions is the orchestrator, not the container. It pulls the image (built once from Dockerfile), creates its own container, checks out repo code, runs 3 shakes, reports PASS/FAIL, destroys container.
+- Identifying the Pareto essentials from Lesson 11: CI gate (3 shakes), `.clang-format` + `make format`, documentation (README + coding_guidelines.md), header dependency fix.
+- Compact Mermaid flowchart + legend table format for section-level diagrams — preferred over pure ASCII (hard to edit sub-boxes) or detail-heavy Mermaid (sprawls too much).
+
+**What didn't work**:
+- Initial confusion between "make bare" and Bear — transcript auto-captions don't distinguish well.
+
+**Code/config changes**:
+- `Artful_Byte_Sandbox/S04_Development_Workflow/Makefile` — Fixed 3 mismatches: added `SOURCES_FORMAT_CPPCHECK`/`HEADERS_FORMAT` filter variables, updated `CPPCHECK_INCLUDES` to `./src ./`, updated `cppcheck:` and `format:` targets to use filtered lists.
+
+**Key takeaways**:
+- Lesson 11 has 4 commits: (1) docs (README + coding_guidelines.md), (2) clang-format integration, (3) header dependency bug fix, (4) cppcheck performance bug fix. Commits 1-2 are new additions, commits 3-4 are fixes to existing tools.
+- `coding_guidelines.md` is a reference doc, NOT part of the automated workflow. `.clang-format` is the machine-enforceable version of those guidelines.
+- `.clang-format` is set-once config. `make format` reads it every run.
+- CI flow: `push → GitHub Actions reads ci.yml → pulls image from Docker Hub → creates container → checks out code → runs 3 shakes → PASS/FAIL → destroys container`.
+- The Dockerfile stays in repo as a recipe/reference — CI doesn't use it directly, it uses the pre-built image.
+
+**Open questions / next steps**:
+- Move to Section 5 (Low Level Programming Fundamentals, Lesson 12+) — GPIO, the current branch topic.
+- Consider creating the S04 Mermaid + legend table as a permanent diagram in the section file.
+
+---
+
+**Likely target file**: `Artful_Bytes_Transcript/S04_Development_Workflow_Best_Practices.md` — append under Lesson 011 or at the end of the section.
+
+---
+
+Now for the CLAUDE.md update — here's what I'd change:
+
+```markdown
+## Active Task Context
+
+- **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
+- **Last completed**: S04 review session — Sandbox Makefile fixed, CI workflow fully understood
+- **S04 Sandbox status**: `S04_Development_Workflow/` — all files verified against source code, Makefile fixed (3 filter/include corrections)
+- **Next**: Lesson 12+ GPIO implementation
+```
+
+Want me to add this to the project `CLAUDE.md`?
