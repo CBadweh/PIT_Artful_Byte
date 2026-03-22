@@ -187,14 +187,15 @@ bool io_config_compare(const struct io_config *cfg1, const struct io_config *cfg
         && (cfg1->resistor == cfg2->resistor) && (cfg1->select == cfg2->select);
 }
 
-void io_set_select(io_e io, io_select_e select)
+ 
+void io_set_select(io_e io, io_select_e select) // io = IO_TEST_LED (P1.0 = IO_10), select = IO_SELECT_GPIO  
 {
-    const uint8_t port = io_port(io);
-    const uint8_t pin = io_pin_bit(io);
+    const uint8_t port = io_port(io);   // (0 & 0x18) >> 3 = 0  → Port 1
+    const uint8_t pin = io_pin_bit(io);  // 1 << (0 & 0x7)  = 1  → BIT0
     switch (select) {
-    case IO_SELECT_GPIO:
-        *port_sel1_regs[port] &= ~pin;
-        *port_sel2_regs[port] &= ~pin;
+    case IO_SELECT_GPIO:                // ← this case runs (select = 0)
+        *port_sel1_regs[port] &= ~pin;  // *port_sel1_regs[0] &= ~1  → P1SEL  bit0 = 0
+        *port_sel2_regs[port] &= ~pin;  // *port_sel2_regs[0] &= ~1  → P1SEL2 bit0 = 0
         break;
     case IO_SELECT_ALT1:
         *port_sel1_regs[port] |= pin;
@@ -210,17 +211,17 @@ void io_set_select(io_e io, io_select_e select)
         break;
     }
 }
-
+// IO_TEST_LED = IO_10 = P1.0, direction = IO_DIR_OUTPUT
 void io_set_direction(io_e io, io_dir_e direction)
-{
-    const uint8_t port = io_port(io);
-    const uint8_t pin = io_pin_bit(io);
+{                       // io = 0, direction = 1
+    const uint8_t port = io_port(io);  // (0 & 0x18) >> 3 = 0  → Port 1
+    const uint8_t pin = io_pin_bit(io);  // 1 << (0 & 0x7)  = 1  → BIT0
     switch (direction) {
-    case IO_DIR_INPUT:
-        *port_dir_regs[port] &= ~pin;
+    case IO_DIR_INPUT:                
+        *port_dir_regs[port] &= ~pin; 
         break;
-    case IO_DIR_OUTPUT:
-        *port_dir_regs[port] |= pin;
+    case IO_DIR_OUTPUT:                 // ← this case runs (direction = 1)
+        *port_dir_regs[port] |= pin;    // *port_dir_regs[0] |= 1  → P1DIR  bit0 = 1, address 022h
         break;
     }
 }
@@ -238,14 +239,14 @@ void io_set_resistor(io_e io, io_resistor_e resistor)
         break;
     }
 }
-
+// IO_TEST_LED = IO_10 = P1.0, out = IO_OUT_LOW
 void io_set_out(io_e io, io_out_e out)
-{
-    const uint8_t port = io_port(io);
-    const uint8_t pin = io_pin_bit(io);
+{                       // io = 0, out = 0
+    const uint8_t port = io_port(io);  // (0 & 0x18) >> 3 = 0  → Port 1
+    const uint8_t pin = io_pin_bit(io);  // 1 << (0 & 0x7)  = 1  → BIT0
     switch (out) {
     case IO_OUT_LOW:
-        *port_out_regs[port] &= ~pin;
+        *port_out_regs[port] &= ~pin;   // *port_out_regs[0] &= ~1  → P1OUT  bit0 = 0, address 021h
         break;
     case IO_OUT_HIGH:
         *port_out_regs[port] |= pin;

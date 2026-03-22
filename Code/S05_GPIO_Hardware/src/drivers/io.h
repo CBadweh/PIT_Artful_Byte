@@ -21,18 +21,18 @@ typedef enum {
 typedef enum
 {
 #if defined(LAUNCHPAD) // Launchpad (MSP430G2553IN20)
-    IO_TEST_LED = IO_10,
-    IO_UART_RXD = IO_11,
-    IO_UART_TXD = IO_12,
-    IO_LINE_DETECT_FRONT_LEFT = IO_13,
+    IO_TEST_LED = IO_10,                // P1.0 - IO_10 -LED
+    IO_UART_RXD = IO_11,                // P1.1 - IO_11 - UART RX
+    IO_UART_TXD = IO_12,                // P1.2 - IO_12 - UART TX
+    IO_LINE_DETECT_FRONT_LEFT = IO_13,  // P1.3 - IO_13 - Line detect front left
     IO_UNUSED_2 = IO_14,
     IO_UNUSED_3 = IO_15,
-    IO_I2C_SCL = IO_16,
-    IO_I2C_SDA = IO_17,
-    IO_IR_REMOTE = IO_20,
-    IO_MOTORS_LEFT_CC_1 = IO_21,
-    IO_MOTORS_LEFT_CC_2 = IO_22,
-    IO_RANGE_SENSOR_FRONT_INT = IO_23,
+    IO_I2C_SCL = IO_16, 
+    IO_I2C_SDA = IO_17, 
+    IO_IR_REMOTE = IO_20,               // P2.0 - IO_20 - IR remote
+    IO_MOTORS_LEFT_CC_1 = IO_21,        // P2.1 - IO_21 - Motors left CC 1
+    IO_MOTORS_LEFT_CC_2 = IO_22,        // P2.2 - IO_22 - Motors left CC 2
+    IO_RANGE_SENSOR_FRONT_INT = IO_23,  // P2.3 - IO_23 - Range sensor front int
     IO_XSHUT_FRONT = IO_24,
     IO_UNUSED_11 = IO_25,
     IO_PWM_MOTORS_LEFT = IO_26,

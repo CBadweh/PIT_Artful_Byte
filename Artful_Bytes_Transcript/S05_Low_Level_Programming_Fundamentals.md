@@ -30,6 +30,8 @@
 **Techniques & Methods:**
 - **Bottom-Up Implementation**: Start driver code at the lowest layer of the software stack (closest to hardware) and build upward, allowing each layer to be tested before the next is added
 - **Enum-Based Pin Naming**: Using a C enum (`io_e`) to give meaningful names to each pin drawn from the schematic, providing type-safe identifiers that can be passed as function arguments
+
+
 - **Bitwise Port/Pin Extraction**: Encoding the port number and pin index into the enum value's bit pattern (`[zeros(3)|port(2)|pin(3)]`) so the port and pin can be extracted using shifts and masks without if/switch statements
 - **Array-Indexed Register Access**: Storing register addresses in arrays indexed by port number to avoid verbose switch/if statements and reduce flash usage
 - **Compile-Time Target Switching**: Using `#ifdef LAUNCHPAD` / `#ifdef NSUMO` preprocessor directives to maintain two pin assignment sets for the development board (16 pins) and robot PCB (24 pins)
@@ -96,6 +98,404 @@
   - `volatile` tells the compiler the memory at the pointed-to address can change outside the program's control (hardware registers), preventing the compiler from optimizing away reads/writes. `const` on the pointer itself means the address stored in the array never changes (register addresses are fixed). Together they ensure correct hardware access while preventing accidental pointer modification.
 
 
+## CBadweh Note
+
+enum - pin mapping
+- 16 and 24 config pin  if defined(LAUNCHEDPAD)
+
+### Enum
+- ![[Pasted image 20260321233057.png]]
+```
+  Enums — the basics                                                                                                                                                                                                                              
+  An enum is just a way to give names to numbers. The compiler replaces the name with a number at compile time:                                                                                                                                   
+  typedef enum {
+      IO_10,  // = 0
+      IO_11,  // = 1
+      IO_12,  // = 2
+      IO_13,  // = 3
+      IO_14,  // = 4
+      IO_15,  // = 5
+      IO_16,  // = 6
+      IO_17,  // = 7
+      IO_20,  // = 8
+      IO_21,  // = 9
+      IO_22,  // = 10
+      ...
+  } io_generic_e;
+
+  That's it. IO_10 is just a fancy name for the number 0. IO_21 is just 9. The compiler auto-increments from 0.
+
+  The naming convention — it's the pin number on the chip
+```
+
+```
+For example: UART_RX on the right side of the schematic
+
+  P1.1 = Port 1, Pin 1
+
+  So IO_11 = Port 1, Pin 1 = P1.1
+
+  The naming is just the port and pin digits smashed together:
+
+  P1.1  →  IO_11   (port 1, pin 1)
+  P1.2  →  IO_12   (port 1, pin 2)
+  P2.0  →  IO_20   (port 2, pin 0)
+  P3.5  →  IO_35   (port 3, pin 5)
+
+```
+
+**preporcessr Directive or Conditionl Compilation**
+```
+defined in src/driver/io.h
+typedef enum
+{
+#if defined(LAUNCHPAD) // Launchpad (MSP430G2553IN20)
+    IO_TEST_LED = IO_10,
+    IO_UART_RXD = IO_11,
+    IO_UART_TXD = IO_12,
+    ...
+    IO_XSHUT_FRONT = IO_24,
+    IO_UNUSED_11 = IO_25,
+    IO_PWM_MOTORS_LEFT = IO_26,
+    IO_UNUSED_13 = IO_27,
+#elif defined(NSUMO) // Nsumo rev 2 (MSP430G2553IPW28)
+    IO_LINE_DETECT_FRONT_RIGHT = IO_10,
+    IO_UART_RXD = IO_11,
+    IO_UART_TXD = IO_12,
+	 ...
+    IO_PWM_MOTORS_LEFT = IO_35,
+    IO_PWM_MOTORS_RIGHT = IO_36,
+    IO_MOTORS_RIGHT_CC_1 = IO_37,
+#endif
+} io_e;
+
+
+Defined in Makefile
+	# The HW variable must be passed as a make argument (e.g. make HW=LAUNCHPAD)                                             
+	ifeq ($(HW),LAUNCHPAD)                                                                                                 
+	DEFINES = -DLAUNCHPAD                                                                                                    
+	else ifeq ($(HW),NSUMO)                                                                                                
+	DEFINES = -DNSUMO
+	else ifneq ($(MAKECMDGOALS),$(filter $(MAKECMDGOALS),clean cppcheck format))
+	$(error "HW not set. Usage: make HW=LAUNCHPAD or make HW=NSUMO")
+	endif
+
+
+How to run in terminal
+  make HW=LAUNCHPAD
+  make HW=NSUMO
+
+
+
+```
+
+
+### Memory Map
+
+Example: This is the "before" version — raw register manipulation, no abstraction layer yet. He's showing this to explain what memory-mapped registers are
+```
+#include <msp430.h>
+
+static void test_blink_led(void)
+{
+    // TODO: Use io functions
+    P1DIR |= BIT0;
+    volatile unsigned int i; // volatile to prevent optimization
+    while (1) {
+        P1OUT ^= BIT0;
+        for (i = 10000; i > 0; i--) { } // delay
+    }
+}
+
+int main(void)
+{
+    // TODO: Move to mcu_init
+    WDTCTL = WDTPW + WDTHOLD; // stop watchdog timer
+    test_blink_led();
+    return 0;
+}
+```
+  P1DIR, P1OUT, BIT0 — these look like normal C variables, but they're not. They're addresses in memory that are wired directly to hardware. When you write `P1DIR |= BIT0`, you're not writing to RAM — you're writing to a specific memory address that physically controls the direction of Port 1, Pin 0.
+	  The two TODOs mark what lesson 12 is about to fix:
+	  - // TODO: Use io functions → replace P1DIR |= BIT0 with io_set_direction(IO_TEST_LED, IO_DIR_OUTPUT)
+	  - // TODO: Move to mcu_init → move watchdog stop into mcu_init()
+
+
+
+
+He's explaining **why you need an abstraction layer**.
+
+The raw code works — `P1DIR |= BIT0` blinks the LED just fine. But look at the problems:
+
+1. **Not readable** — `P1DIR |= BIT0` tells you nothing about *what* you're controlling. Is BIT0 the LED? A motor? You have to go back to the schematic every time.
+
+2. **Not portable** — if the LED moves to a different pin on the nsumo board, you have to find and change every `P1DIR`, `P1OUT`, `BIT0` scattered across the codebase.
+
+3. **Error-prone** — you have to remember to set direction, select, resistor, output in the right order with the right bitwise operations. Miss one and you get a bug that's hard to diagnose on hardware.
+
+The lesson is setting up the **before** so you appreciate the **after**:
+
+```c
+// Before: what does this even do?
+P1DIR |= BIT0;
+P1OUT ^= BIT0;
+
+// After: self-documenting
+io_set_direction(IO_TEST_LED, IO_DIR_OUTPUT);
+io_set_out(IO_TEST_LED, IO_OUT_HIGH);
+```
+
+That's the whole motivation for building `io.c` / `io.h` — wrap the ugly register details once, then never think about them again.
+
+=== start-multi-column: myID
+
+Left column content here
+```
+  Defined in io.h
+      typedef enum {
+          IO_SELECT_GPIO,   // = 0  →  SEL=0, SEL2=0
+          IO_SELECT_ALT1,   // = 1  →  SEL=1, SEL2=0
+          IO_SELECT_ALT2,   // = 2  →  SEL=0, SEL2=1
+          IO_SELECT_ALT3,   // = 3  →  SEL=1, SEL2=1
+      } io_select_e;
+
+
+  Defined in io.c
+      void io_set_select(io_e io, io_select_e select)
+      {
+          const uint8_t port = io_port(io);
+          const uint8_t pin = io_pin_bit(io);
+          switch (select) {
+          case IO_SELECT_GPIO:                    // SEL=0, SEL2=0
+              *port_sel1_regs[port] &= ~pin;
+              *port_sel2_regs[port] &= ~pin;
+              break;
+          case IO_SELECT_ALT1:                    // SEL=1, SEL2=0
+              *port_sel1_regs[port] |= pin;
+              *port_sel2_regs[port] &= ~pin;
+              break;
+          case IO_SELECT_ALT2:                    // SEL=0, SEL2=1
+              *port_sel1_regs[port] &= ~pin;
+              *port_sel2_regs[port] |= pin;
+              break;
+          case IO_SELECT_ALT3:                    // SEL=1, SEL2=1
+              *port_sel1_regs[port] |= pin;
+              *port_sel2_regs[port] |= pin;
+              break;
+          }
+      }
+
+
+  Used in io_initial_configs[] table (io.c)
+      [IO_UART_RXD] = { IO_SELECT_ALT3, ... },   ← UART needs Alt3 on P1.1
+      [IO_I2C_SCL]  = { IO_SELECT_ALT3, ... },   ← I2C needs Alt3 on P1.6
+      [IO_PWM_MOTORS_LEFT] = { IO_SELECT_ALT1, ... },  ← PWM needs Alt1 on P2.6
+      [IO_TEST_LED] = { IO_SELECT_GPIO, ... },    ← LED is just plain GPIO
+
+```
+
+--- column-break ---
+
+Right column content 
+
+```
+  PxSEL  PxSEL2  │ Function      │ What it means
+  ───────────────┼───────────────┼──────────────────────────────
+    0      0     │ GPIO          │ You control the pin directly (read/write)
+    1      0     │ Alt1          │ Pin connects to peripheral #1
+    0      1     │ Alt2          │ Pin connects to peripheral #2
+    1      1     │ Alt3          │ Pin connects to peripheral #3
+
+  What Alt1/Alt2/Alt3 actually do depends on the specific pin — that's the yellow note in the diagram. For example:
+  - P1.1 Alt3 = UART RX
+  - P1.6 Alt3 = I2C SCL
+  - P2.6 Alt1 = Timer/PWM
+
+```
+
+```
+Enum value   Binary   SEL(bit0)  SEL2(bit1)
+─────────    ──────   ─────────  ──────────
+GPIO = 0      00         0          0
+ALT1 = 1      01         1          0
+ALT2 = 2      10         0          1
+ALT3 = 3      11         1          1
+```
+
+=== end-multi-column
+
+#### Implementation 
+
+
+
+**Image 1 — simplified/pseudocode version:**
+```c
+void io_set_select(...)
+{
+    P1SEL &= ~BIT0;
+    P1SEL2 &= ~BIT0;
+}
+```
+
+**Image 2 — the naive approach (what he's showing you NOT to do):**
+```c
+void io_set_select(io_e io, io_select_e select)
+{
+    UNUSED(io);
+    UNUSED(select);
+
+    switch (select)
+    {
+    case IO_SELECT_GPIO:
+            switch (io) {
+            case IO_TEST_LED:
+                P1SEL &= ~BIT0;
+                P1SEL2 &= ~BIT0;
+                break;
+            case IO_UART_TXD
+                P1SEL &= ~BIT1;
+                P1SEL2 &= ~BIT1;
+                break;
+            }
+    break;
+    ...
+```
+
+He's showing the **bad version** to motivate the array-indexed approach. This nested switch would need a case for every pin inside every select option — it would be massive and repetitive. That's why the actual implementation uses `port_sel1_regs[port]` and `io_pin_bit(io)` instead — one piece of code handles all pins and all select modes.
+
+
+#### io_generic_e to io_3
+
+```
+ io_generic_e auto-increments from 0:
+
+  typedef enum {
+      // Port 1                        Int    Binary
+      IO_10,  // P1.0                   0     00|000
+      IO_11,  // P1.1                   1     00|001
+      IO_12,  // P1.2                   2     00|010
+      IO_13,  // P1.3                   3     00|011
+      IO_14,  // P1.4                   4     00|100
+      IO_15,  // P1.5                   5     00|101
+      IO_16,  // P1.6                   6     00|110
+      IO_17,  // P1.7                   7     00|111
+                                              ──┼───
+      // Port 2                        port=00  pin wraps back to 000
+      IO_20,  // P2.0                   8     01|000
+      IO_21,  // P2.1                   9     01|001
+      IO_22,  // P2.2                  10     01|010
+      IO_23,  // P2.3                  11     01|011
+      IO_24,  // P2.4                  12     01|100
+      IO_25,  // P2.5                  13     01|101
+      IO_26,  // P2.6                  14     01|110
+      IO_27,  // P2.7                  15     01|111
+                                              ──┼───
+      // Port 3 (nsumo only)           port=01  pin wraps back to 000
+      IO_30,  // P3.0                  16     10|000
+      IO_31,  // P3.1                  17     10|001
+      IO_32,  // P3.2                  18     10|010
+      IO_33,  // P3.3                  19     10|011
+      IO_34,  // P3.4                  20     10|100
+      IO_35,  // P3.5                  21     10|101
+      IO_36,  // P3.6                  22     10|110
+      IO_37,  // P3.7                  23     10|111
+  } io_generic_e;                             ──┼───
+                                             port=10
+
+  8 pins per port = 2³  →  pin fits in 3 bits (000-111) port naturally falls in bits 3-4
+
+  It's not designed — it's a consequence of binary counting. Every 8 values, the lower 3 bits wrap back to 000 and the upper bits  
+  increment. That's why 8 pins per port maps perfectly: the hardware's grouping aligns with binary arithmetic. The io_port() and   
+  io_pin_bit() functions just read what's already there.
+
+
+❯ yes but it also depends on naming the IO_* and the order of it. You could name IO_1 instead of IO_10, and the io_generic_e would 
+ be broken. you could also have IO_11 first, then IO_10 second, and the enum would be borken                                       
+
+  Exactly right. The whole trick depends on two rules:
+
+  1. Name matches Port.Pin — IO_XY where X = port, Y = pin. If you named it IO_1 instead of IO_10, the name would lie about what it
+   maps to.
+  2. Order matches physical layout — Port 1 pins 0-7 first, then Port 2 pins 0-7, then Port 3. If you swapped IO_11 before IO_10,  
+  the auto-increment would assign wrong values:
+
+  Correct order:              Wrong order:
+  IO_10 = 0  ← P1.0          IO_11 = 0  ← supposed to be P1.1
+  IO_11 = 1  ← P1.1          IO_10 = 1  ← supposed to be P1.0
+  IO_12 = 2  ← P1.2          IO_12 = 2
+
+  io_port(IO_10) = 0  ✓      io_port(IO_10) = 0  ✓ (lucky)
+  io_pin_idx(IO_10) = 0  ✓   io_pin_idx(IO_10) = 1  ✗ WRONG
+
+  The enum auto-increment is just 0, 1, 2, 3... — it has no idea about ports or pins. The naming and ordering convention is what   
+  makes the binary encoding work. Break either rule and io_port() / io_pin_bit() extract garbage.
+
+  That's why the static_assert exists in io.c:
+  static_assert(sizeof(io_generic_e) == 1, "Unexpected size, -fshort-enums missing?");
+  It catches one failure mode (enum too large), but the ordering/naming discipline is on the programmer.
+
+```
+
+#### LED example
+
+
+The LED is `IO_TEST_LED` on the Launchpad, which maps to `IO_10` = Port 1, Pin 0. It's just a plain GPIO output — no peripheral needed.
+
+```
+1. DEFINED in io.h — what options exist
+    typedef enum {
+        IO_SELECT_GPIO,   // = 0
+        IO_SELECT_ALT1,   // = 1
+        IO_SELECT_ALT2,   // = 2
+        IO_SELECT_ALT3,   // = 3
+    } io_select_e;
+
+
+2. CONFIGURED in io.c — what the LED pin is set to at boot
+    static const struct io_config io_initial_configs[] = {
+        [IO_TEST_LED] = { IO_SELECT_GPIO, IO_RESISTOR_DISABLED, IO_DIR_OUTPUT, IO_OUT_LOW },
+                          ^^^^^^^^^^^^^^
+                          LED is plain GPIO, not a peripheral
+    };
+
+
+3. RUNS in io.c — what actually writes to hardware
+    io_init()
+      → io_configure(IO_TEST_LED, &io_initial_configs[IO_TEST_LED])
+        → io_set_select(IO_TEST_LED, IO_SELECT_GPIO)
+            {
+                port = io_port(IO_TEST_LED)    → 0  (port 1)
+                pin  = io_pin_bit(IO_TEST_LED) → 1  (BIT0)
+
+                case IO_SELECT_GPIO:           → binary 00
+                    *port_sel1_regs[0] &= ~1;  → P1SEL  bit 0 = 0
+                    *port_sel2_regs[0] &= ~1;  → P1SEL2 bit 0 = 0
+            }
+```
+
+Both SEL bits are cleared to 0 → the pin is in GPIO mode → you control it directly with `io_set_out()`.
+
+Now compare with UART RX (`IO_UART_RXD = IO_11` = Port 1, Pin 1):
+
+```
+    [IO_UART_RXD] = { IO_SELECT_ALT3, ... },
+                      ^^^^^^^^^^^^^^
+                      Hand pin to UART peripheral
+
+    → io_set_select(IO_UART_RXD, IO_SELECT_ALT3)
+        {
+            port = 0  (port 1)
+            pin  = 2  (BIT1)
+
+            case IO_SELECT_ALT3:               → binary 11
+                *port_sel1_regs[0] |= 2;       → P1SEL  bit 1 = 1
+                *port_sel2_regs[0] |= 2;       → P1SEL2 bit 1 = 1
+        }
+```
+
+Both SEL bits are set to 1 → pin is handed to Alt3 → the UART hardware takes over that pin. You can't `io_set_out()` on it anymore — the UART peripheral drives it.
+
+Same function, same flow — just a different enum value picks a different path through the switch statement.
 
 
 
@@ -104,9 +504,329 @@
 
 
 
+#### Progression
+
+```
+LESSON 12 — GPIO ABSTRACTION LAYER BUILD PROGRESSION
+=====================================================
+
+LAYER 0: Raw registers (what we're replacing)
+─────────────────────────────────────────────
+  P1DIR |= BIT0;          ← "set direction of... something on port 1?"
+  P1OUT ^= BIT0;          ← "toggle... pin 0? which component is that?"
+  P1SEL &= ~BIT0;         ← "select... what mode?"
+  P1REN |= BIT0;          ← "enable resistor on... what?"
+
+  Problem: You need the schematic open at all times.
+
+
+LAYER 1: Give pins meaningful names                    [io.h]
+─────────────────────────────────────
+  io_generic_e:  IO_10, IO_11, IO_12 ...       ← Port.Pin encoding
+        ↓ maps to
+  io_e:          IO_TEST_LED = IO_10            ← Schematic name
+                 IO_UART_RXD = IO_11
+                 IO_UART_TXD = IO_12
+
+
+LAYER 2: Wrap each register behind a function          [io.c]
+─────────────────────────────────────────────
+  Register        Raw code               Abstraction function
+  ─────────       ────────               ────────────────────
+  PxSEL/PxSEL2   P1SEL |= BIT0;     →   io_set_select(IO_TEST_LED, IO_SELECT_GPIO)
+  PxDIR           P1DIR |= BIT0;     →   io_set_direction(IO_TEST_LED, IO_DIR_OUTPUT)
+  PxREN           P1REN |= BIT0;     →   io_set_resistor(IO_TEST_LED, IO_RESISTOR_ENABLED)
+  PxOUT           P1OUT |= BIT0;     →   io_set_out(IO_TEST_LED, IO_OUT_HIGH)
+  PxIN            val = P1IN & BIT0; →   io_get_input(IO_TEST_LED)
+
+  Inside each function:
+    io_set_out(IO_TEST_LED, IO_OUT_HIGH)
+        → io_port(IO_TEST_LED)    = 0  (port 1)
+        → io_pin_bit(IO_TEST_LED) = 1  (bit mask)
+        → *port_out_regs[0] |= 1       (writes to P1OUT)
+
+
+LAYER 3: Bundle all settings into one config struct    [io.h + io.c]
+───────────────────────────────────────────────
+  struct io_config {
+      io_select_e    select;      ← GPIO or peripheral?
+      io_resistor_e  resistor;    ← pull-up/pull-down?
+      io_dir_e       dir;         ← input or output?
+      io_out_e       out;         ← high or low?
+  };
+
+  io_configure(IO_TEST_LED, &config);    ← sets all 4 at once
+      → io_set_select()
+      → io_set_direction()
+      → io_set_out()
+      → io_set_resistor()
+
+
+LAYER 4: Init every pin at boot from a table           [io.c]
+────────────────────────────────────────────
+  static const struct io_config io_initial_configs[] = {
+      [IO_TEST_LED]  = { GPIO,  NO_RESISTOR,  OUTPUT,  LOW  },
+      [IO_UART_RXD]  = { ALT3,  NO_RESISTOR,  OUTPUT,  LOW  },
+      [IO_UART_TXD]  = { ALT3,  NO_RESISTOR,  OUTPUT,  LOW  },
+      [IO_UNUSED_2]  = { GPIO,  RESISTOR,     OUTPUT,  LOW  },  ← prevent float
+      ...
+  };
+
+  io_init()  →  loops through table  →  calls io_configure() for each pin
+
+
+LAYER 5: MCU init ties it all together                 [mcu_init.c → main.c]
+──────────────────────────────────────
+  main()
+    └→ mcu_init()
+          ├→ watchdog_setup()     ← stop watchdog (safety first)
+          ├→ init_clocks()        ← set 16 MHz
+          ├→ io_init()            ← configure ALL pins from table
+          └→ _enable_interrupts()
+
+
+FILE MAP
+========
+  src/
+  ├── main.c                  ← calls mcu_init(), then test code
+  ├── drivers/
+  │   ├── io.h                ← Layer 1 (enums) + Layer 3 (config struct) + prototypes
+  │   ├── io.c                ← Layer 2 (register functions) + Layer 4 (init table)
+  │   ├── mcu_init.h          ← mcu_init() prototype
+  │   └── mcu_init.c          ← Layer 5 (boot sequence)
+  └── common/
+      ├── defines.h            ← BUSY_WAIT_ms, ARRAY_SIZE macros
+      ├── assert_handler.h     ← ASSERT macro
+      └── assert_handler.c     ← breakpoint + LED blink on failure
+```
+
+Each layer builds on the one below it. The raw registers never go away — they're just hidden inside `io.c` so the rest of the codebase never has to think about them.
 
 
 
+#### another flow: Layer 
+
+```
+LAYER 4: Bulk init
+══════════════════
+  io_init()  →  loops through io_initial_configs[]
+                 calls io_configure() for each pin
+                      │
+                      ▼
+LAYER 3: Bundle all settings
+════════════════════════════
+  struct io_config {                     io_configure(io, config)
+      io_select_e   select;        ──→      io_set_select()
+      io_resistor_e resistor;      ──→      io_set_resistor()
+      io_dir_e      dir;           ──→      io_set_direction()
+      io_out_e      out;           ──→      io_set_out()
+  };
+                                            │   │   │   │
+                                            ▼   ▼   ▼   ▼
+LAYER 2: One function per register
+══════════════════════════════════
+  Enum               Function               Register
+  ──────────────     ──────────────────      ────────
+  io_select_e    →   io_set_select()     →   PxSEL, PxSEL2
+  io_dir_e       →   io_set_direction()  →   PxDIR
+  io_resistor_e  →   io_set_resistor()   →   PxREN
+  io_out_e       →   io_set_out()        →   PxOUT
+  io_in_e        ←   io_get_input()      ←   PxIN  (read)
+
+                         │  every function calls  │
+                         ▼                        ▼
+LAYER 1: Extract port & pin from enum
+═════════════════════════════════════
+  io_generic_e / io_e
+  [ 000 | PP | PPP ]
+    pad   port  pin
+
+  io_port(io)     →  (io & 0x18) >> 3  →  array index (0, 1, 2)
+  io_pin_idx(io)  →   io & 0x07        →  pin number (0-7)
+  io_pin_bit(io)  →   1 << pin_idx     →  bit mask for register
+
+                         │                        │
+                         ▼                        ▼
+LAYER 0: Hardware register arrays
+═════════════════════════════════
+  port_sel1_regs[] = { &P1SEL,  &P2SEL,  &P3SEL  }
+  port_sel2_regs[] = { &P1SEL2, &P2SEL2, &P3SEL2 }
+  port_dir_regs[]  = { &P1DIR,  &P2DIR,  &P3DIR  }
+  port_ren_regs[]  = { &P1REN,  &P2REN,  &P3REN  }
+  port_out_regs[]  = { &P1OUT,  &P2OUT,  &P3OUT  }
+  port_in_regs[]   = { &P1IN,   &P2IN,   &P3IN   }
+
+  Usage: *port_dir_regs[port] |= pin_bit;
+         ───────────────────    ────────
+         io_port() picks        io_pin_bit() picks
+         which register         which bit
+```
+
+Everything flows top-down: `io_init()` → `io_configure()` → individual `io_set_*()` functions → `io_port()`/`io_pin_bit()` → hardware register arrays → actual hardware.
+
+#### Diagram mapping in Canva
+The diagram you made is the reference map
+This is really solid work. What you've built is essentially a call graph with data flow — you're mapping:
+
+  - What calls what (red lines connecting functions)
+  - What types feed into what (struct fields → enum definitions)
+  - What's inside each abstraction (expanded code blocks)
+
+  This is a legitimate technique — in professional embedded work, people do this on whiteboards during code reviews and
+  architecture discussions. It's sometimes called a dependency map or data flow trace.
+
+  Is it efficient? Yes, for the first time through. You're building a mental model of code you've never seen before. Drawing it out
+   forces you to actually follow every connection instead of assuming you understand.
+
+  One suggestion to make it even better: you have everything expanded at once. That's why it feels overwhelming. Try collapsing it 
+  into layers — only expand the layer you're actively studying:
+
+  Collapsed view (your map):
+      test_blink_led()
+          → io_configure(IO_TEST_LED, &led_config)
+              → io_set_select()     → registers
+              → io_set_direction()  → registers
+              → io_set_out()        → registers
+              → io_set_resistor()   → registers
+
+  Expanded view (only when you zoom into one):
+      io_set_select(IO_TEST_LED, IO_SELECT_GPIO)
+          port = 0, pin = 1
+          P1SEL bit0 = 0
+          P1SEL2 bit0 = 0
+
+#### Data table
+```
+You're right — my addresses were off. Here are the correct values from the datasheet:
+
+  Port 1                          Port 2                                                                                             ──────                          ──────
+  020h  P1IN                      028h  P2IN                                                                                       
+  021h  P1OUT                     029h  P2OUT
+  022h  P1DIR                     02Ah  P2DIR
+  026h  P1SEL                     02Eh  P2SEL
+  041h  P1SEL2                    042h  P2SEL2
+  027h  P1REN                     02Fh  P2REN
+
+  So the arrays actually hold:
+
+  port_sel1_regs[0] = &P1SEL   → 026h
+  port_sel1_regs[1] = &P2SEL   → 02Eh
+
+  port_sel2_regs[0] = &P1SEL2  → 041h
+  port_sel2_regs[1] = &P2SEL2  → 042h
+
+```
+
+
+
+Layer Step by step:
+
+```
+THE ARRAY IS A LOOKUP TABLE OF ADDRESSES
+═════════════════════════════════════════
+
+port_sel1_regs[0] = &P1SEL  = address 026h
+port_sel1_regs[1] = &P2SEL  = address 02Eh
+
+port_sel2_regs[0] = &P1SEL2 = address 041h
+port_sel2_regs[1] = &P2SEL2 = address 042h
+
+
+NOW TRACE THE LED EXAMPLE
+═════════════════════════
+
+port = 0      (IO_TEST_LED is on Port 1, array index 0)
+pin  = 1      (BIT0)
+
+*port_sel1_regs[port] &= ~pin;
+│        │      │       │   │
+│        │      │       │   └── ~1 = 11111110 (flip the bit)
+│        │      │       └────── &= bitwise AND (clear that bit)
+│        │      └────────────── [0] picks &P1SEL (address 026h)
+│        └───────────────────── the array
+└────────────────────────────── * dereference: go TO that address and write
+
+Expands to:
+    *(&P1SEL) &= ~1
+     ────────
+     go to address 026h, read the byte there,
+     clear bit 0, write it back
+
+Which is the same as:
+    P1SEL &= ~BIT0;       ← the raw register write
+
+
+Same for the second line:
+    *port_sel2_regs[0] &= ~1
+    = *(&P1SEL2) &= ~1
+    = P1SEL2 &= ~BIT0;    ← clear bit 0 at address 041h
+```
+
+The `*` (dereference) is the key — the array stores **pointers to** registers, not values. `*port_sel1_regs[0]` means "go to the address stored at index 0 and write there." That's how one line of code can target P1SEL or P2SEL — just by changing the index.
+
+
+/wrapup
+
+
+### 2026-03-22 — Lesson 12 GPIO Abstraction Layer: Code Setup + Deep Dive
+
+**Goal**: Set up the S05_GPIO_Hardware project to lesson 12 state and understand the GPIO abstraction layer (`io.c`/`io.h`) — how enums, config structs, register arrays, and bitwise encoding work together.
+
+**What worked**:
+- Tracing one concrete example (LED blink on IO_TEST_LED = P1.0) end-to-end through all abstraction layers — most effective way to understand the code.
+- Building a dependency map / call graph diagram on paper — offloads the mental burden of tracking all connections at once.
+- Seeing the 3-version progression in main.c (raw → intermediate → final) made the "why" of each abstraction layer clear.
+
+**What didn't work**:
+- Trying to understand all layers at once — too many variables, enums, and functions to hold in working memory simultaneously. Solution: collapse to layers, only expand one at a time.
+
+**Code/config changes**:
+- `src/drivers/io.h` — Created: GPIO driver header (enums, config struct, 9 function prototypes). User added inline comments mapping io_e to port.pin.
+- `src/drivers/io.c` — Created: GPIO driver (register arrays, config table, all set/get/init functions). User added inline comments tracing LED example values through io_set_select().
+- `src/drivers/mcu_init.h` / `mcu_init.c` — Created: watchdog stop + 16 MHz clock + io_init()
+- `src/common/assert_handler.h` / `assert_handler.c` — Created: MCU-safe assert (breakpoint + LED blink)
+- `src/common/defines.h` — Updated: added BUSY_WAIT_ms, CYCLES_*, INTERRUPT_FUNCTION, SUPPRESS_UNUSED
+- `src/main.c` — Updated: 3 versions (raw/intermediate/final) kept as reference. Intermediate version is active.
+- `Makefile` — Updated: added 3 source files, `-fshort-enums`, `-DLAUNCHPAD`
+- `README.md` — Updated: reflects lesson 12 implemented state
+- Deleted `src/app/PLACEHOLDER`, `src/drivers/PLACEHOLDER`, `src/test/PLACEHOLDER`
+
+**Key takeaways**:
+- `io_generic_e` defines physical pin numbering (IO_XY = Port X, Pin Y). Auto-increment from 0 makes the binary encoding work: `[000|PP|PPP]` — port in bits 3-4, pin in bits 0-2. **Naming and ordering must match physical layout or encoding breaks.**
+- `io_e` aliases generic pins to schematic names (IO_TEST_LED = IO_10). Changes per target (#if LAUNCHPAD / NSUMO).
+- `io_select_e` values (0-3) map to 2-bit binary counting: SEL is bit 0, SEL2 is bit 1. Not a trick — follows binary truth table.
+- Register arrays (`port_sel1_regs[]`, `port_dir_regs[]`, etc.) store pointers to hardware addresses from the datasheet (Table 8-2). `*port_sel1_regs[port]` dereferences to write at that address. Replaces nested switch statements.
+- `io_configure()` calls all four `io_set_*()` functions. `io_init()` loops through `io_initial_configs[]` table calling `io_configure()` for each pin.
+- `-DLAUNCHPAD` in Makefile is equivalent to `#define LAUNCHPAD` — selects which pin mapping compiles. Lesson 13 makes this a `make HW=LAUNCHPAD` argument.
+- Datasheet references: MSP430G2553 Datasheet (SLAS735J), MSP430x2xx Family User's Guide (SLAU144K — Chapter 8 "Digital I/O" for register addresses).
+- `// TODO:` comments are location-specific reminders pinned to the exact line needing work — different from a project-level TODO list.
+
+**Open questions / next steps**:
+- `io_set_resistor()` not yet traced with concrete values for the LED example
+- `io_get_input()` and `io_get_current_config()` not explored yet
+- Bit manipulation (`&=`, `|=`, `~`) understood in context but could benefit from isolated practice
+- Haven't built/flashed the code to verify on hardware yet
+- Next: Lesson 13 (hardware versioning — HW=LAUNCHPAD/NSUMO Makefile arg, io_detect_hw_type())
+
+---
+
+Likely target file: `Artful_Bytes_Transcript/S05_Low_Level_Programming_Fundamentals.md` (append under Lesson 012)
+
+---
+
+Now for CLAUDE.md — here's the proposed update to the Active Task Context section:
+
+```markdown
+## Active Task Context
+
+- **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
+- **Active work**: `Code/S05_GPIO_Hardware/` — Lesson 12 GPIO driver implemented, studying code
+- **Lesson 12 status**: All source files created (io.c/h, mcu_init.c/h, assert_handler.c/h, updated defines.h, Makefile, main.c). main.c has 3 versions: raw/intermediate/final. Intermediate version is active. Not yet built/flashed.
+- **Last completed**: S04 review session — Sandbox Makefile fixed, CI workflow fully understood
+- **Next**: Lesson 13 — Hardware versioning (HW=LAUNCHPAD/NSUMO, io_detect_hw_type)
+```
+
+Want me to write this CLAUDE.md update?
 
 
 ---

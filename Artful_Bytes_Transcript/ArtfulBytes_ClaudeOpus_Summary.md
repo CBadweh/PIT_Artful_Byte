@@ -1210,6 +1210,55 @@ Select Register
 ```
 
 
+```
+Interface                          Implementation
+        =========                          ==============
+
+                          ?
+      io.c  +  ──────────────────────>     P1DIR
+               io_select.c                 P2SEL
+               io_dir.c                    P1REN
+               io_out.c                    P3IN
+               :                           :
+               :                           :
+```
+
+
+```
+S05_GPIO_Hardware/
+├── Makefile                        ← MODIFIED (added sources, -fshort-enums, -DLAUNCHPAD)
+├── README.md                       ← MODIFIED (lesson 12 status)
+├── LICENSE
+├── .clang-format
+├── .gitignore
+├── .gitmodules
+├── .github/workflows/ci.yml
+├── docs/
+│   ├── coding_guidelines.md
+│   ├── schematic.png
+│   ├── sw_arch.png
+│   ├── nsumo.jpg
+│   └── sysdiag.jpg
+├── src/
+│   ├── main.c                      ← MODIFIED (mcu_init + io_set_out LED blink)
+│   ├── common/
+│   │   ├── defines.h               ← MODIFIED (added BUSY_WAIT_ms, CYCLES, INTERRUPT_FUNCTION)
+│   │   ├── assert_handler.h        ← NEW (ASSERT macro)
+│   │   └── assert_handler.c        ← NEW (breakpoint + LED blink on failure)
+│   ├── drivers/
+│   │   ├── io.h                    ← NEW (pin enums, config struct, GPIO prototypes)
+│   │   ├── io.c                    ← NEW (register arrays, bulk init, all set/get functions)
+│   │   ├── mcu_init.h              ← NEW (mcu_init prototype)
+│   │   └── mcu_init.c              ← NEW (watchdog stop, 16 MHz clock, io_init)
+│   ├── app/                        ← empty (future: state machine, drive, enemy, line)
+│   └── test/                       ← empty (future: on-target test functions)
+├── external/printf/                ← empty (submodule placeholder)
+└── tools/dockerfile
+```
+
+**6 new files** (the lesson 12 deliverables) + **3 modified files** (Makefile, main.c, defines.h, README).
+
+
 
 **Terminology & Key Concepts:**
 - **IO Pins (GPIO)**: General Purpose Input/Output -- the configurable metal pins on a microcontroller used to communicate with external hardware (sensors, motors, LEDs)
