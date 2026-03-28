@@ -1023,7 +1023,7 @@ Step 1 — Session Notes
 - **CI Dual-Target Build**: Adding both `make HW=LAUNCHPAD` and `make HW=NSUMO` steps to the GitHub Actions workflow so every commit is validated against both targets
 
 **Source Code Mapping:**
-- `io_detect_hw_type()`: `io.c:184` -- Configures port 3 pin 4 as input (using raw TI registers since port 3 is not in the Launchpad enum) and reads its level to determine hardware type
+- `io_detect_hw_type()`: `io.c:184` -- Configures port 3 pin 4 as input (using raw TI registers since port 3 is not in the Launchpad enum) and reads its level to determine hardware type: runtime
   ```c
   static hw_type_e io_detect_hw_type(void)
   {
@@ -1039,11 +1039,19 @@ Step 1 — Session Notes
   ```c
   void io_init(void)
   {
-  #if defined(NSUMO)
-      ASSERT(io_detect_hw_type() == HW_TYPE_NSUMO);
-  #elif defined(LAUNCHPAD)
-      ASSERT(io_detect_hw_type() == HW_TYPE_LAUNCHPAD);
-  #endif
+	 #if defined(NSUMO)
+	    // TODO: Assert
+	    if (io_detect_hw_type() != HW_TYPE_NSUMO) {
+	        while (1) { }
+	    }
+	#elif defined(LAUNCHPAD)
+	    // TODO: Assert
+	    if (io_detect_hw_type() != HW_TYPE_LAUNCHPAD) {
+	        while (1) { }
+	    }
+	#else
+    // TODO: Assert
+    while (1) { }
       ...
   }
   ```
@@ -1068,6 +1076,119 @@ Step 1 — Session Notes
 - **Q2: When would you use an ADC-based version detection instead of GPIOs?**
   - When GPIO pins are scarce and many board versions exist. A single ADC pin with a resistor divider network can encode dozens of versions as distinct voltage levels, while GPIO-based detection requires one pin per bit (2^n versions per n pins). The trade-off is slightly more complex read logic and sensitivity to resistor tolerances.
 
+### CBadweh Note
+
+
+
+Here's the flow for `make HW=NSUMO`:
+
+```
+Source file (io.c)                    After preprocessor                   Final binary
+┌─────────────────────────┐           ┌──────────────────────┐            ┌──────────────┐
+│                         │           │                      │            │              │
+│ #if defined(NSUMO)      │           │ IO_30, IO_31, ...    │            │ Machine code │
+│   IO_30, IO_31, ...     │──keep──>  │ IO_XSHUT_FRONT_RIGHT │──compile──>│ for NSUMO    │
+│   IO_XSHUT_FRONT_RIGHT  │           │ io_detect == NSUMO?  │            │ pins only    │
+│   detect == NSUMO?      │           │                      │            │              │
+│                         │           └──────────────────────┘            └──────┬───────┘
+│ #elif defined(LAUNCHPAD)│                                                      │
+│   IO_TEST_LED = IO_10   │──delete                                         flash to MCU
+│   IO_UNUSED_2           │  (gone, as if commented out)                         │
+│   IO_UNUSED_3           │                                                      v
+│   detect == LAUNCHPAD?  │                                             ┌──────────────┐
+│                         │                                             │  Runtime on  │
+│ #endif                  │                                             │  real HW     │
+└─────────────────────────┘                                             │              │
+                                                                        │  Read P3.4   │
+                                                                        │  Pull-up?    │
+                                                                        │  ├─ YES: OK  │
+                                                                        │  └─ NO: hang │
+                                                                        └──────────────┘
+
+Compile time ──────────────────────────────────────>│<──────── Runtime
+(no hardware needed)                                │  (on real hardware)
+                                                    │
+                                                  flash
+                                                  
+preprocessor
+- remove comments and guard  
+  
+
+Key point:
+#if defined(NSUMO) is a compile-time decision.
+io_detect_hw_type() is a runtime decision.                                         
+                                                  
+```
+
+**Compile time**: preprocessor deletes the LAUNCHPAD block. Compiler only sees NSUMO code. Zero bytes wasted on LaunchPad pin definitions. No errors from missing Port 3 enums.
+
+**Runtime**: the binary is now running on the MCU. `io_detect_hw_type()` reads P3.4. If there's a pull-up (robot PCB) — match, code continues. If not (LaunchPad) — mismatch, `while (1) { }` hangs.
+
+
+
+
+### 2026-03-28 — Lesson 13: Handling Multiple Hardware Versions
+
+**Progress diagram**:
+```
+Lesson 13 — Hardware Versioning
+    Makefile HW argument system                    ← studied ✓, code updated
+        → GOALS_WITHOUT_HW exclusion               ← studied ✓
+        → TARGET_HW / TARGET_NAME variables         ← studied ✓
+        → Per-target build dirs (build/nsumo/obj)   ← studied ✓
+        → DEFINES = -D$(HW) (dynamic)              ← studied ✓
+    Runtime hardware detection                      ← studied ✓, code updated
+        → hw_type_e enum                            ← studied ✓
+        → io_detect_hw_type() reads P3.4 pull-up    ← studied ✓
+        → while(1) hang on mismatch (TODO: Assert)  ← studied ✓
+    CI dual-target builds                           ← studied ✓, code updated
+        → make HW=NSUMO + make HW=LAUNCHPAD        ← studied ✓
+    Compile time vs Runtime concept                 ← discussed ✓
+        → Preprocessor: mutually exclusive, one deleted   ← understood ✓
+        → io_detect_hw_type(): exists in both binaries    ← understood ✓
+```
+
+**Goal**: Review Lesson 13 chronologically, understand compile-time vs runtime hardware versioning, and update S05_GPIO_Hardware code to match.
+
+**What worked**:
+- Chronological walkthrough of the transcript gave clear picture of what the instructor did and why.
+- Compile-time vs runtime distinction clicked: preprocessor picks *which code* goes in the binary, runtime checks *which board* it's running on.
+
+**What didn't work**:
+- Initial code update used `ASSERT()` macro (from the final reference source code). Lesson 13 actually uses `if + while(1){}` with `// TODO: Assert` — the assert replacement comes in a later lesson. Fixed after user caught it from their own code screenshot.
+
+**Code/config changes**:
+- `Code/S05_GPIO_Hardware/Makefile` — Added HW argument parsing, GOALS_WITHOUT_HW exclusion, per-target build dirs, dynamic DEFINES
+- `Code/S05_GPIO_Hardware/src/drivers/io.c` — Added `hw_type_e` enum, `io_detect_hw_type()`, mismatch check with `while(1){}` in `io_init()`
+- `Code/S05_GPIO_Hardware/.github/workflows/ci.yml` — Dual-target builds (`make HW=NSUMO` + `make HW=LAUNCHPAD`)
+
+**Key takeaways**:
+- **Compile time**: preprocessor runs before compiler. `#if defined(NSUMO)` / `#elif defined(LAUNCHPAD)` are mutually exclusive — one block is deleted entirely. Saves flash and prevents compile errors (e.g., Port 3 enums don't exist on LaunchPad).
+- **Runtime**: `io_detect_hw_type()` exists in *both* binaries. It reads P3.4 — pull-up resistor on robot PCB returns HIGH, absent on LaunchPad returns LOW. The `if` check around it (which value to compare) is the part swapped by the preprocessor.
+- **Pull-up resistor technique**: common in industry for distinguishing board revisions. N GPIOs = 2^N versions. ADC + resistor network is an alternative when GPIOs are scarce.
+- **Separate build dirs** (`build/launchpad/obj`, `build/nsumo/obj`) prevent stale object files when switching targets without `make clean`.
+
+**Open questions / next steps**:
+- Lesson 14 (Assert handler) — replaces `while(1){}` with proper `ASSERT()` macro
+- User also noted a `Code/Hardware_version/` folder exists — may want to reconcile with `Code/S05_GPIO_Hardware/`
+
+Likely target file: `Artful_Bytes_Transcript/S05_Low_Level_Programming_Fundamentals.md` under Lesson 13.
+
+---
+
+**CLAUDE.md update** — proposed change to the Active Task Context section:
+
+```markdown
+## Active Task Context
+
+- **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
+- **Active work**: `Code/S05_GPIO_Hardware/` — Lesson 13 hardware versioning complete
+- **Lesson 13 status**: All code updated — Makefile HW argument system, io_detect_hw_type() with while(1) hang, CI dual-target builds. Compile-time vs runtime concept understood.
+- **Next up**: Lesson 14 (Assert handler — replaces while(1) with ASSERT macro)
+- **Last completed**: Lesson 12 GPIO driver — all source files, intermediate LED blink flow understood
+```
+
+Want me to apply this CLAUDE.md update?
 ---
 
 # Lesson 014 -- Assert on a Microcontroller
