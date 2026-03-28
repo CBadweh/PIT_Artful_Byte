@@ -182,3 +182,11 @@ Code/LED_test_launchpad_IO/build/obj/common/assert_handler.o
 Code/LED_test_launchpad_IO/build/obj/drivers/io.o
 Code/LED_test_launchpad_IO/build/obj/drivers/led.o
 Code/LED_test_launchpad_IO/build/obj/drivers/mcu_init.o
+Code/Hardware_version/build/bin/nsumo
+Code/Hardware_version/build/obj/src/main.o
+Code/Hardware_version/docs/coding_guidelines.md
+Code/Hardware_version/docs/nsumo.jpg
+Code/Hardware_version/docs/schematic.png
+Code/Hardware_version/docs/sw_arch.png
+Code/Hardware_version/docs/sysdiag.jpg
+bash.exe.stackdump
