@@ -6,6 +6,115 @@ r### Section 5: Low-Level Programming Fundamentals
 
 **File Path:** [12 How I program GPIOs in C  Embedded System Project Series #12.txt](Artful_Bytes_Transcript/12%20How%20I%20program%20GPIOs%20in%20C%20%20Embedded%20System%20Project%20Series%20%2312.txt)
 
+
+
+**Test 1: `test_blink_led()`** — single pin, manual config
+
+```
+main()
+│
+└── mcu_init()                          ← mcu_init.c
+    ├── watchdog_setup()
+    ├── init_clocks()
+    ├── io_init()                       ← configures all pins (bulk)
+    └── _enable_interrupts()
+
+test_blink_led()                        ← main.c
+│
+├── io_configure(IO_TEST_LED, &led_config)  ← reconfigures just this one pin
+│   ├── io_set_select()
+│   ├── io_set_direction()
+│   ├── io_set_out()
+│   └── io_set_resistor()
+│
+└── while (1)
+    ├── out = (out == IO_OUT_LOW) ? IO_OUT_HIGH : IO_OUT_LOW
+    ├── io_set_out(IO_TEST_LED, out)
+    └── __delay_cycles(250000)          ← raw delay, 250 ms
+```
+
+---
+
+**Test 2: `test_launchpad_io_pins_output()`** — all pins, output toggle
+
+```
+test_launchpad_io_pins_output()         ← main.c
+│
+├── test_setup()
+│   └── mcu_init()                      ← configures all pins (bulk)
+│
+├── for each pin (IO_10 → IO_27):
+│   └── io_configure(io, &output_config)  ← reconfigures ALL as output
+│
+└── while (1)
+    └── for each pin (IO_10 → IO_27):
+        ├── io_set_out(io, IO_OUT_HIGH)
+        ├── BUSY_WAIT_ms(10)
+        └── io_set_out(io, IO_OUT_LOW)
+            ↑ verified with logic analyzer (Sigrok)
+```
+
+---
+
+**Test 3: `test_launchpad_io_pins_input()`** — all pins, input with pull-up
+
+```
+test_launchpad_io_pins_input()          ← main.c
+│
+├── test_setup()
+│   └── mcu_init()                      ← configures all pins (bulk)
+│
+├── led_init()                          ← led.c, asserts IO_TEST_LED matches expected config
+│
+├── for each pin (IO_10 → IO_27):
+│   └── io_configure(io, &input_config)   ← reconfigures ALL as input + pull-up
+│
+├── for each pin (IO_10 → IO_27):
+│   │
+│   ├── skip IO_TEST_LED                ← need it as output for feedback
+│   ├── led_set(LED_TEST, LED_STATE_ON) ← "pull this pin now"
+│   ├── wait until io_get_input(io) == IO_IN_LOW  ← user pulls pin low
+│   ├── led_set(LED_TEST, LED_STATE_OFF)
+│   └── wait until io_get_input(io) == IO_IN_HIGH ← user disconnects
+│
+└── while (1)                           ← test complete signal
+    ├── led_set(LED_TEST, LED_STATE_ON)
+    ├── BUSY_WAIT_ms(500)
+    ├── led_set(LED_TEST, LED_STATE_OFF)
+    └── BUSY_WAIT_ms(2000)              ← slow blink = all pins passed
+```
+
+```
+main()
+│
+└── mcu_init()                          ← mcu_init.c
+    │
+    ├── watchdog_setup()                ← stops watchdog timer
+    │
+    ├── init_clocks()                   ← sets DCO to 16 MHz
+    │
+    ├── io_init()                       ← io.c
+    │   │
+    │   └── for each pin (IO_10 → IO_27):
+    │       │
+    │       └── io_configure(io, &io_initial_configs[io])
+    │           │
+    │           ├── io_set_select()     ← PxSEL / PxSEL2
+    │           ├── io_set_direction()  ← PxDIR
+    │           ├── io_set_out()        ← PxOUT
+    │           └── io_set_resistor()   ← PxREN
+    │
+    └── _enable_interrupts()
+
+while (1)                               ← main.c
+│
+├── io_set_out(IO_TEST_LED, IO_OUT_HIGH) ← pin already configured by io_init()
+├── BUSY_WAIT_ms(250)
+├── io_set_out(IO_TEST_LED, IO_OUT_LOW)
+└── BUSY_WAIT_ms(250)
+```
+
+
 **Objective:** Teaches how to write a clean GPIO abstraction layer in C for the MSP430 microcontroller, translating a hardware schematic's pin assignments into software by wrapping TI's register defines behind a well-structured interface. This is the first real driver code in the project and establishes the pattern for all subsequent driver implementations.
 
 **Terminology & Key Concepts:**
@@ -828,6 +937,62 @@ Now for CLAUDE.md — here's the proposed update to the Active Task Context sect
 
 Want me to write this CLAUDE.md update?
 
+
+#### /wrapup
+
+```
+Step 1 — Session Notes                                                                                                          
+                                                                                                                                  
+  Likely target: Artful_Bytes_Transcript/S05_Low_Level_Programming_Fundamentals.md (under Lesson 12)                                                                                                                                                                
+  ### 2026-03-28 — Lesson 12 demo checkpoints: created Code folders for all 4 GPIO test stages                                                                                                                                                                      
+  **Progress diagram**:
+      Lesson 12 — How I Program GPIOs in C
+      ├── test_blink_led()                              ← checkpoint created ✓ (LED_Final_test_1/)
+      │   └── io_configure() on single pin              ← studied ✓
+      ├── test_launchpad_io_pins_output()                ← checkpoint created ✓ (LED_Final_test_launchpad_IO/)
+      │   └── all 16 pins as output, logic analyzer     ← studied ✓
+      ├── test_launchpad_io_pins_input()                 ← added to same folder ✓
+      │   └── all pins as input + pull-up, manual test  ← studied ✓
+      ├── io_init() bulk initialization                  ← checkpoint created ✓ (LED_init_pin/)
+      │   └── io_initial_configs[] + io_init() loop     ← studied ✓
+      └── LED_Final/ (original)                          ← already existed ✓
+          └── inline blink in main() with BUSY_WAIT_ms  ← studied ✓
+
+  **Goal**: Create incremental code checkpoints for each lesson 12 demo, matching the course progression.
+
+  **What worked**:
+  - Copying folder structure from LED_Final and changing only main.c per checkpoint — keeps driver files consistent while showing 
+  incremental main.c evolution.
+  - Using `CC = msp430-elf-gcc` on PATH instead of absolute TOOLS_PATH — fixed build failures. Saved to memory for future
+  Makefiles.
+  - Adding `SUPPRESS_UNUSED` to test functions that coexist in one file — matches upstream pattern, avoids -Werror failures.      
+
+  **What didn't work**:
+  - Initial Makefiles used `TOOLS_PATH=/c/ti` with full bin path — didn't resolve on this machine. Fixed by matching the working  
+  blink_example Sandbox Makefile style.
+
+  **Code/config changes**:
+  - `Code/LED_Final_test_1/` — NEW folder. test_blink_led() with io_configure() on single pin, __delay_cycles(250000)
+  - `Code/LED_Final_test_launchpad_IO/` — NEW folder. test_launchpad_io_pins_output() + test_launchpad_io_pins_input(), includes  
+  led.c/h driver
+  - `Code/LED_init_pin/` — User-copied folder, UPDATED main.c to show io_init() bulk initialization pattern
+  - `Code/LED_Final/Makefile` — unchanged (still uses old TOOLS_PATH style, not updated this session)
+  - `Code/LED_Final_test_1/Makefile` — fixed to use CC=msp430-elf-gcc on PATH
+
+  **Key takeaways**:
+  - Lesson 12 has 4 stages: (1) single-pin blink with io_configure(), (2) all-pin output toggle, (3) all-pin input with pull-ups, 
+  (4) io_init() bulk config via const array
+  - test_setup() in upstream just calls mcu_init() — the test functions manage their own initialization
+  - LED_Final is the "final polished" version; the test_* folders show how the author built up to it incrementally
+  - Duplicate driver files across checkpoint folders is acceptable for a learning repo (option 3 — just live with it)
+
+  **Open questions / next steps**:
+  - LED_Final/Makefile still uses old TOOLS_PATH style — could update to match but not critical
+  - Ready to move to lesson 13 (Handling Multiple Hardware Versions) or continue deeper into lesson 12 concepts
+  - Could consolidate LED_Final and LED_init_pin since they have the same main.c logic — but keeping both shows the naming intent 
+
+
+```
 
 ---
 
