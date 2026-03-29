@@ -1,32 +1,10 @@
-// Lesson 14: test_assert() + LED driver blink
-
 #include "common/assert_handler.h"
-#include "common/defines.h"
 #include "drivers/mcu_init.h"
-#include "drivers/io.h"
-#include "drivers/led.h"
-
-static void test_assert(void)
-{
-    ASSERT(0); // Always fails -- triggers assert handler
-}
-
-static void test_blink_led(void)
-{
-    led_init();
-    while (1) {
-        led_set(LED_TEST, LED_STATE_ON);
-        BUSY_WAIT_ms(250);
-        led_set(LED_TEST, LED_STATE_OFF);
-        BUSY_WAIT_ms(250);
-    }
-}
 
 int main(void)
 {
-    // mcu_init();
-    // test_blink_led();
-    test_assert(); // Uncomment to trigger assert handler
+    mcu_init();
+    ASSERT(0);
     return 0;
 }
 
@@ -41,5 +19,7 @@ int main(void)
  *
  * --- io_init + io_set_out (Lesson 13) ---
  * mcu_init(); io_set_out(IO_TEST_LED, ...); BUSY_WAIT_ms(250);
+ *
+ * --- Lesson 14: test functions in main.c ---
+ * test_assert(), test_blink_led() — moved to src/test/test.c in Lesson 15
  */
-

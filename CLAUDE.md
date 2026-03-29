@@ -164,7 +164,7 @@ GitHub Actions workflow at `.github/workflows/main.yml`. Triggers on every push.
 ## Active Task Context
 
 - **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
-- **Active work**: `Code/S05_GPIO_Hardware/` — Lesson 13 hardware versioning complete
-- **Lesson 13 status**: All code updated — Makefile HW argument system, io_detect_hw_type() with while(1) hang, CI dual-target builds. Compile-time vs runtime concept understood.
-- **Next up**: Lesson 14 (Assert handler — replaces while(1) with ASSERT macro)
-- **Last completed**: Lesson 12 GPIO driver — all source files, intermediate LED blink flow understood
+- **Active work**: `Code/S05_GPIO_Hardware/` — Lesson 15 test infrastructure complete
+- **Lesson 15 status**: All code implemented — test.c with own main(), Makefile TEST= argument system, build_tests.sh, main.c cleaned up. Fault injection concept (test_assert) understood.
+- **Next up**: Lesson 16
+- **Last completed**: Lesson 14 Assert handler — ASSERT macro, assert_handler.c with BREAKPOINT + LED blink

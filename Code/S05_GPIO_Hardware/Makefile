@@ -14,6 +14,14 @@ endif
 endif
 TARGET_NAME=$(TARGET_HW)
 
+ifneq ($(TEST),)
+ifeq ($(findstring test_,$(TEST)),)
+$(error "TEST=$(TEST) is invalid (test function must start with test_)")
+else
+TARGET_NAME=$(TEST)
+endif
+endif
+
 # Directories
 TOOLS_DIR = ${TOOLS_PATH}
 MSPGCC_ROOT_DIR = $(TOOLS_DIR)/msp430-gcc
@@ -48,8 +56,16 @@ SOURCES_WITH_HEADERS = \
 		src/drivers/mcu_init.c \
 		src/common/assert_handler.c \
 
+ifndef TEST
+MAIN_FILE = src/main.c
+else
+MAIN_FILE = src/test/test.c
+# Touch test.c to force rebuild every time in case TEST define changed
+$(shell touch src/test/test.c)
+endif
+
 SOURCES = \
-		src/main.c \
+		$(MAIN_FILE) \
 		$(SOURCES_WITH_HEADERS)
 
 HEADERS = \
@@ -81,7 +97,9 @@ CPPCHECK_FLAGS = \
 
 # Flags
 MCU = msp430g2553
-DEFINES = -D$(HW)
+HW_DEFINE = $(addprefix -D,$(HW))
+TEST_DEFINE = $(addprefix -DTEST=,$(TEST))
+DEFINES = $(HW_DEFINE) $(TEST_DEFINE)
 WFLAGS = -Wall -Wextra -Werror -Wshadow
 CFLAGS = -mmcu=$(MCU) $(WFLAGS) -fshort-enums $(addprefix -I,$(INCLUDE_DIRS)) $(DEFINES) -Og -g
 LDFLAGS = -mmcu=$(MCU) $(addprefix -L,$(LIB_DIRS))

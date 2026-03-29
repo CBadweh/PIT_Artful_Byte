@@ -1272,6 +1272,11 @@ Want me to apply this CLAUDE.md update?
 - **Q2: Why does the assert handler avoid using the LED driver and instead writes registers directly?**
   - The LED driver itself contains asserts (e.g., checking that `led_init()` was called). If the assert handler called `led_set()` and that inner assert also failed, `assert_handler()` would be called recursively until the stack overflows. By using raw register writes, the assert handler has zero code dependencies and cannot trigger further asserts.
 
+#### CBadweh
+
+
+
+
 ---
 
 # Lesson 015 -- My Small Test Functions
@@ -1349,6 +1354,76 @@ Want me to apply this CLAUDE.md update?
   - The author explicitly chose not to write formal unit tests for this project. These test functions are "scratch functions" -- quick validation that a specific driver or feature works on real hardware. They require physical interaction (pressing buttons, connecting logic analyzers) and cannot be automated in the traditional unit test sense. The Makefile-based selection is a pragmatic middle ground for a small embedded project.
 - **Q2: Why force-touch test.c on every build instead of making make aware of the TEST define change?**
   - Make tracks file modification timestamps, not compiler flags. If only the `TEST=` argument changes but no source file is modified, make will reuse the old object file, linking the wrong test function. Touching `test.c` forces it to recompile, ensuring the new `TEST` define takes effect. This is an acknowledged workaround for a make limitation.
+
+
+
+## Step 1 — Session Notes
+
+Likely target file: `Artful_Bytes_Transcript/S05_Low_Level_Programming_Fundamentals.md`
+
+```
+### 2026-03-28 — Lesson 15: Test Functions Infrastructure
+
+**Progress diagram**:
+    Lesson 15: My Small Test Functions
+    ├─ Separate test file                          ✓
+    │   ├─ test.c with own main()                  ✓ implemented
+    │   ├─ test_setup() → mcu_init()               ✓ implemented
+    │   ├─ test_assert() — fault injection          ✓ implemented + discussed
+    │   ├─ test_blink_led() — LED driver verify     ✓ implemented + discussed
+    │   └─ SUPPRESS_UNUSED on all test functions    ✓ implemented
+    ├─ Makefile TEST= argument                     ✓
+    │   ├─ ifneq/findstring validation             ✓ implemented
+    │   ├─ MAIN_FILE switching (main.c vs test.c)  ✓ implemented
+    │   ├─ $(shell touch) forced recompile         ✓ implemented
+    │   └─ -DTEST= define injection                ✓ implemented
+    ├─ tools/build_tests.sh                        ✓
+    │   └─ grep -P regex test discovery + loop     ✓ implemented
+    ├─ CI test step                                — skipped (pre-existing CI issue)
+    └─ main.c cleanup                              ✓ implemented
+
+**Goal**: Understand and implement Lesson 15 — moving test functions out of main.c into a dedicated test infrastructure with Makefile-driven selection.
+
+**What worked**:
+- Summarized lesson from transcript, then compared against current S05_GPIO_Hardware codebase to identify the gap (still at Lesson 14 level).
+- Implemented all changes in one pass: test.c, main.c cleanup, Makefile TEST handling, build_tests.sh.
+
+**Code/config changes**:
+- `Code/S05_GPIO_Hardware/src/test/test.c` — Created. Contains test_setup(), test_assert(), test_blink_led() with SUPPRESS_UNUSED, and main() using TEST() macro.
+- `Code/S05_GPIO_Hardware/src/main.c` — Cleaned up. Removed test functions, kept mcu_init() + ASSERT(0). Historical comment block preserved.
+- `Code/S05_GPIO_Hardware/Makefile` — Added TEST= validation, MAIN_FILE switching with $(shell touch), HW_DEFINE/TEST_DEFINE variables.
+- `Code/S05_GPIO_Hardware/tools/build_tests.sh` — Created. Regex-based test discovery, builds each for both HW targets.
+
+**Key takeaways**:
+- Two main() functions, one entry point: Makefile picks either main.c (real app) or test.c (test harness). Same drivers compiled either way — only the entry point swaps.
+- test_assert() is fault injection: deliberately triggers ASSERT(0) to verify the error handler works (BREAKPOINT with debugger, LED blink without). "Testing the fire alarm before there's a fire."
+- test_blink_led() is hardware verification: confirms the full driver chain (mcu_init → led_init → led_set → physical pin toggle) actually works on the board.
+- These aren't automated pass/fail tests — they're hardware smoke tests. You flash, then physically observe the board.
+- $(shell touch src/test/test.c) workaround: changing TEST= doesn't modify source, so make wouldn't recompile without this force.
+
+**Open questions / next steps**:
+- Lesson 16 (next in Section 5) — likely interrupts or UART
+- CI still has working-directory issue from earlier — not addressed this session
+- Code not yet verified on hardware (no MSP430 connected)
+```
+
+---
+
+## Step 2 — Proposed CLAUDE.md Update
+
+Here's the change to the **Active Task Context** section:
+
+```markdown
+## Active Task Context
+
+- **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
+- **Active work**: `Code/S05_GPIO_Hardware/` — Lesson 15 test infrastructure complete
+- **Lesson 15 status**: All code implemented — test.c with own main(), Makefile TEST= argument system, build_tests.sh, main.c cleaned up. Fault injection concept (test_assert) understood.
+- **Next up**: Lesson 16
+- **Last completed**: Lesson 14 Assert handler — ASSERT macro, assert_handler.c with BREAKPOINT + LED blink
+```
+
+Want me to write this update to CLAUDE.md?
 
 ---
 
