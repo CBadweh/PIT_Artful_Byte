@@ -44,6 +44,7 @@ TARGET = $(BIN_DIR)/$(TARGET_NAME)
 
 SOURCES_WITH_HEADERS = \
 		src/drivers/io.c \
+		src/drivers/led.c \
 		src/drivers/mcu_init.c \
 		src/common/assert_handler.c \
 

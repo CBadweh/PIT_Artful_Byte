@@ -164,6 +164,7 @@ GitHub Actions workflow at `.github/workflows/main.yml`. Triggers on every push.
 ## Active Task Context
 
 - **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
-- **Active work**: `Code/S05_GPIO_Hardware/` — Lesson 12 GPIO driver implemented, studying code
-- **Lesson 12 status**: All source files created (io.c/h, mcu_init.c/h, assert_handler.c/h, updated defines.h, Makefile, main.c). main.c has 3 versions: raw/intermediate/final. Intermediate version active. Finished understanding intermediate LED blink flow. Still need to study: all-pin output test, all-pin input test, io_init() bulk initialization.
-- **Last completed**: S04 review session — Sandbox Makefile fixed, CI workflow fully understood
+- **Active work**: `Code/S05_GPIO_Hardware/` — Lesson 13 hardware versioning complete
+- **Lesson 13 status**: All code updated — Makefile HW argument system, io_detect_hw_type() with while(1) hang, CI dual-target builds. Compile-time vs runtime concept understood.
+- **Next up**: Lesson 14 (Assert handler — replaces while(1) with ASSERT macro)
+- **Last completed**: Lesson 12 GPIO driver — all source files, intermediate LED blink flow understood

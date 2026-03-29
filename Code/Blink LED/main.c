@@ -1,4 +1,4 @@
-// Lesson 14: test_assert() + LED driver blink
+// Lesson 14: Assert on a Microcontroller (CCS IDE + TI compiler version)
 
 #include "common/assert_handler.h"
 #include "common/defines.h"
@@ -29,17 +29,3 @@ int main(void)
     test_assert(); // Uncomment to trigger assert handler
     return 0;
 }
-
-/*
- * Previous versions kept for reference:
- *
- * --- Raw register manipulation (Lesson 12) ---
- * P1DIR |= BIT0; P1OUT ^= BIT0; with volatile delay loop
- *
- * --- Intermediate io abstraction (Lesson 12) ---
- * io_configure(IO_TEST_LED, &led_config); io_set_out(); __delay_cycles()
- *
- * --- io_init + io_set_out (Lesson 13) ---
- * mcu_init(); io_set_out(IO_TEST_LED, ...); BUSY_WAIT_ms(250);
- */
-
