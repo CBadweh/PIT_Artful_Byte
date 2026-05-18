@@ -161,6 +161,30 @@ GitHub Actions workflow at `.github/workflows/main.yml`. Triggers on every push.
 
 ---
 
+## C Prerequisites for Students (FastBit1 Reference)
+
+> For students with Arduino-level C skills following this course. Full analysis:
+> `Chat/FastBit1_C_Topics_For_ArtfulBytes.md`
+> Full FastBit1 course summary: `C:\Users\Sheen\Desktop\Embedded_System\FastBit1_C_Programming\FastBit1_Transcript\EmbeddedC_ClaudeOpus_Summary.md`
+
+### Recommended Study Order (8 sections, ~60 lessons)
+
+**Week 1: The Foundation Gap**
+- `S17 → S19 → S13 + S5 → S18` — Bitwise ops + Pointers + LED exercise (capstone)
+- After this: students can READ `io.c` and understand what register manipulation does (S18 is where the full chain clicks: cast address → bitwise configure → hardware changes)
+
+**Week 2: Embedded-Specific C**
+- `S24 → S14` — `volatile` + `stdint.h`
+- After this: students understand WHY the code uses `volatile uint8_t` instead of `int`
+
+**Week 3: Code Organization**
+- `S25 → S31 → S6 + S7` — Structs + Preprocessor + `static`/functions
+- After this: students can understand multi-file architecture, macros, and module design
+
+**Total: ~60 lessons out of 192 (31%) → covers ~90% of the C patterns in the Artful Bytes codebase.**
+
+---
+
 ## Active Task Context
 
 - **Current position**: Section 5 — Low Level Programming Fundamentals (branch: `Section-5-GPIO-HW`)
