@@ -8,11 +8,23 @@ description: Use when user asks ANY question where the section files (S0X_*.md) 
 
 When the user asks ANY question where the section files have relevant content, follow this workflow instead of explaining directly. This includes conceptual questions, code questions, Makefile/tooling questions, workflow questions — anything the notes already cover.
 
+## Step 0 — Detect the current workspace
+
+Scan the current working directory to find the course's retrieval layers:
+
+1. **Layer 1 (Summary):** Glob for `*_Transcript/*_Summary.md` or `*_Transcript/*_Claude*Summary.md`
+2. **Layer 2 (Section files):** Glob for `*_Transcript/S0*.md` (files, not directories)
+3. **Layer 2 (Sandbox):** Glob for `*_Sandbox/`
+
+If no summary or section files are found, tell the user: "This workspace doesn't have retrieval layers set up yet. Consider generating a course summary first."
+
+Store the discovered paths and use them throughout the remaining steps.
+
 ## Step 1 — Point to Notes First
 
 Check the relevant files and point the user to the exact section:
-- **Layer 1** (`Artful_Bytes_Transcript/ArtfulBytes_ClaudeOpus_Summary.md`) — course overview, big-picture context across all sections
-- **Layer 2** (`Artful_Bytes_Transcript/S0X_*.md` section files + `Artful_Byte_Sandbox/`) — per-lesson detail, techniques, code snippets, CBadweh's appended notes, hands-on checkpoints
+- **Layer 1** (discovered summary file) — course overview, big-picture context across all sections
+- **Layer 2** (discovered section files + sandbox) — per-lesson detail, techniques, code snippets, CBadweh's appended notes, hands-on checkpoints
 
 Example response:
 > "Check `S04_Development_Workflow_Best_Practices.md` → Lesson 008 → Commit Rules (Three Rules). Come back if it doesn't click."
@@ -29,7 +41,7 @@ When explaining, try a different angle from what the notes already say — analo
 
 After explaining, ask the user to capture it in their own words:
 - Insight, factual note, or code snippet → suggest appending to the relevant `S0X_*.md` section file under the specific lesson
-- Hands-on example or checkpoint → suggest adding to the relevant `Artful_Byte_Sandbox/` README
+- Hands-on example or checkpoint → suggest adding to the relevant Sandbox README
 
 ## Step 4 — Prompt Understanding Verification
 
@@ -48,9 +60,9 @@ This ensures the user initiates the verification loop even if they forget to do 
 
 | Layer | Files | Contains |
 |---|---|---|
-| 1 | `Artful_Bytes_Transcript/ArtfulBytes_ClaudeOpus_Summary.md` | Full course summary — overview of all sections, big-picture context |
-| 2 | `Artful_Bytes_Transcript/S0X_*.md` | Per-section detail: terminology, techniques, code snippets, CBadweh's appended notes |
-| 2 | `Artful_Byte_Sandbox/` | Hands-on checkpoints: isolated examples with READMEs, created at learning milestones |
+| 1 | Summary file (`*_ClaudeOpus_Summary.md` or `*_Claude_Summary.md`) | Full course summary — overview of all sections, big-picture context |
+| 2 | Section files (`*_Transcript/S0X_*.md`) | Per-section detail: terminology, techniques, code snippets, CBadweh's appended notes |
+| 2 | Sandbox (`*_Sandbox/`) | Hands-on checkpoints: isolated examples with READMEs, created at learning milestones |
 
 ### Section File Quick Reference
 
