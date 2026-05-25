@@ -207,7 +207,7 @@ while (1)                               ← main.c
   - `volatile` tells the compiler the memory at the pointed-to address can change outside the program's control (hardware registers), preventing the compiler from optimizing away reads/writes. `const` on the pointer itself means the address stored in the array never changes (register addresses are fixed). Together they ensure correct hardware access while preventing accidental pointer modification.
 
 
-## CBadweh Note
+### CBadweh Note
 
 enum - pin mapping
 - 16 and 24 config pin  if defined(LAUNCHEDPAD)
