@@ -38,3 +38,15 @@ make clean                        # remove build artifacts
 
 - Lesson 12 notes: `Artful_Bytes_Transcript/S05_Low_Level_Programming_Fundamentals.md`
 - Upstream reference: `Code/source_code/nsumo_video/src/drivers/io.c`
+
+```bash
+git clone --branch feature_io_handling https://github.com/artfulbytes/nsumo_video.git
+```
+
+This clones only the `feature_io_handling` branch. If you also want all other branches available locally, just clone normally and then checkout:
+
+```bash
+git clone https://github.com/artfulbytes/nsumo_video.git
+cd nsumo_video
+git checkout feature_io_handling
+```

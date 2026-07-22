@@ -41,3 +41,10 @@ $(OBJ_DIR)/%.o: src/%.c
 
 clean:
 	@$(RM) -rf $(BUILD_DIR)
+
+# Flash to board (uses DSLite)
+DSLITE = C:/ti/ccs2041/ccs/ccs_base/DebugServer/bin/DSLite.exe
+CCXML = msp430g2553.ccxml
+
+flash: $(TARGET)
+	$(DSLITE) load -c $(CCXML) -f $(TARGET)

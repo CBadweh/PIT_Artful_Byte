@@ -702,5 +702,10 @@ Release/
 *.idx
 
 # ─── GCC / Makefile build artifacts ──────────────────────────────────────────
+build/
 *.o
 *.elf
+
+# ─── Windows crash dumps ──────────────────────────────────────────────────────
+*.stackdump
+bash.exe.stackdump
