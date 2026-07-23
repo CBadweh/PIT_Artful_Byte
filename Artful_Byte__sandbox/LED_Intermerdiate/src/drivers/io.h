@@ -60,6 +60,13 @@ typedef enum
     IO_OUT_HIGH,
 } io_out_e;
 
+typedef enum
+{
+    IO_IN_LOW,
+    IO_IN_HIGH,
+} io_in_e;
+
+
 struct io_config
 {
     io_select_e select;
@@ -73,5 +80,6 @@ void io_set_select(io_e io, io_select_e select);
 void io_set_direction(io_e io, io_dir_e direction);
 void io_set_resistor(io_e io, io_resistor_e resistor);
 void io_set_out(io_e io, io_out_e out);
+io_in_e io_get_input(io_e io);
 
 #endif /* IO_H */

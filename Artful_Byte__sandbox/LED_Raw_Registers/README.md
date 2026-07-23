@@ -2,7 +2,7 @@
 
 **Lesson:** 12 — How I Program GPIOs in C
 **Course:** Artful Byte — Bare-Metal Sumo Robot (MSP430G2553)
-**Stage:** 1 of 6 — Starting point, zero abstraction
+**Stage:** 1 of 6 — Starting point, zero abstraction. THIS IS THE FIRST BLINKY FROM THE VIDEO AT timestamp 9:00
 
 ---
 

@@ -2,7 +2,8 @@
 
 **Lesson:** 12 — How I Program GPIOs in C
 **Course:** Artful Byte — Bare-Metal Sumo Robot (MSP430G2553)
-**Stage:** 2 of 6 — First IO abstraction layer
+**Stage:** 2 of 6 — First IO abstraction layer, THIS IS THE 2ND BLINK TEST FROM THE VIDEO timestamp 20:00
+**CBadweh Note** only for LAUNCHPAD, NOT for NSUMO, 
 
 ---
 
