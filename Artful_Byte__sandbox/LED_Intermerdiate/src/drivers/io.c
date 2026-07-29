@@ -1,18 +1,12 @@
 #include "drivers/io.h"
 
-#include <assert.h>
 #include <msp430.h>
 #include <stdint.h>
-
-#if !defined(LAUNCHPAD)
-#error "This intermediate demo is built for LAUNCHPAD only (make with -DLAUNCHPAD)."
-#endif
 
 #define IO_PORT_CNT (2u)
 
 /* With "-fshort-enums", enum values are one byte; encoding:
  * [ zeros (3) | port (2) | pin (3) ] */
-static_assert(sizeof(io_generic_e) == 1, "Unexpected size, -fshort-enums missing?");
 /*  CBadweh's Note
     Bitsise Operation (Code Trick) at timestamp 15:40
     pin = enum & 0x7

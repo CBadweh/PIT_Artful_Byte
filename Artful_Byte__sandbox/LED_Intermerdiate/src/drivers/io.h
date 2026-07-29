@@ -14,7 +14,6 @@ typedef enum {
 
 typedef enum
 {
-#if defined(LAUNCHPAD)
     IO_TEST_LED = IO_10,
     IO_UART_RXD = IO_11,
     IO_UART_TXD = IO_12,
@@ -31,7 +30,6 @@ typedef enum
     IO_UNUSED_11 = IO_25,
     IO_PWM_MOTORS_LEFT = IO_26,
     IO_UNUSED_13 = IO_27,
-#endif
 } io_e;
 
 typedef enum

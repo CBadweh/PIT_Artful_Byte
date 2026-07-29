@@ -14,7 +14,7 @@ CC = $(MSPGCC_BIN_DIR)/msp430-elf-gcc
 RM = rm
 
 MCU = msp430g2553
-DEFINES = -DLAUNCHPAD
+DEFINES =
 WFLAGS = -Wall -Wextra -Werror -Wshadow
 CFLAGS = -mmcu=$(MCU) $(WFLAGS) -fshort-enums -Og -g \
 	-I$(MSPGCC_INCLUDE_DIR) -I./src $(DEFINES)

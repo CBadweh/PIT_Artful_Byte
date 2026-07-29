@@ -3,7 +3,7 @@
 **Lesson:** 12 — How I Program GPIOs in C
 **Course:** Artful Byte — Bare-Metal Sumo Robot (MSP430G2553)
 **Stage:** 2 of 6 — First IO abstraction layer, THIS IS THE 2ND BLINK TEST FROM THE VIDEO timestamp 20:00
-**CBadweh Note** only for LAUNCHPAD, NOT for NSUMO, 
+**CBadweh Note** LAUNCHPAD-only sandbox. Guards and assert removed — enum and io_e are unconditional.
 
 ---
 
@@ -18,7 +18,7 @@ This is where the lesson's hardest concepts live. The bit-packing trick and arra
 ## What This Demonstrates
 
 - **Bit-packing enum (`io_generic_e`)**: each value encodes `[ zeros(3) | port(2) | pin(3) ]` in a single byte — `IO_10` = port 1 pin 0, `IO_27` = port 2 pin 7
-- **`-fshort-enums` compiler flag**: required so the enum fits in 1 byte; `static_assert(sizeof(io_generic_e) == 1)` guards against forgetting it
+- **`-fshort-enums` compiler flag**: required so the enum fits in 1 byte; the bit-packing math relies on `io_generic_e` being exactly 1 byte
 - **Array-of-pointers dispatch**: `port_dir_regs[]`, `port_out_regs[]`, etc. — port index extracted via mask+shift, no switch statement needed
 - **`struct io_config`**: groups select, direction, resistor, out into one call to `io_configure()`
 - **Abstraction benefit**: `main()` refers only to `IO_TEST_LED` — changing the pin only requires updating the enum, not hunting through `P1DIR`/`P1OUT` calls
