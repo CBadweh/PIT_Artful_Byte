@@ -3,7 +3,7 @@
 #include <msp430.h>
 #include <stdint.h>
 
-#define IO_PORT_CNT (2u)
+#define IO_PORT_CNT (1u)
 
 /* With "-fshort-enums", enum values are one byte; encoding:
  * [ zeros (3) | port (2) | pin (3) ] */
@@ -33,12 +33,11 @@ static uint8_t io_pin_bit(io_e io)
 /*  CBadweh's Note
     Array Indexing (Code Trick) at timestamp 30:00
 */
-static volatile uint8_t *const port_dir_regs[IO_PORT_CNT] = { &P1DIR, &P2DIR };
-static volatile uint8_t *const port_ren_regs[IO_PORT_CNT] = { &P1REN, &P2REN };
-static volatile uint8_t *const port_out_regs[IO_PORT_CNT] = { &P1OUT, &P2OUT };
-static volatile uint8_t *const port_sel1_regs[IO_PORT_CNT] = { &P1SEL, &P2SEL };
-static volatile uint8_t *const port_sel2_regs[IO_PORT_CNT] = { &P1SEL2, &P2SEL2 };
-
+static volatile uint8_t *const port_dir_regs[IO_PORT_CNT] = { &P1DIR };
+static volatile uint8_t *const port_ren_regs[IO_PORT_CNT] = { &P1REN };
+static volatile uint8_t *const port_out_regs[IO_PORT_CNT] = { &P1OUT };
+static volatile uint8_t *const port_sel1_regs[IO_PORT_CNT] = { &P1SEL };
+static volatile uint8_t *const port_sel2_regs[IO_PORT_CNT] = { &P1SEL2 };
 void io_configure(io_e io, const struct io_config *config)
 {
     io_set_select(io, config->select);
@@ -46,7 +45,6 @@ void io_configure(io_e io, const struct io_config *config)
     io_set_out(io, config->out);
     io_set_resistor(io, config->resistor);
 }
-
 void io_set_select(io_e io, io_select_e select)
 {
     const uint8_t port = io_port(io);
