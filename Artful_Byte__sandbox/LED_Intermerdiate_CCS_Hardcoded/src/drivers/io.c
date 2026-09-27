@@ -88,6 +88,9 @@ void io_set_out(io_e io, io_out_e out)
     }
 }
 
+/*  Explore struct
+    compare io_set_select(IO_TEST_LED, led_config.select) vs io_set_select(io, config->select);    
+*/
 void io_configure(io_e io, const struct io_config *config)
 {
     io_set_select(io, config->select);

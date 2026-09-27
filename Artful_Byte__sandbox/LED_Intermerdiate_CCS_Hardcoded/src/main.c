@@ -8,10 +8,10 @@ static void test_blink_led(void)
 {
     /* Configure the LED */
     const struct io_config led_config = {
-    .dir = IO_DIR_OUTPUT,
-    .select = IO_SELECT_GPIO,
-    .resistor = IO_RESISTOR_DISABLED,
-    .out = IO_OUT_LOW,
+        .dir = IO_DIR_OUTPUT,
+        .select = IO_SELECT_GPIO,
+        .resistor = IO_RESISTOR_DISABLED,
+        .out = IO_OUT_LOW,
     };
     // Now we can access led_config through . operator
 
@@ -20,6 +20,8 @@ static void test_blink_led(void)
     io_set_direction(IO_TEST_LED, led_config.dir);   // set P1DIR = 1 for output
     io_set_out(IO_TEST_LED, led_config.out);         // set P1OUT 
     io_set_resistor(IO_TEST_LED, led_config.resistor); // set P1REN 0
+    
+    // io_configure(IO_TEST_LED, &led_config);
     
     io_out_e out = IO_OUT_LOW;
     while (1) {
