@@ -21,7 +21,8 @@
       "Bash(cat *)",
       "Bash(echo *)",
       "WebFetch(*)",
-      "WebSearch(*)"
+      "WebSearch(*)",
+      "Bash(python -c ' *)"
     ],
     "deny": [
       "Read(./.env)",

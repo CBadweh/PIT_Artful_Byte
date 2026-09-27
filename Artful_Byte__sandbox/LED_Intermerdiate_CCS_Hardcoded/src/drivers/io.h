@@ -64,7 +64,6 @@ typedef enum
     IO_IN_HIGH,
 } io_in_e;
 
-
 struct io_config
 {
     io_select_e select;

@@ -38,13 +38,8 @@ static volatile uint8_t *const port_ren_regs[IO_PORT_CNT] = { &P1REN };
 static volatile uint8_t *const port_out_regs[IO_PORT_CNT] = { &P1OUT };
 static volatile uint8_t *const port_sel1_regs[IO_PORT_CNT] = { &P1SEL };
 static volatile uint8_t *const port_sel2_regs[IO_PORT_CNT] = { &P1SEL2 };
-void io_configure(io_e io, const struct io_config *config)
-{
-    io_set_select(io, config->select);
-    io_set_direction(io, config->dir);
-    io_set_out(io, config->out);
-    io_set_resistor(io, config->resistor);
-}
+
+/* Get Port and Pin number and then set the appropriate register */
 void io_set_select(io_e io, io_select_e select)
 {
     const uint8_t port = io_port(io);
@@ -93,3 +88,10 @@ void io_set_out(io_e io, io_out_e out)
     }
 }
 
+void io_configure(io_e io, const struct io_config *config)
+{
+    io_set_select(io, config->select);
+    io_set_direction(io, config->dir);
+    io_set_out(io, config->out);
+    io_set_resistor(io, config->resistor);
+}

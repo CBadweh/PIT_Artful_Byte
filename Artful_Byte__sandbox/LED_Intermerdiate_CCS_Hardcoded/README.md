@@ -2,10 +2,20 @@
 
 **Lesson:** 12 — How I Program GPIOs in C
 **Course:** Artful Byte — Bare-Metal Sumo Robot (MSP430G2553)
-**Stage:** 2 of 6 — First IO abstraction layer, THIS IS THE 2ND BLINK TEST FROM THE VIDEO timestamp 20:00
+**Stage:** 2 of 6 — First IO abstraction layer, THIS IS THE 2ND BLINK TEST FROM THE VIDEO timestamp 20:00 (GREEN LED)
 **Build:** CCS (Code Composer Studio) — TI compiler (cl430)
-**CBadweh Note** LAUNCHPAD-only sandbox. Guards and assert removed — enum and io_e are unconditional.
+**CBadweh Note** LAUNCHPAD-only sandbox. 
+Guards and assert removed — enum and io_e are unconditional.
+Reduce switches in io.c 
+- only focusing on IO mode, ignore ALT Modes
+- only focusing on OUTPUT, REGISTER_DISABLED
+- only focusing on PORT 1, ignoring PORT 2 in Array Indexing
 
+Start without using io_configure() - to understand struct, enum, datatype
+Next use io_configure()
+
+
+HARDCODED for Port 1
 ---
 
 ## Overview
