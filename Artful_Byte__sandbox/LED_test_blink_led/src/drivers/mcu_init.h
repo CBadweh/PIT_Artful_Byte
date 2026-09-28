@@ -1,7 +1,7 @@
 #ifndef MCU_INIT_H
 #define MCU_INIT_H
 
-/* Initialization of common microcontroller functionality */
+/* Lesson 12 — Initialization of common microcontroller functionality */
 
 void mcu_init(void);
 

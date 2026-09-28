@@ -1,5 +1,5 @@
-# Lesson 12 Test 1 — test_blink_led with io_configure on a single pin.
-# Usage: make
+# Lesson 12 Test 1 — test_blink_led with io_configure on a single pin (LaunchPad only).
+# Usage: make | make flash | make clean
 
 TOOLCHAIN_DIR = C:/ti/msp430-gcc
 INC_DIR = $(TOOLCHAIN_DIR)/include
@@ -12,17 +12,15 @@ CC = msp430-elf-gcc
 RM = rm
 
 MCU = msp430g2553
-DEFINES = -DLAUNCHPAD
 WFLAGS = -Wall -Wextra -Werror -Wshadow
 CFLAGS = -mmcu=$(MCU) $(WFLAGS) -fshort-enums -Og -g \
-	-I$(INC_DIR) -I./src $(DEFINES)
+	-I$(INC_DIR) -I./src
 LDFLAGS = -mmcu=$(MCU) -L$(INC_DIR)
 
 SOURCES = \
 	src/main.c \
 	src/drivers/io.c \
-	src/drivers/mcu_init.c \
-	src/common/assert_handler.c
+	src/drivers/mcu_init.c
 
 OBJECTS = $(patsubst src/%.c,$(OBJ_DIR)/%.o,$(SOURCES))
 TARGET = $(BIN_DIR)/blink.elf

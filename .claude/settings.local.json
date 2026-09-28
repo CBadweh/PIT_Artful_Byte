@@ -22,7 +22,10 @@
       "Bash(echo *)",
       "WebFetch(*)",
       "WebSearch(*)",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(make clean *)",
+      "Bash(make)",
+      "Bash(echo \"exit=$?\")"
     ],
     "deny": [
       "Read(./.env)",
